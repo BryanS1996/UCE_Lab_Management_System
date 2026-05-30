@@ -1,0 +1,22 @@
+# Dependencias de Node (se ignoran en cualquier subcarpeta)
+**/node_modules/
+
+# Archivos de variables de entorno (¡Seguridad importante!)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Carpetas de compilación / producción
+**/dist/
+**/build/
+**/.next/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs de errores
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
