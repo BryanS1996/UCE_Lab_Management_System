@@ -1,21 +1,55 @@
+version: '3.9'
+
 services:
-  postgres:
-    image: postgres:16
-
-    container_name: lab-postgres
-
-    restart: always
-
+  auth-db:
+    image: postgres:15-alpine
+    container_name: auth-db
     environment:
-      POSTGRES_DB: lab_management
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
-
+      - "${DB_PORT}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - auth-db-data:/var/lib/postgresql/data
+    networks:
+      - uce-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+      DB_HOST: auth-db
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+    ports:
+      - "3000:3000"
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    volumes:
+      - ./services/auth-service/src:/app/src
+      - ./services/auth-service/node_modules:/app/node_modules
+    networks:
+      - uce-network
+    command: npm run start:dev
 
 volumes:
-  postgres_data:
+  auth-db-data:
+
+networks:
+  uce-network:
+    driver: bridge
