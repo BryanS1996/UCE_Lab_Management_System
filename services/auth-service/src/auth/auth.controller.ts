@@ -3,30 +3,47 @@ import {
   Post,
   Body,
   Get,
-  Param,
   UseGuards,
   Request,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiBody,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto, ChangePasswordDto } from './dto';
 import { JwtAuthGuard } from './guards';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('register')
+  @ApiOperation({ summary: 'Registrar nuevo usuario', description: 'Crea un nuevo usuario en el sistema. La contraseña debe contener mayúsculas, minúsculas, números y caracteres especiales.' })
+  @ApiResponse({ status: 201, description: 'Usuario registrado exitosamente. Retorna access token y refresh token.' })
+  @ApiResponse({ status: 400, description: 'El usuario ya existe o los datos son inválidos.' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
   @Post('login')
+  @ApiOperation({ summary: 'Iniciar sesión', description: 'Autentica al usuario y retorna JWT access token (15min) y refresh token (7d).' })
+  @ApiResponse({ status: 200, description: 'Login exitoso. Retorna accessToken, refreshToken y datos del usuario.' })
+  @ApiResponse({ status: 401, description: 'Credenciales inválidas.' })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT')
   @Post('change-password')
+  @ApiOperation({ summary: 'Cambiar contraseña', description: 'Permite al usuario autenticado cambiar su contraseña.' })
+  @ApiResponse({ status: 200, description: 'Contraseña actualizada correctamente.' })
+  @ApiResponse({ status: 401, description: 'Token inválido o contraseña actual incorrecta.' })
   async changePassword(
     @Request() req,
     @Body() changePasswordDto: ChangePasswordDto,
@@ -35,7 +52,11 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT')
   @Get('me')
+  @ApiOperation({ summary: 'Obtener usuario autenticado', description: 'Retorna los datos del usuario actualmente autenticado.' })
+  @ApiResponse({ status: 200, description: 'Datos del usuario autenticado.' })
+  @ApiResponse({ status: 401, description: 'Token inválido o expirado.' })
   async getCurrentUser(@Request() req) {
     return {
       id: req.user.id,
