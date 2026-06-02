@@ -5,12 +5,12 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm ci --only=production && \
+RUN npm install --omit=dev --legacy-peer-deps && \
     npm cache clean --force
 
 COPY . .
 
-RUN npm ci && npm run build
+RUN npm install --legacy-peer-deps && npm run build
 
 # Production stage
 FROM node:20-alpine

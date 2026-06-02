@@ -9,94 +9,120 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  ParseUUIDPipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ReservationsService } from './reservations.service';
 import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { ReservationStatus } from '../database/entities';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 
 @Controller('reservations')
+@UseGuards(JwtAuthGuard) // Todos los endpoints requieren autenticación
 export class ReservationsController {
   constructor(private readonly reservationsService: ReservationsService) {}
 
   /**
    * POST /reservations
    * Crear una nueva reserva
-   * Body: CreateReservationDto
-   * Returns: Reservation creada
+   * user_id se toma del JWT, no del body
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createReservationDto: CreateReservationDto) {
-    return this.reservationsService.create(createReservationDto);
+  create(
+    @Body() createReservationDto: CreateReservationDto,
+    @CurrentUser() currentUser: CurrentUserData,
+  ) {
+    return this.reservationsService.create(createReservationDto, currentUser);
+  }
+
+  /**
+   * GET /reservations/my
+   * Obtener mis reservas (usuario autenticado)
+   * Query: ?status=PENDING|CONFIRMED|CANCELLED
+   */
+  @Get('my')
+  findMyReservations(
+    @CurrentUser() currentUser: CurrentUserData,
+    @Query('status') status?: ReservationStatus,
+  ) {
+    return this.reservationsService.findMyReservations(currentUser, status);
   }
 
   /**
    * GET /reservations
-   * Obtener todas las reservas con filtros opcionales
+   * Obtener todas las reservas (admins ven todas, usuarios solo las suyas)
    * Query params:
-   *   - laboratory_id (UUID)
-   *   - user_id (UUID)
+   *   - lab_id (int)
+   *   - user_id (UUID) — solo para admins
    *   - status (PENDING | CONFIRMED | CANCELLED)
    */
   @Get()
   findAll(
-    @Query('laboratory_id') laboratory_id?: string,
+    @CurrentUser() currentUser: CurrentUserData,
+    @Query('lab_id') lab_id?: string,
     @Query('user_id') user_id?: string,
     @Query('status') status?: ReservationStatus,
   ) {
-    return this.reservationsService.findAll({
-      laboratory_id,
-      user_id,
-      status,
-    });
+    return this.reservationsService.findAll(
+      {
+        lab_id: lab_id ? parseInt(lab_id, 10) : undefined,
+        user_id,
+        status,
+      },
+      currentUser,
+    );
   }
 
   /**
    * GET /reservations/:id
    * Obtener una reserva específica por ID
-   * Params:
-   *   - id (UUID de la reserva)
    */
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.reservationsService.findOne(id);
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: CurrentUserData,
+  ) {
+    return this.reservationsService.findOne(id, currentUser);
   }
 
   /**
    * PATCH /reservations/:id
-   * Actualizar una reserva
-   * Params:
-   *   - id (UUID de la reserva)
-   * Body: UpdateReservationDto (campos opcionales)
+   * Actualizar una reserva (solo dueño o admin)
    */
   @Patch(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateReservationDto: UpdateReservationDto,
+    @CurrentUser() currentUser: CurrentUserData,
   ) {
-    return this.reservationsService.update(id, updateReservationDto);
+    return this.reservationsService.update(id, updateReservationDto, currentUser);
   }
 
   /**
    * DELETE /reservations/:id
    * Cancelar una reserva (soft delete)
-   * Params:
-   *   - id (UUID de la reserva)
    */
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  remove(@Param('id') id: string) {
-    return this.reservationsService.remove(id);
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: CurrentUserData,
+  ) {
+    return this.reservationsService.remove(id, currentUser);
   }
 
   /**
    * PATCH /reservations/:id/confirm
-   * Confirmar una reserva (cambiar estado PENDING → CONFIRMED)
-   * Params:
-   *   - id (UUID de la reserva)
+   * Confirmar una reserva: PENDING → CONFIRMED (solo ADMIN)
    */
   @Patch(':id/confirm')
-  confirm(@Param('id') id: string) {
-    return this.reservationsService.confirm(id);
+  confirm(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: CurrentUserData,
+  ) {
+    return this.reservationsService.confirm(id, currentUser);
   }
 }

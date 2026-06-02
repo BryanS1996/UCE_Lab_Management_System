@@ -1,12 +1,14 @@
 import {
   Entity,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
   VersionColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
-import { v4 as uuid } from 'uuid';
+import { Laboratory } from './laboratory.entity';
 
 export enum ReservationStatus {
   PENDING = 'PENDING',
@@ -16,37 +18,48 @@ export enum ReservationStatus {
 
 @Entity('reservations')
 export class Reservation {
-  @PrimaryColumn('uuid')
+  @PrimaryGeneratedColumn('uuid', { name: 'reservation_id' })
   reservation_id!: string;
 
-  @Column('uuid')
-  laboratory_id!: string;
-
-  @Column('uuid')
+  @Column('uuid', { name: 'user_id' })
   user_id!: string;
 
-  @Column('timestamp')
+  @Column('int', { name: 'lab_id' })
+  lab_id!: number;
+
+  @Column('timestamp with time zone', { name: 'start_time' })
   start_time!: Date;
 
-  @Column('timestamp')
+  @Column('timestamp with time zone', { name: 'end_time' })
   end_time!: Date;
+
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: ReservationStatus.PENDING,
+  })
+  status: ReservationStatus = ReservationStatus.PENDING;
 
   @Column('varchar', { length: 500, nullable: true })
   purpose?: string;
 
-  @Column({
-    type: 'varchar',
-    default: ReservationStatus.PENDING,
-    enum: ReservationStatus,
-  })
-  status: ReservationStatus = ReservationStatus.PENDING;
+  @Column('varchar', { length: 1000, nullable: true })
+  notes?: string;
 
-  @CreateDateColumn()
-  created_at!: Date;
-
-  @UpdateDateColumn()
-  updated_at!: Date;
+  @Column('boolean', { default: false, name: 'requires_payment' })
+  requires_payment: boolean = false;
 
   @VersionColumn()
   version!: number;
+
+  @CreateDateColumn({ name: 'created_at' })
+  created_at!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at!: Date;
+
+  // Relación ManyToOne con Laboratory (sin FK constraint cross-service)
+  @ManyToOne(() => Laboratory, { nullable: true, eager: false })
+  @JoinColumn({ name: 'lab_id', referencedColumnName: 'lab_id' })
+  laboratory?: Laboratory;
 }
