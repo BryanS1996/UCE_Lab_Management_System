@@ -1,0 +1,319 @@
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Reservation, ReservationStatus, Laboratory } from '../database/entities';
+import { CreateReservationDto, UpdateReservationDto } from './dto';
+import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
+import { CurrentUserData } from '../common/decorators/current-user.decorator';
+
+@Injectable()
+export class ReservationsService {
+  private readonly logger = new Logger(ReservationsService.name);
+
+  constructor(
+    @InjectRepository(Reservation)
+    private readonly reservationRepository: Repository<Reservation>,
+    @InjectRepository(Laboratory)
+    private readonly laboratoryRepository: Repository<Laboratory>,
+    private readonly rabbitmqService: RabbitmqService,
+  ) {}
+
+  /**
+   * Crear una nueva reserva
+   * - Verifica JWT del usuario
+   * - Verifica que el laboratorio exista y esté activo
+   * - Verifica conflictos de horario en BD (query eficiente)
+   * - Publica evento ReservationCreated en RabbitMQ
+   */
+  async create(
+    createReservationDto: CreateReservationDto,
+    currentUser: CurrentUserData,
+  ): Promise<Reservation> {
+    const { lab_id, start_time, end_time, purpose, notes } = createReservationDto;
+
+    // 1. Validar rango de tiempo
+    const startDate = new Date(start_time);
+    const endDate = new Date(end_time);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new BadRequestException('Formato de fecha inválido');
+    }
+
+    if (endDate <= startDate) {
+      throw new BadRequestException('end_time debe ser posterior a start_time');
+    }
+
+    if (startDate < new Date()) {
+      throw new BadRequestException('No se pueden crear reservas en el pasado');
+    }
+
+    // 2. Verificar que el laboratorio existe y está activo
+    const laboratory = await this.laboratoryRepository.findOne({
+      where: { lab_id },
+    });
+
+    if (!laboratory) {
+      throw new NotFoundException(`Laboratorio con ID ${lab_id} no encontrado`);
+    }
+
+    if (!laboratory.is_active) {
+      throw new ConflictException(
+        `El laboratorio '${laboratory.name}' no está disponible actualmente`,
+      );
+    }
+
+    // 3. Verificar conflictos de horario usando query eficiente
+    const conflictCount = await this.reservationRepository
+      .createQueryBuilder('r')
+      .where('r.lab_id = :lab_id', { lab_id })
+      .andWhere('r.status IN (:...statuses)', {
+        statuses: [ReservationStatus.CONFIRMED, ReservationStatus.PENDING],
+      })
+      .andWhere('r.start_time < :endTime', { endTime: endDate })
+      .andWhere('r.end_time > :startTime', { startTime: startDate })
+      .getCount();
+
+    if (conflictCount > 0) {
+      throw new ConflictException(
+        'Ya existe una reserva en ese horario para este laboratorio',
+      );
+    }
+
+    // 4. Crear la reserva
+    const reservation = this.reservationRepository.create({
+      lab_id,
+      user_id: currentUser.user_id, // Tomado del JWT, no del body
+      start_time: startDate,
+      end_time: endDate,
+      purpose,
+      notes,
+      status: ReservationStatus.PENDING,
+    });
+
+    const saved = await this.reservationRepository.save(reservation);
+
+    // 5. Publicar evento ReservationCreated (fire-and-forget)
+    this.rabbitmqService
+      .publishReservationCreated({
+        reservation_id: saved.reservation_id,
+        user_id: saved.user_id,
+        lab_id: saved.lab_id,
+        start_time: saved.start_time,
+        end_time: saved.end_time,
+        purpose: saved.purpose,
+      })
+      .catch((err) =>
+        this.logger.error('Error publicando ReservationCreated', err),
+      );
+
+    this.logger.log(
+      `✅ Reserva creada: ${saved.reservation_id} para lab ${lab_id} por usuario ${currentUser.user_id}`,
+    );
+
+    return saved;
+  }
+
+  /**
+   * Obtener todas las reservas con filtros opcionales
+   * - Los usuarios solo ven sus propias reservas
+   * - Los admins pueden ver todas
+   */
+  async findAll(
+    filters: {
+      lab_id?: number;
+      user_id?: string;
+      status?: ReservationStatus;
+    },
+    currentUser: CurrentUserData,
+  ): Promise<Reservation[]> {
+    const query = this.reservationRepository.createQueryBuilder('r');
+
+    // Si no es admin, solo puede ver sus propias reservas
+    if (currentUser.role !== 'ADMIN') {
+      query.andWhere('r.user_id = :user_id', { user_id: currentUser.user_id });
+    } else if (filters?.user_id) {
+      query.andWhere('r.user_id = :user_id', { user_id: filters.user_id });
+    }
+
+    if (filters?.lab_id) {
+      query.andWhere('r.lab_id = :lab_id', { lab_id: filters.lab_id });
+    }
+
+    if (filters?.status) {
+      query.andWhere('r.status = :status', { status: filters.status });
+    }
+
+    return query.orderBy('r.start_time', 'ASC').getMany();
+  }
+
+  /**
+   * Obtener reservas del usuario autenticado
+   */
+  async findMyReservations(
+    currentUser: CurrentUserData,
+    status?: ReservationStatus,
+  ): Promise<Reservation[]> {
+    const query = this.reservationRepository
+      .createQueryBuilder('r')
+      .where('r.user_id = :user_id', { user_id: currentUser.user_id });
+
+    if (status) {
+      query.andWhere('r.status = :status', { status });
+    }
+
+    return query.orderBy('r.start_time', 'ASC').getMany();
+  }
+
+  /**
+   * Obtener una reserva por ID
+   * Verifica que el usuario tenga permiso para verla
+   */
+  async findOne(id: string, currentUser: CurrentUserData): Promise<Reservation> {
+    const reservation = await this.reservationRepository.findOne({
+      where: { reservation_id: id },
+    });
+
+    if (!reservation) {
+      throw new NotFoundException(`Reserva con ID ${id} no encontrada`);
+    }
+
+    // Solo el dueño o un admin pueden ver la reserva
+    if (
+      reservation.user_id !== currentUser.user_id &&
+      currentUser.role !== 'ADMIN'
+    ) {
+      throw new ForbiddenException('No tienes permiso para ver esta reserva');
+    }
+
+    return reservation;
+  }
+
+  /**
+   * Actualizar una reserva
+   * Solo el dueño o admin pueden modificarla
+   */
+  async update(
+    id: string,
+    updateReservationDto: UpdateReservationDto,
+    currentUser: CurrentUserData,
+  ): Promise<Reservation> {
+    const reservation = await this.findOne(id, currentUser);
+
+    if (reservation.status === ReservationStatus.CANCELLED) {
+      throw new BadRequestException('No se puede modificar una reserva cancelada');
+    }
+
+    // Validar cambios de horario
+    if (updateReservationDto.start_time || updateReservationDto.end_time) {
+      const startDate = new Date(
+        updateReservationDto.start_time || reservation.start_time,
+      );
+      const endDate = new Date(
+        updateReservationDto.end_time || reservation.end_time,
+      );
+
+      if (endDate <= startDate) {
+        throw new BadRequestException('end_time debe ser posterior a start_time');
+      }
+
+      const labId = updateReservationDto.lab_id ?? reservation.lab_id;
+
+      // Verificar conflictos excluyendo la reserva actual
+      const conflictCount = await this.reservationRepository
+        .createQueryBuilder('r')
+        .where('r.lab_id = :lab_id', { lab_id: labId })
+        .andWhere('r.reservation_id != :id', { id })
+        .andWhere('r.status IN (:...statuses)', {
+          statuses: [ReservationStatus.CONFIRMED, ReservationStatus.PENDING],
+        })
+        .andWhere('r.start_time < :endTime', { endTime: endDate })
+        .andWhere('r.end_time > :startTime', { startTime: startDate })
+        .getCount();
+
+      if (conflictCount > 0) {
+        throw new ConflictException(
+          'Ya existe una reserva en ese horario para este laboratorio',
+        );
+      }
+    }
+
+    Object.assign(reservation, updateReservationDto);
+    return this.reservationRepository.save(reservation);
+  }
+
+  /**
+   * Cancelar una reserva (soft delete cambiando estado a CANCELLED)
+   * Publica evento ReservationCancelled
+   */
+  async remove(id: string, currentUser: CurrentUserData): Promise<Reservation> {
+    const reservation = await this.findOne(id, currentUser);
+
+    if (reservation.status === ReservationStatus.CANCELLED) {
+      throw new BadRequestException('La reserva ya está cancelada');
+    }
+
+    reservation.status = ReservationStatus.CANCELLED;
+    const cancelled = await this.reservationRepository.save(reservation);
+
+    // Publicar evento ReservationCancelled (fire-and-forget)
+    this.rabbitmqService
+      .publishReservationCancelled({
+        reservation_id: cancelled.reservation_id,
+        user_id: cancelled.user_id,
+        lab_id: cancelled.lab_id,
+      })
+      .catch((err) =>
+        this.logger.error('Error publicando ReservationCancelled', err),
+      );
+
+    this.logger.log(`🚫 Reserva cancelada: ${id}`);
+    return cancelled;
+  }
+
+  /**
+   * Confirmar una reserva (cambiar estado PENDING → CONFIRMED)
+   * Solo ADMIN puede confirmar
+   * Publica evento ReservationConfirmed
+   */
+  async confirm(id: string, currentUser: CurrentUserData): Promise<Reservation> {
+    const reservation = await this.reservationRepository.findOne({
+      where: { reservation_id: id },
+    });
+
+    if (!reservation) {
+      throw new NotFoundException(`Reserva con ID ${id} no encontrada`);
+    }
+
+    if (reservation.status !== ReservationStatus.PENDING) {
+      throw new BadRequestException(
+        `No se puede confirmar una reserva con estado '${reservation.status}'`,
+      );
+    }
+
+    reservation.status = ReservationStatus.CONFIRMED;
+    const confirmed = await this.reservationRepository.save(reservation);
+
+    // Publicar evento ReservationConfirmed (fire-and-forget)
+    this.rabbitmqService
+      .publishReservationConfirmed({
+        reservation_id: confirmed.reservation_id,
+        user_id: confirmed.user_id,
+        lab_id: confirmed.lab_id,
+        start_time: confirmed.start_time,
+        end_time: confirmed.end_time,
+      })
+      .catch((err) =>
+        this.logger.error('Error publicando ReservationConfirmed', err),
+      );
+
+    this.logger.log(`✅ Reserva confirmada: ${id}`);
+    return confirmed;
+  }
+}
