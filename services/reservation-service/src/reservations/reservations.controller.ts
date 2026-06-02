@@ -11,26 +11,38 @@ import {
   HttpStatus,
   UseGuards,
   ParseUUIDPipe,
-  ParseIntPipe,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiParam,
+} from '@nestjs/swagger';
 import { ReservationsService } from './reservations.service';
 import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { ReservationStatus } from '../database/entities';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
 
+@ApiTags('reservations')
+@ApiBearerAuth('JWT')
 @Controller('reservations')
-@UseGuards(JwtAuthGuard) // Todos los endpoints requieren autenticación
+@UseGuards(JwtAuthGuard)
 export class ReservationsController {
   constructor(private readonly reservationsService: ReservationsService) {}
 
-  /**
-   * POST /reservations
-   * Crear una nueva reserva
-   * user_id se toma del JWT, no del body
-   */
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Crear reserva',
+    description: 'Crea una nueva reserva de laboratorio. El user_id se toma automáticamente del JWT. Verifica disponibilidad del laboratorio y conflictos de horario. Publica evento ReservationCreated en RabbitMQ.',
+  })
+  @ApiResponse({ status: 201, description: 'Reserva creada con estado PENDING.' })
+  @ApiResponse({ status: 400, description: 'Fechas inválidas o laboratorio no activo.' })
+  @ApiResponse({ status: 401, description: 'Token JWT inválido o expirado.' })
+  @ApiResponse({ status: 409, description: 'Conflicto de horario en el laboratorio.' })
   create(
     @Body() createReservationDto: CreateReservationDto,
     @CurrentUser() currentUser: CurrentUserData,
@@ -38,12 +50,10 @@ export class ReservationsController {
     return this.reservationsService.create(createReservationDto, currentUser);
   }
 
-  /**
-   * GET /reservations/my
-   * Obtener mis reservas (usuario autenticado)
-   * Query: ?status=PENDING|CONFIRMED|CANCELLED
-   */
   @Get('my')
+  @ApiOperation({ summary: 'Mis reservas', description: 'Retorna todas las reservas del usuario autenticado.' })
+  @ApiQuery({ name: 'status', required: false, enum: ReservationStatus, description: 'Filtrar por estado' })
+  @ApiResponse({ status: 200, description: 'Lista de reservas del usuario.' })
   findMyReservations(
     @CurrentUser() currentUser: CurrentUserData,
     @Query('status') status?: ReservationStatus,
@@ -51,15 +61,15 @@ export class ReservationsController {
     return this.reservationsService.findMyReservations(currentUser, status);
   }
 
-  /**
-   * GET /reservations
-   * Obtener todas las reservas (admins ven todas, usuarios solo las suyas)
-   * Query params:
-   *   - lab_id (int)
-   *   - user_id (UUID) — solo para admins
-   *   - status (PENDING | CONFIRMED | CANCELLED)
-   */
   @Get()
+  @ApiOperation({
+    summary: 'Listar reservas',
+    description: 'ADMIN: retorna todas las reservas. Otros roles: solo sus propias reservas.',
+  })
+  @ApiQuery({ name: 'lab_id', required: false, type: Number })
+  @ApiQuery({ name: 'user_id', required: false, type: String, description: 'Solo disponible para ADMIN' })
+  @ApiQuery({ name: 'status', required: false, enum: ReservationStatus })
+  @ApiResponse({ status: 200, description: 'Lista de reservas.' })
   findAll(
     @CurrentUser() currentUser: CurrentUserData,
     @Query('lab_id') lab_id?: string,
@@ -67,20 +77,17 @@ export class ReservationsController {
     @Query('status') status?: ReservationStatus,
   ) {
     return this.reservationsService.findAll(
-      {
-        lab_id: lab_id ? parseInt(lab_id, 10) : undefined,
-        user_id,
-        status,
-      },
+      { lab_id: lab_id ? parseInt(lab_id, 10) : undefined, user_id, status },
       currentUser,
     );
   }
 
-  /**
-   * GET /reservations/:id
-   * Obtener una reserva específica por ID
-   */
   @Get(':id')
+  @ApiOperation({ summary: 'Obtener reserva por ID' })
+  @ApiParam({ name: 'id', type: String, description: 'UUID de la reserva' })
+  @ApiResponse({ status: 200, description: 'Datos de la reserva.' })
+  @ApiResponse({ status: 403, description: 'Sin permiso para ver esta reserva.' })
+  @ApiResponse({ status: 404, description: 'Reserva no encontrada.' })
   findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUser: CurrentUserData,
@@ -88,11 +95,10 @@ export class ReservationsController {
     return this.reservationsService.findOne(id, currentUser);
   }
 
-  /**
-   * PATCH /reservations/:id
-   * Actualizar una reserva (solo dueño o admin)
-   */
   @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar reserva', description: 'Actualiza campos de una reserva. Solo el dueño o ADMIN.' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Reserva actualizada.' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateReservationDto: UpdateReservationDto,
@@ -101,12 +107,11 @@ export class ReservationsController {
     return this.reservationsService.update(id, updateReservationDto, currentUser);
   }
 
-  /**
-   * DELETE /reservations/:id
-   * Cancelar una reserva (soft delete)
-   */
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cancelar reserva', description: 'Cancela una reserva (soft delete → estado CANCELLED). Publica evento ReservationCancelled en RabbitMQ.' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Reserva cancelada.' })
   remove(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUser: CurrentUserData,
@@ -114,11 +119,11 @@ export class ReservationsController {
     return this.reservationsService.remove(id, currentUser);
   }
 
-  /**
-   * PATCH /reservations/:id/confirm
-   * Confirmar una reserva: PENDING → CONFIRMED (solo ADMIN)
-   */
   @Patch(':id/confirm')
+  @ApiOperation({ summary: 'Confirmar reserva', description: 'Cambia estado de PENDING → CONFIRMED. Solo ADMIN. Publica evento ReservationConfirmed en RabbitMQ.' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Reserva confirmada.' })
+  @ApiResponse({ status: 400, description: 'La reserva no está en estado PENDING.' })
   confirm(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() currentUser: CurrentUserData,
