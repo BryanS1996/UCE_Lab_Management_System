@@ -48,17 +48,11 @@ export class UsersService {
   }
 
   async findByIdWithPassword(id: string) {
-    return this.usersRepository.findOne({
-      where: { id },
-      select: [
-        'id',
-        'email',
-        'firstName',
-        'lastName',
-        'password',
-        'isActive',
-      ],
-    });
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.id = :id', { id })
+      .addSelect('user.password')
+      .getOne();
   }
 
   async findByEmail(email: string) {
@@ -69,17 +63,12 @@ export class UsersService {
   }
 
   async findByEmailWithPassword(email: string) {
-    return this.usersRepository.findOne({
-      where: { email },
-      select: [
-        'id',
-        'email',
-        'firstName',
-        'lastName',
-        'password',
-        'isActive',
-      ],
-    });
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.email = :email', { email })
+      .addSelect('user.password')
+      .leftJoinAndSelect('user.roles', 'roles')
+      .getOne();
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
