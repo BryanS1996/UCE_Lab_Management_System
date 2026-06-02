@@ -22,9 +22,7 @@ services:
 
   # ─── QA: Auth Service (puerto 3010) ──────────────────
   auth-service-qa:
-    build:
-      context: ./services/auth-service
-      dockerfile: Dockerfile
+    image: bryanfabricio96/auth-service:qa
     container_name: auth-service-qa
     environment:
       NODE_ENV: qa
@@ -86,9 +84,7 @@ services:
 
   # ─── QA: Reservation Service (puerto 3011) ───────────
   reservation-service-qa:
-    build:
-      context: ./services/reservation-service
-      dockerfile: Dockerfile
+    image: bryanfabricio96/reservation-service:qa
     container_name: reservation-service-qa
     environment:
       NODE_ENV: qa
