@@ -1,31 +1,34 @@
 import {
-  IsUUID,
+  IsInt,
   IsDateString,
   IsString,
   IsNotEmpty,
+  IsOptional,
   Length,
-  ValidateIf,
+  Min,
 } from 'class-validator';
 
 export class CreateReservationDto {
-  @IsNotEmpty()
-  @IsUUID()
-  laboratory_id!: string;
+  @IsNotEmpty({ message: 'El ID del laboratorio es requerido' })
+  @IsInt()
+  @Min(1)
+  lab_id!: number;
 
-  @IsNotEmpty()
-  @IsUUID()
-  user_id!: string;
-
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'La hora de inicio es requerida' })
   @IsDateString()
   start_time!: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'La hora de fin es requerida' })
   @IsDateString()
   end_time!: string;
 
-  @ValidateIf((o) => o.purpose !== undefined)
+  @IsOptional()
   @IsString()
   @Length(1, 500)
   purpose?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 1000)
+  notes?: string;
 }

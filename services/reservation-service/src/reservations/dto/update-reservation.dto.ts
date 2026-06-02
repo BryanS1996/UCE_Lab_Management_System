@@ -1,22 +1,31 @@
-import {
-  IsUUID,
-  IsDateString,
-  IsString,
-  IsEnum,
-  IsOptional,
-  Length,
-} from 'class-validator';
+import { IsOptional, IsInt, IsDateString, IsString, IsEnum, Length, Min } from 'class-validator';
 import { ReservationStatus } from '../../database/entities';
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateReservationDto } from './create-reservation.dto';
 
-export class UpdateReservationDto extends PartialType(CreateReservationDto) {
+export class UpdateReservationDto {
   @IsOptional()
-  @IsEnum(ReservationStatus)
-  status?: ReservationStatus;
+  @IsInt()
+  @Min(1)
+  lab_id?: number;
+
+  @IsOptional()
+  @IsDateString()
+  start_time?: string;
+
+  @IsOptional()
+  @IsDateString()
+  end_time?: string;
 
   @IsOptional()
   @IsString()
   @Length(1, 500)
   purpose?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 1000)
+  notes?: string;
+
+  @IsOptional()
+  @IsEnum(ReservationStatus)
+  status?: ReservationStatus;
 }
