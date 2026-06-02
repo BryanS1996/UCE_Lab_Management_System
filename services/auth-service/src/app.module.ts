@@ -11,7 +11,7 @@ import { User, Role } from './database/entities';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: process.env.NODE_ENV === 'prod' ? '.env.prod' : '.env.qa',
+      envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -23,8 +23,7 @@ import { User, Role } from './database/entities';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         entities: [User, Role],
-        synchronize: configService.get<string>('NODE_ENV') === 'dev',
-        logging: configService.get<string>('NODE_ENV') === 'dev',
+        synchronize: true,
       }),
     }),
     AuthModule,
