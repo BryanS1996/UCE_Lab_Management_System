@@ -1,0 +1,123 @@
+
+services:
+  # ─── QA: Auth Database ───────────────────────────────
+  auth-db-qa:
+    image: postgres:15-alpine
+    container_name: auth-db-qa
+    environment:
+      POSTGRES_USER: authuser
+      POSTGRES_PASSWORD: authpassword
+      POSTGRES_DB: auth_service_qa
+    ports:
+      - "5434:5432"
+    volumes:
+      - auth-db-qa-data:/var/lib/postgresql/data
+    networks:
+      - uce-qa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U authuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── QA: Auth Service (puerto 3010) ──────────────────
+  auth-service-qa:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service-qa
+    environment:
+      NODE_ENV: qa
+      PORT: 3010
+      DB_HOST: auth-db-qa
+      DB_PORT: 5432
+      DB_USERNAME: authuser
+      DB_PASSWORD: authpassword
+      DB_NAME: auth_service_qa
+      JWT_SECRET: qa-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+    ports:
+      - "3010:3010"
+    depends_on:
+      auth-db-qa:
+        condition: service_healthy
+    networks:
+      - uce-qa-network
+
+  # ─── QA: Reservation Database ────────────────────────
+  reservation-db-qa:
+    image: postgres:15-alpine
+    container_name: reservation-db-qa
+    environment:
+      POSTGRES_USER: reservationuser
+      POSTGRES_PASSWORD: reservationpassword
+      POSTGRES_DB: reservation_service_qa
+    ports:
+      - "5435:5432"
+    volumes:
+      - reservation-db-qa-data:/var/lib/postgresql/data
+    networks:
+      - uce-qa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reservationuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── QA: RabbitMQ (puerto 5673 / 15673) ──────────────
+  rabbitmq-qa:
+    image: rabbitmq:3.12-management-alpine
+    container_name: rabbitmq-qa
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    volumes:
+      - rabbitmq-qa-data:/var/lib/rabbitmq
+    networks:
+      - uce-qa-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ─── QA: Reservation Service (puerto 3011) ───────────
+  reservation-service-qa:
+    build:
+      context: ./services/reservation-service
+      dockerfile: Dockerfile
+    container_name: reservation-service-qa
+    environment:
+      NODE_ENV: qa
+      PORT: 3011
+      DB_HOST: reservation-db-qa
+      DB_PORT: 5432
+      DB_USERNAME: reservationuser
+      DB_PASSWORD: reservationpassword
+      DB_NAME: reservation_service_qa
+      DB_SSL: "false"
+      JWT_SECRET: qa-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
+    ports:
+      - "3011:3011"
+    depends_on:
+      reservation-db-qa:
+        condition: service_healthy
+      rabbitmq-qa:
+        condition: service_healthy
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+
+volumes:
+  auth-db-qa-data:
+  reservation-db-qa-data:
+  rabbitmq-qa-data:
+
+networks:
+  uce-qa-network:
+    driver: bridge
