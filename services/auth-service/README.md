@@ -164,64 +164,22 @@ npm run format          # Formatea con Prettier
 
 ## 🔐 Variables de Entorno
 
-### QA (.env.qa)
+Crea un archivo `.env` con las siguientes variables:
+
 ```env
-NODE_ENV=qa
 PORT=3000
-DB_HOST=auth-db-qa.xxxxx.rds.amazonaws.com
+DB_HOST=your_db_host
 DB_PORT=5432
-DB_USERNAME=authuser
-DB_PASSWORD=<generate-secure-password>
-DB_NAME=auth_service_qa
-JWT_SECRET=<generate-secure-secret>
-CORS_ORIGIN=https://qa-frontend.example.com
+DB_USERNAME=your_db_username
+DB_PASSWORD=your_db_password
+DB_NAME=your_db_name
+JWT_SECRET=your_jwt_secret_key
+CORS_ORIGIN=your_cors_origin
 ```
 
-### PROD (.env.prod)
-```env
-NODE_ENV=prod
-PORT=3000
-DB_HOST=auth-db-prod.xxxxx.rds.amazonaws.com
-DB_PORT=5432
-DB_USERNAME=authuser
-DB_PASSWORD=<generate-secure-password>
-DB_NAME=auth_service_prod
-JWT_SECRET=<generate-secure-secret>
-CORS_ORIGIN=https://frontend.example.com
-```
+## 🏢 Infraestructura
 
-## 🏢 Infraestructura Terraform
-
-### QA
-```bash
-cd ../../infra/terraform/qa/auth-service
-
-# Copiar variables
-cp terraform.tfvars.example terraform.tfvars
-
-# Editar terraform.tfvars con tus valores
-# (DB_PASSWORD, JWT_SECRET, etc.)
-
-# Inicializar
-terraform init
-
-# Planificar
-terraform plan
-
-# Aplicar
-terraform apply
-```
-
-### PROD
-```bash
-cd ../../prod/auth-service
-
-# Mismo proceso que QA
-cp terraform.tfvars.example terraform.tfvars
-terraform init
-terraform plan
-terraform apply
-```
+La configuración de infraestructura se maneja desde tu cuenta educativa de AWS
 
 ## 🔑 Endpoints API
 
@@ -322,25 +280,18 @@ curl -X GET http://localhost:3000/auth/me \
 
 ## 🚢 Deployment
 
-### Docker (Local/QA)
+### Docker
 ```bash
 # Build
 docker build -t auth-service:latest .
 
 # Run
 docker run -p 3000:3000 \
-  -e NODE_ENV=qa \
-  -e DB_HOST=db.example.com \
+  --env-file .env \
   auth-service:latest
 ```
 
-### AWS ECS (PROD)
-1. Crear repositorio ECR
-2. Push imagen Docker
-3. Crear ECS Task Definition
-4. Crear ECS Service
-5. Configurar ALB
-6. Configurar RDS (vía Terraform)
+
 
 ## 🧪 Testing
 
@@ -367,17 +318,15 @@ npm run test:e2e
 
 ## 🤝 Ramas de Desarrollo
 
-- `main`: Producción (PROD)
-- `qa`: Control de Calidad (QA)
+- `main`: Rama principal
 - `feature/auth-service`: Desarrollo del servicio de autenticación
 
 ## 📋 Checklist de Configuración
 
-- [ ] Copiar `.env.qa` y `.env.prod` desde ejemplos
+- [ ] Crear archivo `.env` con variables requeridas
 - [ ] Generar contraseñas seguras y secretos JWT
-- [ ] Configurar RDS en AWS (vía Terraform)
-- [ ] Configurar Secrets Manager en AWS
-- [ ] Crear buckets S3 para Terraform state
+- [ ] Configurar acceso a la base de datos
+- [ ] Probar endpoints de autenticación
 - [ ] Configurar CI/CD en GitHub Actions
 - [ ] Configurar monitoreo con CloudWatch
 - [ ] Hacer pruebas de endpoints
@@ -385,18 +334,17 @@ npm run test:e2e
 
 ## ⚠️ Notas Importantes
 
-1. **Nunca** commitear `.env.prod` o secretos en Git
-2. Usar Secrets Manager de AWS para producción
-3. Siempre hacer backups antes de deployments PROD
-4. Multi-AZ está habilitado en PROD para alta disponibilidad
-5. Los logs se exportan a CloudWatch automáticamente
+1. **Nunca** commitear `.env` o secretos en Git
+2. Usar variables de entorno seguras en tu cuenta educativa de AWS
+3. Generar contraseñas seguras y secretos JWT
+4. Los logs se exportan según tu configuración en AWS
 
 ## 🆘 Troubleshooting
 
 ### Error de conexión a BD
 ```bash
-# Verificar estado de RDS
-aws rds describe-db-instances --db-instance-identifier auth-service-db-qa
+# Verificar estado de la base de datos
+aws rds describe-db-instances --db-instance-identifier auth-service-db
 
 # Verificar security groups
 aws ec2 describe-security-groups --group-ids sg-xxxxx
