@@ -8,7 +8,7 @@ on:
 
 jobs:
   # ─────────────────────────────────────────────────────
-  # 1. DETECT WHICH MICROSERVICES CHANGED
+  # 1. DETECTAR QUÉ MICROSERVICIOS CAMBIARON
   # ─────────────────────────────────────────────────────
   detect-changes:
     runs-on: ubuntu-latest
@@ -27,7 +27,7 @@ jobs:
               - 'services/reservation-service/**'
 
   # ─────────────────────────────────────────────────────
-  # 2. BUILD AUTH SERVICE (Only if changes occurred)
+  # 2. CONSTRUIR AUTH SERVICE (Solo si hubo cambios)
   # ─────────────────────────────────────────────────────
   build-auth:
     needs: detect-changes
@@ -50,7 +50,7 @@ jobs:
           tags: bryanfabricio96/auth-service:${{ env.TAG }}
 
   # ─────────────────────────────────────────────────────
-  # 3. BUILD RESERVATION SERVICE (Only if there were changes)
+  # 3. CONSTRUIR RESERVATION SERVICE (Solo si hubo cambios)
   # ─────────────────────────────────────────────────────
   build-reservation:
     needs: detect-changes
