@@ -1,14 +1,27 @@
-FROM node:18-alpine
+# Builder stage
+FROM node:20-alpine as builder
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+
+RUN npm ci --only=production && \
+    npm cache clean --force
 
 COPY . .
 
-RUN npm run build
+RUN npm ci && npm run build
+
+# Production stage
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy only necessary files from builder
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start:prod"]
+CMD ["node", "dist/main"]
