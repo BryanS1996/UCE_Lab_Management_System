@@ -1,0 +1,73 @@
+name: Deploy — Production
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  test-all:
+    name: Run All Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [auth-service, reservation-service, laboratory-service, notification-service]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install & Test
+        working-directory: services/${{ matrix.service }}
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+          npm run test -- --forceExit
+
+  build-and-deploy:
+    name: Build & Deploy Production
+    runs-on: ubuntu-latest
+    needs: test-all
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push all services
+        run: |
+          for service in auth-service reservation-service laboratory-service notification-service; do
+            echo "Building $service..."
+            docker build -t ${{ steps.login-ecr.outputs.registry }}/uce-$service:latest \
+              -t ${{ steps.login-ecr.outputs.registry }}/uce-$service:${{ github.sha }} \
+              services/$service
+            docker push ${{ steps.login-ecr.outputs.registry }}/uce-$service:latest
+            docker push ${{ steps.login-ecr.outputs.registry }}/uce-$service:${{ github.sha }}
+          done
+
+      - name: Deploy to Production EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ec2-user/app
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --no-deps
+            sleep 20
+            curl -f http://localhost:3000/health && echo "Auth PROD OK"
+            curl -f http://localhost:3001/health && echo "Reservation PROD OK"

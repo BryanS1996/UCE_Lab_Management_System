@@ -1,0 +1,33 @@
+name: Notification Service — CI
+
+on:
+  push:
+    branches: [main, qa, feature/*]
+    paths:
+      - 'services/notification-service/**'
+      - '.github/workflows/notification-service-ci.yml'
+  pull_request:
+    branches: [main, qa]
+    paths:
+      - 'services/notification-service/**'
+
+jobs:
+  lint-and-test:
+    name: Lint & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: services/notification-service/package-lock.json
+      - name: Install
+        working-directory: services/notification-service
+        run: npm ci --legacy-peer-deps
+      - name: Build
+        working-directory: services/notification-service
+        run: npm run build
+      - name: Test
+        working-directory: services/notification-service
+        run: npm run test -- --forceExit

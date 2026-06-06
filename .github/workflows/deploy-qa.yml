@@ -1,0 +1,73 @@
+name: Deploy — QA
+
+on:
+  push:
+    branches: [qa]
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy QA
+    runs-on: ubuntu-latest
+    environment: qa
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push — Auth Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/auth-service
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/uce-auth-service:qa-${{ github.sha }}
+
+      - name: Build & Push — Reservation Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/reservation-service
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/uce-reservation-service:qa-${{ github.sha }}
+
+      - name: Build & Push — Laboratory Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/laboratory-service
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/uce-laboratory-service:qa-${{ github.sha }}
+
+      - name: Build & Push — Notification Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/notification-service
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-${{ github.sha }}
+
+      - name: Deploy to QA EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.QA_EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ec2-user/app
+            export IMAGE_TAG=qa-${{ github.sha }}
+            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
+            docker compose -f docker-compose.qa.yml pull
+            docker compose -f docker-compose.qa.yml up -d --no-deps
+            sleep 15
+            curl -f http://localhost:3010/health && echo "Auth QA OK"
+            curl -f http://localhost:3011/health && echo "Reservation QA OK"
