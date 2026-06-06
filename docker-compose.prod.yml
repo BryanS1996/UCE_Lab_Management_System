@@ -1,0 +1,101 @@
+# Template para deploy en AWS (usar con variables de entorno reales)
+# Los valores sensibles se inyectan desde AWS Secrets Manager / GitHub Secrets
+
+services:
+
+  auth-service:
+    image: ${ECR_REGISTRY}/uce-auth-service:${IMAGE_TAG:-latest}
+    container_name: auth-service
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: ${AUTH_DB_HOST}
+      DB_PORT: 5432
+      DB_USERNAME: ${AUTH_DB_USER}
+      DB_PASSWORD: ${AUTH_DB_PASS}
+      DB_NAME: auth_service
+      DB_SSL: "true"
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    ports:
+      - "3000:3000"
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  reservation-service:
+    image: ${ECR_REGISTRY}/uce-reservation-service:${IMAGE_TAG:-latest}
+    container_name: reservation-service
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: ${RESERVATION_DB_HOST}
+      DB_PORT: 5432
+      DB_USERNAME: ${RESERVATION_DB_USER}
+      DB_PASSWORD: ${RESERVATION_DB_PASS}
+      DB_NAME: reservation_service
+      DB_SSL: "true"
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+    ports:
+      - "3001:3001"
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  laboratory-service:
+    image: ${ECR_REGISTRY}/uce-laboratory-service:${IMAGE_TAG:-latest}
+    container_name: laboratory-service
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DB_HOST: ${LAB_DB_HOST}
+      DB_PORT: 5432
+      DB_USERNAME: ${LAB_DB_USER}
+      DB_PASSWORD: ${LAB_DB_PASS}
+      DB_NAME: laboratory_service
+      DB_SSL: "true"
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+    ports:
+      - "3002:3002"
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+
+  notification-service:
+    image: ${ECR_REGISTRY}/uce-notification-service:${IMAGE_TAG:-latest}
+    container_name: notification-service
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      DB_HOST: ${NOTIF_DB_HOST}
+      DB_PORT: 5432
+      DB_USERNAME: ${NOTIF_DB_USER}
+      DB_PASSWORD: ${NOTIF_DB_PASS}
+      DB_NAME: notification_service
+      DB_SSL: "true"
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+    ports:
+      - "3003:3003"
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+
+networks:
+  uce-prod-network:
+    driver: bridge

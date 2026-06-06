@@ -1,15 +1,15 @@
-name: Reservation Service — CI
+name: Auth Service — CI
 
 on:
   push:
     branches: [main, qa, feature/*]
     paths:
-      - 'services/reservation-service/**'
-      - '.github/workflows/reservation-service-ci.yml'
+      - 'services/auth-service/**'
+      - '.github/workflows/auth-service-ci.yml'
   pull_request:
     branches: [main, qa]
     paths:
-      - 'services/reservation-service/**'
+      - 'services/auth-service/**'
 
 jobs:
   lint-and-test:
@@ -21,19 +21,19 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: services/reservation-service/package-lock.json
+          cache-dependency-path: services/auth-service/package-lock.json
       - name: Install
-        working-directory: services/reservation-service
+        working-directory: services/auth-service
         run: npm ci --legacy-peer-deps
       - name: Build
-        working-directory: services/reservation-service
+        working-directory: services/auth-service
         run: npm run build
       - name: Test
-        working-directory: services/reservation-service
+        working-directory: services/auth-service
         run: npm run test -- --forceExit --coverage
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: reservation-coverage
-          path: services/reservation-service/coverage/
+          name: auth-coverage
+          path: services/auth-service/coverage/
           retention-days: 7
