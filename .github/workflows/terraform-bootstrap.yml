@@ -1,6 +1,6 @@
 name: Terraform — Bootstrap S3 Backend
 
-# Ejecutar UNA VEZ por cuenta AWS (manual: Actions → Run workflow)
+# Ejecutar UNA VEZ por cuenta AWS
 on:
   workflow_dispatch:
     inputs:
@@ -11,12 +11,15 @@ on:
         options:
           - qa
           - prod
+  push:
+    branches:
+      - feature/structure # Disparador automático temporal
 
 jobs:
   bootstrap:
-    name: Crear S3 + DynamoDB (${{ inputs.environment }})
+    name: Crear S3 + DynamoDB (${{ inputs.environment || 'qa' }})
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment == 'qa' && 'qa' || 'production' }}
+    environment: ${{ (inputs.environment || 'qa') == 'qa' && 'qa' || 'production' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -27,15 +30,15 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ inputs.environment == 'prod' && secrets.PROD_AWS_ACCESS_KEY_ID || secrets.QA_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ inputs.environment == 'prod' && secrets.PROD_AWS_SECRET_ACCESS_KEY || secrets.QA_AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ inputs.environment == 'prod' && secrets.PROD_AWS_SESSION_TOKEN || secrets.QA_AWS_SESSION_TOKEN }}
+          aws-access-key-id: ${{ (inputs.environment || 'qa') == 'prod' && secrets.PROD_AWS_ACCESS_KEY_ID || secrets.QA_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ (inputs.environment || 'qa') == 'prod' && secrets.PROD_AWS_SECRET_ACCESS_KEY || secrets.QA_AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ (inputs.environment || 'qa') == 'prod' && secrets.PROD_AWS_SESSION_TOKEN || secrets.QA_AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
       - name: Detectar si el backend ya existe
         id: existing
         env:
-          ENV_NAME: ${{ inputs.environment }}
+          ENV_NAME: ${{ inputs.environment || 'qa' }}
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           BUCKET="uce-lab-tfstate-${ACCOUNT_ID}-${ENV_NAME}"
@@ -67,14 +70,14 @@ jobs:
           AWS_SESSION_TOKEN: ${{ secrets.QA_AWS_SESSION_TOKEN }}
         run: |
           terraform apply -auto-approve \
-            -var="environment=${{ inputs.environment }}"
+            -var="environment=${{ inputs.environment || 'qa' }}"
 
       - name: Resumen — configurar GitHub Variables
         env:
-          GH_ENV: ${{ inputs.environment == 'qa' && 'qa' || 'production' }}
+          GH_ENV: ${{ (inputs.environment || 'qa') == 'qa' && 'qa' || 'production' }}
         run: |
           {
-            echo "## Bootstrap S3 — ${{ inputs.environment }}"
+            echo "## Bootstrap S3 — ${{ inputs.environment || 'qa' }}"
             echo ""
             if [ "${{ steps.existing.outputs.exists }}" = "true" ]; then
               echo "El backend **ya existia** en esta cuenta. No se modifico infraestructura."
@@ -82,11 +85,10 @@ jobs:
               echo "Backend **creado** correctamente."
             fi
             echo ""
-            echo "Configura estas **Variables** en el Environment \`${GH_ENV}\`:"
+            echo "Configura estas **Variables** en tu repositorio de GitHub:"
             echo ""
             echo "| Variable | Valor |"
             echo "|----------|-------|"
             echo "| \`TF_STATE_BUCKET\` | \`${{ steps.existing.outputs.bucket }}\` |"
             echo "| \`TF_LOCK_TABLE\` | \`${{ steps.existing.outputs.lock_table }}\` |"
-            echo "| \`TF_AWS_REGION\` | \`us-east-1\` |"
           } >> "$GITHUB_STEP_SUMMARY"
