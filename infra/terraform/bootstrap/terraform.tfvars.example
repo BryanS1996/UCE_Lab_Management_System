@@ -1,0 +1,7 @@
+environment  = "qa"
+aws_region   = "us-east-1"
+aws_profile  = "qa"
+
+# Repetir en cuenta Prod con:
+# environment = "prod"
+# aws_profile = "prod"

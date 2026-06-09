@@ -1,0 +1,55 @@
+name: Terraform — Apply QA
+
+on:
+  push:
+    branches: [qa]
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform-apply-qa.yml'
+
+jobs:
+  terraform-apply:
+    name: Terraform Apply (QA)
+    runs-on: ubuntu-latest
+    environment: qa
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.5.0'
+
+      - name: Configure AWS credentials (cuenta QA)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Verificar variables de backend S3
+        run: |
+          if [ -z "${{ vars.TF_STATE_BUCKET }}" ] || [ -z "${{ vars.TF_LOCK_TABLE }}" ]; then
+            echo "::error::Faltan TF_STATE_BUCKET o TF_LOCK_TABLE en Environment qa. Ejecuta el workflow 'Terraform — Bootstrap S3 Backend'."
+            exit 1
+          fi
+
+      - name: Terraform Init (S3 backend)
+        working-directory: infra/terraform/environments/qa
+        env:
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE }}
+          TF_AWS_REGION: ${{ vars.TF_AWS_REGION }}
+        run: bash ../../scripts/init-backend.sh qa
+
+      - name: Terraform Apply
+        working-directory: infra/terraform/environments/qa
+        run: |
+          terraform apply -auto-approve \
+            -var="key_pair_name=${{ vars.TF_KEY_PAIR_NAME }}" \
+            -var="enable_rds=false" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}"
+
+      - name: Mostrar outputs
+        working-directory: infra/terraform/environments/qa
+        run: terraform output

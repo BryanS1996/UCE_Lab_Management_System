@@ -1,0 +1,6 @@
+# Copiar a backend.hcl (en .gitignore) tras ejecutar bootstrap
+bucket         = "uce-lab-tfstate-123456789012-qa"
+key            = "qa/terraform.tfstate"
+region         = "us-east-1"
+dynamodb_table = "uce-lab-tflock-qa"
+encrypt        = true

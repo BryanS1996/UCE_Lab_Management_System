@@ -1,38 +1,30 @@
-# Frontend Angular — UCE Lab Management
+# Frontend — Panel de pruebas UCE Lab
 
-**Framework:** Angular 18 + Angular Material + RxJS
+SPA ligera (Vite + TypeScript) para probar los 4 microservicios.
 
-## Estructura
+## Requisitos
 
-```
-src/app/
-  core/         ← Guards, interceptors, servicios globales, NgRx store
-  shared/       ← Componentes, directivas, pipes reutilizables
-  features/
-    auth/           ← Login, registro
-    dashboard/      ← Panel principal
-    reservations/   ← CRUD de reservas
-    laboratories/   ← Vista de laboratorios
-    notifications/  ← Notificaciones en tiempo real (WebSocket)
-    incidents/      ← Reporte de incidentes
-    analytics/      ← Reportes y gráficas
-```
+- Microservicios corriendo (`docker compose up` o por servicio)
+- Mismo `JWT_SECRET` en todos los servicios
 
-## Estado
-
-Pendiente de implementación. Inicializar con:
+## Iniciar
 
 ```bash
-ng new frontend --directory ./apps/frontend --routing --style scss
 cd apps/frontend
-ng add @angular/material
+npm install
+npm run dev
 ```
 
-## Conexión a servicios
+Abre http://localhost:4200
 
-| Servicio | URL (Dev) |
-|----------|----------|
-| API Gateway / Auth | http://localhost:3000 |
-| Reservation Service | http://localhost:3001 |
-| Laboratory Service | http://localhost:3002 |
-| Notification WS | ws://localhost:3003/notifications |
+## Ambiente QA (puertos 3010–3013)
+
+http://localhost:4200?env=qa
+
+## Qué puedes probar
+
+| Sección | Endpoints |
+|---------|-----------|
+| Auth | Login, registro, refresh token manual, auto-renovación en 401, JWT decodificado |
+| Health | `/health` de cada microservicio |
+| Protegidos | `/auth/me`, reservas, laboratorios, notificaciones |

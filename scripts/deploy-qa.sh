@@ -16,5 +16,7 @@ sleep 15
 
 curl -f http://localhost:3010/health && echo "  Auth Service QA: OK"
 curl -f http://localhost:3011/health && echo "  Reservation Service QA: OK"
+curl -f http://localhost:3012/health && echo "  Laboratory Service QA: OK"
+curl -f http://localhost:3013/health && echo "  Notification Service QA: OK"
 
 echo "=== Deploy QA completado ==="
