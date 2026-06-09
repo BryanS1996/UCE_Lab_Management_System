@@ -11,9 +11,14 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Notification Service — UCE Lab Management')
-    .setDescription('Microservicio de notificaciones: consume eventos RabbitMQ y hace push via WebSocket')
+    .setDescription(
+      'Microservicio de notificaciones: consume eventos RabbitMQ y hace push via WebSocket',
+    )
     .setVersion('1.0.0')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'JWT',
+    )
     .addTag('notifications', 'Gestión de notificaciones')
     .addTag('health', 'Estado del servicio')
     .build();
@@ -26,4 +31,4 @@ async function bootstrap() {
   console.log(`Notification Service running on port ${port}`);
   console.log(`WebSocket namespace: /notifications`);
 }
-bootstrap();
+void bootstrap();

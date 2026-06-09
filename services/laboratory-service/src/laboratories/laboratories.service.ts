@@ -28,10 +28,17 @@ export class LaboratoriesService {
     private readonly rabbitmqService: RabbitmqService,
   ) {}
 
-  async create(dto: CreateLaboratoryDto, currentUser: CurrentUser): Promise<Laboratory> {
-    const existing = await this.labRepository.findOne({ where: { name: dto.name } });
+  async create(
+    dto: CreateLaboratoryDto,
+    currentUser: CurrentUser,
+  ): Promise<Laboratory> {
+    const existing = await this.labRepository.findOne({
+      where: { name: dto.name },
+    });
     if (existing) {
-      throw new ConflictException(`Laboratory with name "${dto.name}" already exists`);
+      throw new ConflictException(
+        `Laboratory with name "${dto.name}" already exists`,
+      );
     }
 
     const lab = this.labRepository.create({
@@ -54,7 +61,8 @@ export class LaboratoriesService {
   }
 
   async findAll(filters?: LaboratoryFilters): Promise<Laboratory[]> {
-    const query = this.labRepository.createQueryBuilder('lab')
+    const query = this.labRepository
+      .createQueryBuilder('lab')
       .leftJoinAndSelect('lab.resources', 'resources');
 
     if (filters?.status) {
@@ -82,13 +90,21 @@ export class LaboratoriesService {
     return lab;
   }
 
-  async update(id: number, dto: UpdateLaboratoryDto, currentUser: CurrentUser): Promise<Laboratory> {
+  async update(
+    id: number,
+    dto: UpdateLaboratoryDto,
+    currentUser: CurrentUser,
+  ): Promise<Laboratory> {
     const lab = await this.findOne(id);
 
     if (dto.name && dto.name !== lab.name) {
-      const existing = await this.labRepository.findOne({ where: { name: dto.name } });
+      const existing = await this.labRepository.findOne({
+        where: { name: dto.name },
+      });
       if (existing) {
-        throw new ConflictException(`Laboratory with name "${dto.name}" already exists`);
+        throw new ConflictException(
+          `Laboratory with name "${dto.name}" already exists`,
+        );
       }
     }
 
@@ -106,7 +122,10 @@ export class LaboratoriesService {
     return updated;
   }
 
-  async remove(id: number, currentUser: CurrentUser): Promise<{ message: string }> {
+  async remove(
+    id: number,
+    currentUser: CurrentUser,
+  ): Promise<{ message: string }> {
     const lab = await this.findOne(id);
     lab.is_active = false;
     lab.updated_by = currentUser.email;
@@ -142,13 +161,20 @@ export class LaboratoriesService {
     maintenance: number;
     active_resources: number;
   }> {
-    const [total, active, inactive, maintenance, active_resources] = await Promise.all([
-      this.labRepository.count(),
-      this.labRepository.count({ where: { status: LaboratoryStatus.ACTIVE, is_active: true } }),
-      this.labRepository.count({ where: { status: LaboratoryStatus.INACTIVE } }),
-      this.labRepository.count({ where: { status: LaboratoryStatus.MAINTENANCE } }),
-      this.labRepository.count({ where: { is_active: true } }),
-    ]);
+    const [total, active, inactive, maintenance, active_resources] =
+      await Promise.all([
+        this.labRepository.count(),
+        this.labRepository.count({
+          where: { status: LaboratoryStatus.ACTIVE, is_active: true },
+        }),
+        this.labRepository.count({
+          where: { status: LaboratoryStatus.INACTIVE },
+        }),
+        this.labRepository.count({
+          where: { status: LaboratoryStatus.MAINTENANCE },
+        }),
+        this.labRepository.count({ where: { is_active: true } }),
+      ]);
 
     return { total, active, inactive, maintenance, active_resources };
   }

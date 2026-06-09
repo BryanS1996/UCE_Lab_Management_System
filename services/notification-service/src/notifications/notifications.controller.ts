@@ -49,7 +49,10 @@ export class NotificationsController {
 
   @Get('my/unread-count')
   @ApiOperation({ summary: 'Contador de notificaciones no leídas' })
-  @ApiResponse({ status: 200, description: 'Número de notificaciones sin leer' })
+  @ApiResponse({
+    status: 200,
+    description: 'Número de notificaciones sin leer',
+  })
   async getUnreadCount(@CurrentUser() user: CurrentUserData) {
     return this.notificationsService.countUnread(user.user_id);
   }
@@ -57,7 +60,10 @@ export class NotificationsController {
   @Patch('read-all')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Marcar todas las notificaciones como leídas' })
-  @ApiResponse({ status: 200, description: 'Notificaciones marcadas como leídas' })
+  @ApiResponse({
+    status: 200,
+    description: 'Notificaciones marcadas como leídas',
+  })
   async markAllAsRead(@CurrentUser() user: CurrentUserData) {
     return this.notificationsService.markAllAsRead(user.user_id);
   }
@@ -65,10 +71,17 @@ export class NotificationsController {
   @Patch(':id/read')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Marcar una notificación como leída' })
-  @ApiParam({ name: 'id', description: 'UUID de la notificación', type: String })
+  @ApiParam({
+    name: 'id',
+    description: 'UUID de la notificación',
+    type: String,
+  })
   @ApiResponse({ status: 200, description: 'Notificación marcada como leída' })
   @ApiResponse({ status: 404, description: 'Notificación no encontrada' })
-  @ApiResponse({ status: 403, description: 'No tienes permiso para leer esta notificación' })
+  @ApiResponse({
+    status: 403,
+    description: 'No tienes permiso para leer esta notificación',
+  })
   async markAsRead(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: CurrentUserData,

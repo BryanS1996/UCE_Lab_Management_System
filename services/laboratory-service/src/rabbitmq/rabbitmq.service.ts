@@ -13,7 +13,11 @@ export class RabbitmqService {
         payload,
       );
     } catch (e) {
-      console.warn('[RabbitMQ] Could not publish laboratory.created:', e.message);
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      console.warn(
+        '[RabbitMQ] Could not publish laboratory.created:',
+        errorMessage,
+      );
     }
   }
 
@@ -25,7 +29,11 @@ export class RabbitmqService {
         payload,
       );
     } catch (e) {
-      console.warn('[RabbitMQ] Could not publish laboratory.updated:', e.message);
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      console.warn(
+        '[RabbitMQ] Could not publish laboratory.updated:',
+        errorMessage,
+      );
     }
   }
 }
