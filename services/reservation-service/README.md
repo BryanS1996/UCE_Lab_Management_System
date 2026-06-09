@@ -42,6 +42,7 @@ src/
 - Docker & Docker Compose
 - PostgreSQL 15+ (o usar docker-compose)
 
+
 ## Instalación Local
 
 ### 1. Instalar dependencias

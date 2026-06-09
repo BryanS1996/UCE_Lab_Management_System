@@ -1,7 +1,7 @@
 
 services:
   # ─────────────────────────────────────────────────────
-  # BASE DE DATOS: Auth Service
+  # DATABASE: Auth Service
   # ─────────────────────────────────────────────────────
   auth-db:
     image: postgres:15-alpine
@@ -24,7 +24,7 @@ services:
       retries: 5
 
   # ─────────────────────────────────────────────────────
-  # MICROSERVICIO: Auth Service
+  # MICROSERVICE: Auth Service
   # ─────────────────────────────────────────────────────
   auth-service:
     build:
@@ -54,7 +54,7 @@ services:
       - uce-network
 
   # ─────────────────────────────────────────────────────
-  # BASE DE DATOS: Reservation Service
+  # DATABASE: Reservation Service
   # ─────────────────────────────────────────────────────
   reservation-db:
     image: postgres:15-alpine
@@ -76,7 +76,7 @@ services:
       retries: 5
 
   # ─────────────────────────────────────────────────────
-  # MENSAJERÍA ASÍNCRONA: RabbitMQ
+  # ASYNCHRONOUS MESSAGING: RabbitMQ
   # ─────────────────────────────────────────────────────
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
@@ -98,7 +98,7 @@ services:
       retries: 5
 
   # ─────────────────────────────────────────────────────
-  # MICROSERVICIO: Reservation Service
+  # MICROSERVICE: Reservation Service
   # ─────────────────────────────────────────────────────
   reservation-service:
     build:
