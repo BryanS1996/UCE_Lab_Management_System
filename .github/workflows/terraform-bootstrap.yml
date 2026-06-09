@@ -52,11 +52,19 @@ jobs:
       - name: Terraform Init (bootstrap)
         if: steps.existing.outputs.exists != 'true'
         working-directory: infra/terraform/bootstrap
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.QA_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.QA_AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.QA_AWS_SESSION_TOKEN }}
         run: terraform init
 
       - name: Terraform Apply (bootstrap)
         if: steps.existing.outputs.exists != 'true'
         working-directory: infra/terraform/bootstrap
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.QA_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.QA_AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.QA_AWS_SESSION_TOKEN }}
         run: |
           terraform apply -auto-approve \
             -var="environment=${{ inputs.environment }}"
