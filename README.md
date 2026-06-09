@@ -551,7 +551,7 @@ Distributed Programming Project
 2026
 
 GitHub: https://github.com/BryanS1996
-
+https://deepwiki.com/badge-maker?url=https%3A%2F%2Fdeepwiki.com%2FBryanS1996%2FUCE_Lab_Management_System
 ---
 
 ## License
