@@ -1,26 +1,26 @@
 # Builder stage
-FROM node:20-alpine as builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install --omit=dev --legacy-peer-deps && \
-    npm cache clean --force
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
-RUN npm install --legacy-peer-deps && npm run build
+RUN npm run build
 
 # Production stage
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy only necessary files from builder
+COPY package*.json ./
+
+RUN npm install --omit=dev --legacy-peer-deps && npm cache clean --force
+
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
 
 EXPOSE 3001
 
