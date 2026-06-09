@@ -1,17 +1,23 @@
-name: Terraform — Plan Production
+name: Terraform — Plan
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, qa]
     paths:
       - 'infra/terraform/**'
       - '.github/workflows/terraform-plan.yml'
 
+env:
+  AWS_ACCESS_KEY_ID: ${{ github.base_ref == 'main' && secrets.PROD_AWS_ACCESS_KEY_ID || secrets.QA_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ github.base_ref == 'main' && secrets.PROD_AWS_SECRET_ACCESS_KEY || secrets.QA_AWS_SECRET_ACCESS_KEY }}
+  AWS_SESSION_TOKEN: ${{ github.base_ref == 'main' && secrets.PROD_AWS_SESSION_TOKEN || secrets.QA_AWS_SESSION_TOKEN }}
+  AWS_REGION: us-east-1
+
 jobs:
   terraform-plan:
-    name: Terraform Plan (Production)
+    name: Terraform Plan (${{ github.base_ref == 'main' && 'Production' || 'QA' }})
     runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ github.base_ref == 'main' && 'production' || 'qa' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -19,42 +25,43 @@ jobs:
         with:
           terraform_version: '1.5.0'
 
-      - name: Configure AWS credentials (cuenta PROD)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ env.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Verificar variables de backend S3
         run: |
           if [ -z "${{ vars.TF_STATE_BUCKET }}" ] || [ -z "${{ vars.TF_LOCK_TABLE }}" ]; then
-            echo "::error::Faltan TF_STATE_BUCKET o TF_LOCK_TABLE en Environment production. Ejecuta el workflow 'Terraform — Bootstrap S3 Backend'."
+            echo "::error::Faltan TF_STATE_BUCKET o TF_LOCK_TABLE en Environment ${{ github.base_ref == 'main' && 'production' || 'qa' }}. Ejecuta el workflow 'Terraform — Bootstrap S3 Backend'."
             exit 1
           fi
 
       - name: Terraform Init (S3 backend)
-        working-directory: infra/terraform/environments/prod
+        working-directory: infra/terraform/environments/${{ github.base_ref == 'main' && 'prod' || 'qa' }}
         env:
           TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
           TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE }}
           TF_AWS_REGION: ${{ vars.TF_AWS_REGION }}
-        run: bash ../../scripts/init-backend.sh prod
+        run: bash ../../scripts/init-backend.sh ${{ github.base_ref == 'main' && 'prod' || 'qa' }}
 
       - name: Terraform Plan
-        working-directory: infra/terraform/environments/prod
+        working-directory: infra/terraform/environments/${{ github.base_ref == 'main' && 'prod' || 'qa' }}
         run: |
           terraform plan \
             -var="key_pair_name=${{ vars.TF_KEY_PAIR_NAME }}" \
-            -var="enable_rds=true" \
+            -var="enable_rds=${{ github.base_ref == 'main' && 'true' || 'false' }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+            ${{ github.base_ref == 'main' && '-var="jwt_secret=${{ secrets.JWT_SECRET }}"' || '' }} \
+            -var="image_tag=${{ github.base_ref == 'main' && 'prod' || 'qa' }}" \
             -out=tfplan
 
       - name: Upload plan artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tfplan-prod
-          path: infra/terraform/environments/prod/tfplan
+          name: tfplan-${{ github.base_ref }}
+          path: infra/terraform/environments/${{ github.base_ref == 'main' && 'prod' || 'qa' }}/tfplan
           retention-days: 5

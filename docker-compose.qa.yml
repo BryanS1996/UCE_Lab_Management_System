@@ -24,6 +24,7 @@ services:
   auth-service-qa:
     image: bryanfabricio96/auth-service:qa
     container_name: auth-service-qa
+    pull_policy: always
     environment:
       NODE_ENV: qa
       PORT: 3010
@@ -86,6 +87,7 @@ services:
   reservation-service-qa:
     image: bryanfabricio96/reservation-service:qa
     container_name: reservation-service-qa
+    pull_policy: always
     environment:
       NODE_ENV: qa
       PORT: 3011

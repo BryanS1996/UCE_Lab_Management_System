@@ -1,11 +1,8 @@
-name: Terraform — Plan QA
+name: Terraform — Plan QA [DEPRECATED]
 
+# Deshabilitado: Consolidado en terraform-plan.yml que ahora soporta ambas ramas (main, qa)
 on:
-  pull_request:
-    branches: [qa]
-    paths:
-      - 'infra/terraform/**'
-      - '.github/workflows/terraform-plan-qa.yml'
+  workflow_dispatch:
 
 jobs:
   terraform-plan:

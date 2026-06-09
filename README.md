@@ -429,6 +429,69 @@ docker compose -f docker-compose.prod.yml up -d
 
 ---
 
+## Deployment to AWS EC2
+
+The system supports deploying to AWS EC2 using Docker Compose with pre-built images from Docker Hub.
+
+### Quick Deploy
+
+**Production (with RDS)**:
+```bash
+./scripts/deploy-prod.sh docker /root/.env.prod
+```
+
+**QA (all services in Docker)**:
+```bash
+./scripts/deploy-qa.sh docker /root/.env.qa
+```
+
+### How It Works
+
+1. **GitHub Actions** publishes images to Docker Hub with tags:
+   - `bryanfabricio96/auth-service:prod` → PROD environment
+   - `bryanfabricio96/auth-service:qa` → QA environment
+   - (same for other services)
+
+2. **Terraform** provisions EC2 instances with Docker pre-installed
+
+3. **Deployment Script** (`deploy-docker-compose.sh`):
+   ```bash
+   ./scripts/deploy-docker-compose.sh prod /root/.env.prod
+   ```
+   - Loads environment variables from `.env` file
+   - Pulls images from Docker Hub (`docker-compose pull`)
+   - Starts services in background (`docker-compose up -d`)
+   - Verifies health checks
+
+4. **Services run** with these image sources:
+   - **PROD**: Images from Docker Hub (tag: `prod`), databases on AWS RDS
+   - **QA**: Images from Docker Hub (tag: `qa`), databases in Docker containers
+
+### Environment Configuration
+
+Create `.env.prod` for production:
+```bash
+NODE_ENV=production
+AUTH_DB_HOST=<rds-endpoint>
+AUTH_DB_USER=authuser
+AUTH_DB_PASS=<strong-password>
+# ... other database credentials
+JWT_SECRET=<random-secret>
+RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+```
+
+Create `.env.qa` for QA (minimal, uses Docker containers):
+```bash
+NODE_ENV=qa
+# Most settings use defaults for Docker networking
+```
+
+### Full Documentation
+
+See [docs/deployment/DOCKER_COMPOSE_EC2.md](docs/deployment/DOCKER_COMPOSE_EC2.md) for complete setup guide.
+
+---
+
 ## Security Practices
 
 Implemented:

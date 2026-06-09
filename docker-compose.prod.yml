@@ -1,11 +1,13 @@
-# Template para deploy en AWS (usar con variables de entorno reales)
-# Los valores sensibles se inyectan desde AWS Secrets Manager / GitHub Secrets
+# Production Deployment — Docker Hub Images
+# Deploy en AWS EC2 con docker-compose pull + docker-compose up
+# Variables requeridas: .env (DATABASE_HOSTS, SECRETS, RABBITMQ_URL)
 
 services:
 
   auth-service:
-    image: ${ECR_REGISTRY}/uce-auth-service:${IMAGE_TAG:-latest}
+    image: bryanfabricio96/auth-service:prod
     container_name: auth-service
+    pull_policy: always
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -29,8 +31,9 @@ services:
       retries: 3
 
   reservation-service:
-    image: ${ECR_REGISTRY}/uce-reservation-service:${IMAGE_TAG:-latest}
+    image: bryanfabricio96/reservation-service:prod
     container_name: reservation-service
+    pull_policy: always
     environment:
       NODE_ENV: production
       PORT: 3001
@@ -55,8 +58,9 @@ services:
       retries: 3
 
   laboratory-service:
-    image: ${ECR_REGISTRY}/uce-laboratory-service:${IMAGE_TAG:-latest}
+    image: bryanfabricio96/laboratory-service:prod
     container_name: laboratory-service
+    pull_policy: always
     environment:
       NODE_ENV: production
       PORT: 3002
@@ -81,8 +85,9 @@ services:
       retries: 3
 
   notification-service:
-    image: ${ECR_REGISTRY}/uce-notification-service:${IMAGE_TAG:-latest}
+    image: bryanfabricio96/notification-service:prod
     container_name: notification-service
+    pull_policy: always
     environment:
       NODE_ENV: production
       PORT: 3003
