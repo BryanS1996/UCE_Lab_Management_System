@@ -9,10 +9,20 @@ import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         exchanges: [
-          { name: 'reservation.events', type: 'topic', options: { durable: true } },
-          { name: 'laboratory.events', type: 'topic', options: { durable: true } },
+          {
+            name: 'reservation.events',
+            type: 'topic',
+            options: { durable: true },
+          },
+          {
+            name: 'laboratory.events',
+            type: 'topic',
+            options: { durable: true },
+          },
         ],
-        uri: configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672',
+        uri:
+          configService.get<string>('RABBITMQ_URL') ||
+          'amqp://guest:guest@localhost:5672',
         connectionInitOptions: { wait: false, timeout: 5000 },
         enableDirectReplyTo: false,
       }),

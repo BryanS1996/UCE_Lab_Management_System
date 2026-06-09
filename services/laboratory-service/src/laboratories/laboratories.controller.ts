@@ -26,10 +26,6 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { CurrentUserData } from '../common/decorators/current-user.decorator';
 
-class ChangeStatusDto {
-  status: LaboratoryStatus;
-}
-
 @ApiTags('laboratories')
 @Controller('laboratories')
 export class LaboratoriesController {
@@ -66,7 +62,12 @@ export class LaboratoriesController {
   ) {
     const filters = {
       status,
-      active_only: active_only === 'true' ? true : active_only === 'false' ? false : undefined,
+      active_only:
+        active_only === 'true'
+          ? true
+          : active_only === 'false'
+            ? false
+            : undefined,
     };
     return this.laboratoriesService.findAll(filters);
   }
@@ -89,7 +90,11 @@ export class LaboratoriesController {
     @Body() updateLaboratoryDto: UpdateLaboratoryDto,
     @CurrentUser() currentUser: CurrentUserData,
   ) {
-    return this.laboratoriesService.update(id, updateLaboratoryDto, currentUser);
+    return this.laboratoriesService.update(
+      id,
+      updateLaboratoryDto,
+      currentUser,
+    );
   }
 
   @Patch(':id/status')

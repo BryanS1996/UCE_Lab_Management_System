@@ -1,9 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
-import {
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -155,9 +152,12 @@ describe('AuthService', () => {
 
       const result = await service.refreshTokens('valid-refresh-token');
 
-      expect(mockJwtService.verify).toHaveBeenCalledWith('valid-refresh-token', {
-        issuer: 'auth-service',
-      });
+      expect(mockJwtService.verify).toHaveBeenCalledWith(
+        'valid-refresh-token',
+        {
+          issuer: 'auth-service',
+        },
+      );
       expect(result.accessToken).toBe('new-access');
       expect(result.refreshToken).toBe('new-refresh');
     });
@@ -183,9 +183,9 @@ describe('AuthService', () => {
         isActive: false,
       });
 
-      await expect(service.refreshTokens('valid-refresh-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        service.refreshTokens('valid-refresh-token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

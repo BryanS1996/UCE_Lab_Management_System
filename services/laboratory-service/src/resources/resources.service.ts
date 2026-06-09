@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Resource } from '../laboratories/entities/resource.entity';
@@ -40,25 +37,36 @@ export class ResourcesService {
     });
   }
 
-  async update(labId: number, resourceId: number, dto: UpdateResourceDto): Promise<Resource> {
+  async update(
+    labId: number,
+    resourceId: number,
+    dto: UpdateResourceDto,
+  ): Promise<Resource> {
     await this.checkLabExists(labId);
     const resource = await this.resourceRepository.findOne({
       where: { resource_id: resourceId, lab_id: labId },
     });
     if (!resource) {
-      throw new NotFoundException(`Resource with ID ${resourceId} not found in lab ${labId}`);
+      throw new NotFoundException(
+        `Resource with ID ${resourceId} not found in lab ${labId}`,
+      );
     }
     Object.assign(resource, dto);
     return this.resourceRepository.save(resource);
   }
 
-  async remove(labId: number, resourceId: number): Promise<{ message: string }> {
+  async remove(
+    labId: number,
+    resourceId: number,
+  ): Promise<{ message: string }> {
     await this.checkLabExists(labId);
     const resource = await this.resourceRepository.findOne({
       where: { resource_id: resourceId, lab_id: labId },
     });
     if (!resource) {
-      throw new NotFoundException(`Resource with ID ${resourceId} not found in lab ${labId}`);
+      throw new NotFoundException(
+        `Resource with ID ${resourceId} not found in lab ${labId}`,
+      );
     }
     await this.resourceRepository.remove(resource);
     return { message: `Resource ${resourceId} deleted from lab ${labId}` };

@@ -32,7 +32,11 @@ export class Laboratory {
   @Column({ type: 'int', default: 30 })
   max_capacity: number;
 
-  @Column({ type: 'enum', enum: LaboratoryStatus, default: LaboratoryStatus.ACTIVE })
+  @Column({
+    type: 'enum',
+    enum: LaboratoryStatus,
+    default: LaboratoryStatus.ACTIVE,
+  })
   status: LaboratoryStatus;
 
   @Column({ default: true })

@@ -44,7 +44,7 @@ describe('AuthController', () => {
     expect(mockAuthService.refreshTokens).toHaveBeenCalledWith('refresh-jwt');
   });
 
-  it('getCurrentUser should map req.user fields', async () => {
+  it('getCurrentUser should map req.user fields', () => {
     const req = {
       user: {
         id: 'uuid',
@@ -55,7 +55,7 @@ describe('AuthController', () => {
       },
     };
 
-    await expect(controller.getCurrentUser(req)).resolves.toEqual({
+    expect(controller.getCurrentUser(req)).toEqual({
       id: 'uuid',
       email: 'a@b.com',
       firstName: 'Juan',

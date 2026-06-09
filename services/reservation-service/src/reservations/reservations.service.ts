@@ -282,7 +282,7 @@ export class ReservationsService {
    * Solo ADMIN puede confirmar
    * Publica evento ReservationConfirmed
    */
-  async confirm(id: string, currentUser: CurrentUserData): Promise<Reservation> {
+  async confirm(id: string): Promise<Reservation> {
     const reservation = await this.reservationRepository.findOne({
       where: { reservation_id: id },
     });

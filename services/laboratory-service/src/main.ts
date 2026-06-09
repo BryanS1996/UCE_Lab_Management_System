@@ -12,7 +12,9 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Laboratory Service — UCE Lab Management')
-    .setDescription('Microservicio de gestión de laboratorios con trazabilidad por usuario')
+    .setDescription(
+      'Microservicio de gestión de laboratorios con trazabilidad por usuario',
+    )
     .setVersion('1.0.0')
     .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
@@ -34,4 +36,4 @@ async function bootstrap() {
   console.log(`Swagger: http://localhost:${port}/api/docs`);
 }
 
-bootstrap();
+void bootstrap();

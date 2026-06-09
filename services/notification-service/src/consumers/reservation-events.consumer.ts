@@ -3,6 +3,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/entities/notification.entity';
 
+interface ReservationEventPayload {
+  reservationId: string;
+  userId: string;
+  labName: string;
+  startTime: Date;
+}
+
 @Injectable()
 export class ReservationEventsConsumer {
   private readonly logger = new Logger(ReservationEventsConsumer.name);
@@ -15,7 +22,7 @@ export class ReservationEventsConsumer {
     queue: 'notification.reservation-created',
     queueOptions: { durable: true },
   })
-  async handleReservationCreated(payload: any) {
+  async handleReservationCreated(payload: ReservationEventPayload) {
     this.logger.log(`[Consumer] ReservationCreated: ${payload.reservationId}`);
     await this.notificationsService.create({
       user_id: payload.userId,
@@ -32,8 +39,10 @@ export class ReservationEventsConsumer {
     queue: 'notification.reservation-confirmed',
     queueOptions: { durable: true },
   })
-  async handleReservationConfirmed(payload: any) {
-    this.logger.log(`[Consumer] ReservationConfirmed: ${payload.reservationId}`);
+  async handleReservationConfirmed(payload: ReservationEventPayload) {
+    this.logger.log(
+      `[Consumer] ReservationConfirmed: ${payload.reservationId}`,
+    );
     await this.notificationsService.create({
       user_id: payload.userId,
       title: 'Reserva Confirmada ✅',
@@ -49,8 +58,10 @@ export class ReservationEventsConsumer {
     queue: 'notification.reservation-cancelled',
     queueOptions: { durable: true },
   })
-  async handleReservationCancelled(payload: any) {
-    this.logger.log(`[Consumer] ReservationCancelled: ${payload.reservationId}`);
+  async handleReservationCancelled(payload: ReservationEventPayload) {
+    this.logger.log(
+      `[Consumer] ReservationCancelled: ${payload.reservationId}`,
+    );
     await this.notificationsService.create({
       user_id: payload.userId,
       title: 'Reserva Cancelada',

@@ -7,10 +7,7 @@ import { Laboratory } from '../laboratories/entities/laboratory.entity';
 import { CommonModule } from '../common/common.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Resource, Laboratory]),
-    CommonModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Resource, Laboratory]), CommonModule],
   controllers: [ResourcesController],
   providers: [ResourcesService],
   exports: [ResourcesService],

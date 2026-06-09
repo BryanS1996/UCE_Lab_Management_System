@@ -1,7 +1,15 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
-import { Notification, NotificationStatus } from './entities/notification.entity';
+import {
+  Notification,
+  NotificationStatus,
+} from './entities/notification.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { NotificationsGateway } from '../websocket/notifications.gateway';
 
@@ -25,7 +33,9 @@ export class NotificationsService {
     });
 
     const saved = await this.notificationRepository.save(notification);
-    this.logger.log(`Notification created: ${saved.notification_id} for user ${saved.user_id}`);
+    this.logger.log(
+      `Notification created: ${saved.notification_id} for user ${saved.user_id}`,
+    );
 
     // Push real-time via WebSocket
     try {
@@ -43,7 +53,10 @@ export class NotificationsService {
       });
       saved.status = NotificationStatus.SENT;
     } catch (err) {
-      this.logger.warn(`Failed to emit WebSocket notification: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.warn(
+        `Failed to emit WebSocket notification: ${errorMessage}`,
+      );
       await this.notificationRepository.update(saved.notification_id, {
         status: NotificationStatus.FAILED,
       });
@@ -60,7 +73,7 @@ export class NotificationsService {
     userId: string,
     filters?: { unread_only?: boolean },
   ): Promise<Notification[]> {
-    const where: any = { user_id: userId };
+    const where: { user_id: string; is_read?: boolean } = { user_id: userId };
 
     if (filters?.unread_only) {
       where.is_read = false;
@@ -85,7 +98,9 @@ export class NotificationsService {
     }
 
     if (notification.user_id !== userId) {
-      throw new ForbiddenException('You can only mark your own notifications as read');
+      throw new ForbiddenException(
+        'You can only mark your own notifications as read',
+      );
     }
 
     if (!notification.is_read) {
@@ -112,7 +127,9 @@ export class NotificationsService {
     );
 
     const updated = result.affected ?? 0;
-    this.logger.log(`Marked ${updated} notifications as read for user ${userId}`);
+    this.logger.log(
+      `Marked ${updated} notifications as read for user ${userId}`,
+    );
     return { updated };
   }
 
@@ -138,7 +155,9 @@ export class NotificationsService {
     });
 
     const deleted = result.affected ?? 0;
-    this.logger.log(`Deleted ${deleted} notifications older than ${daysOld} days`);
+    this.logger.log(
+      `Deleted ${deleted} notifications older than ${daysOld} days`,
+    );
     return { deleted };
   }
 }

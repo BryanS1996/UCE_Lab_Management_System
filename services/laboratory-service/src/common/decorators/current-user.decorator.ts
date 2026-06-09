@@ -8,7 +8,7 @@ export interface CurrentUserData {
 
 export const CurrentUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): CurrentUserData => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.user;
+    const request = ctx.switchToHttp().getRequest<{ user?: CurrentUserData }>();
+    return request.user ?? { user_id: '', email: '', role: '' };
   },
 );

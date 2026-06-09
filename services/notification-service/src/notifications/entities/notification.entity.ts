@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Index,
+} from 'typeorm';
 
 export enum NotificationStatus {
   PENDING = 'PENDING',
@@ -32,7 +38,11 @@ export class Notification {
   @Column({ type: 'enum', enum: NotificationType })
   type: NotificationType;
 
-  @Column({ type: 'enum', enum: NotificationStatus, default: NotificationStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: NotificationStatus,
+    default: NotificationStatus.PENDING,
+  })
   status: NotificationStatus;
 
   @Column({ type: 'jsonb', nullable: true })
