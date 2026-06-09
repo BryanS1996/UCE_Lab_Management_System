@@ -23,7 +23,8 @@ import { LaboratoriesService } from './laboratories.service';
 import { CreateLaboratoryDto, UpdateLaboratoryDto } from './dto';
 import { LaboratoryStatus } from './entities/laboratory.entity';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { CurrentUserData } from '../common/decorators/current-user.decorator';
 
 class ChangeStatusDto {
   status: LaboratoryStatus;
