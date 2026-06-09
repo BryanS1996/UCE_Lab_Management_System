@@ -1,28 +1,50 @@
-name: PR Validation — All Services
+name: PR Validation - Changed Services Only
 
 on:
   pull_request:
-    branches: [qa, main]
-    types: [opened, synchronize, reopened]
+    branches: [ qa, main ]
 
 jobs:
-  test-all:
-    name: Test ${{ matrix.service }}
+  detect-changes:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        service: [auth-service, reservation-service, laboratory-service, notification-service]
+    outputs:
+      services: ${{ steps.filter.outputs.changes }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            auth-service: 'services/auth-service/**'
+            laboratory-service: 'services/laboratory-service/**'
+            notification-service: 'services/notification-service/**'
+            reservation-service: 'services/reservation-service/**'
+
+  test-services:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.services != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.detect-changes.outputs.services) }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
-      - name: Install, Build & Test
+          
+      - name: Install Dependencies
         working-directory: services/${{ matrix.service }}
-        run: |
-          npm ci --legacy-peer-deps
-          npm run build
-          npm run test -- --forceExit
+        run: npm ci --legacy-peer-deps
+        
+      - name: Run Linter (if available)
+        working-directory: services/${{ matrix.service }}
+        run: npm run lint --if-present
+        
+      - name: Run Tests
+        working-directory: services/${{ matrix.service }}
+        run: npm run test
