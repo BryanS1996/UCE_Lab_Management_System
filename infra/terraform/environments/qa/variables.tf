@@ -67,3 +67,9 @@ variable "db_password" {
   description = "Solo requerido si enable_rds = true"
   default     = ""
 }
+
+variable "image_tag" {
+  type        = string
+  default     = "qa"
+  description = "Image tag para Docker Hub (prod o qa). Determina qué imágenes descargar en ECS Fargate Task Definition."
+}

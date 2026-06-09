@@ -1,11 +1,8 @@
-name: Terraform — Apply QA
+name: Terraform — Apply QA [DEPRECATED]
 
+# Deshabilitado: Consolidado en terraform-apply.yml que ahora soporta ambas ramas (main, qa)
 on:
-  push:
-    branches: [qa]
-    paths:
-      - 'infra/terraform/**'
-      - '.github/workflows/terraform-apply-qa.yml'
+  workflow_dispatch:
 
 jobs:
   terraform-apply:

@@ -70,3 +70,9 @@ variable "jwt_secret" {
   sensitive   = true
   description = "Referencia para documentacion; configurar en .env del EC2"
 }
+
+variable "image_tag" {
+  type        = string
+  default     = "prod"
+  description = "Image tag para Docker Hub (prod o qa). Determina qué imágenes descargar en ECS Fargate Task Definition."
+}

@@ -1,15 +1,9 @@
 name: Auth Service — CI
 
+# Deshabilitado: La validación se maneja centralmente en pr-validation.yml
+# La construcción se maneja en docker-publish.yml
 on:
-  push:
-    branches: [main, qa, feature/*]
-    paths:
-      - 'services/auth-service/**'
-      - '.github/workflows/auth-service-ci.yml'
-  pull_request:
-    branches: [main, qa]
-    paths:
-      - 'services/auth-service/**'
+  workflow_dispatch:
 
 jobs:
   lint-and-test:
