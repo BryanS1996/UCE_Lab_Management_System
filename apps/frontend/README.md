@@ -1,13 +1,13 @@
-# Frontend — Panel de pruebas UCE Lab
+# Frontend — UCE Lab Test Panel
 
-SPA ligera (Vite + TypeScript) para probar los 4 microservicios.
+Lightweight SPA (Vite + TypeScript) to test the 4 microservices.
 
-## Requisitos
+## Requirements
 
-- Microservicios corriendo (`docker compose up` o por servicio)
-- Mismo `JWT_SECRET` en todos los servicios
+- Microservices running (`docker compose up` or individually)
+- Same `JWT_SECRET` across all services
 
-## Iniciar
+## Getting Started
 
 ```bash
 cd apps/frontend
@@ -15,16 +15,16 @@ npm install
 npm run dev
 ```
 
-Abre http://localhost:4200
+Open http://localhost:4200
 
-## Ambiente QA (puertos 3010–3013)
+## QA Environment (ports 3010–3013)
 
 http://localhost:4200?env=qa
 
-## Qué puedes probar
+## What You Can Test
 
-| Sección | Endpoints |
+| Section | Endpoints |
 |---------|-----------|
-| Auth | Login, registro, refresh token manual, auto-renovación en 401, JWT decodificado |
-| Health | `/health` de cada microservicio |
-| Protegidos | `/auth/me`, reservas, laboratorios, notificaciones |
+| Auth | Login, registration, manual refresh token, auto-renewal on 401, JWT decoded |
+| Health | `/health` of each microservice |
+| Protected | `/auth/me`, reservations, labs, notifications |
