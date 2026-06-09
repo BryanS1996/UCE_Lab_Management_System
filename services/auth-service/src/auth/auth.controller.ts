@@ -14,7 +14,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto, ChangePasswordDto } from './dto';
+import { LoginDto, RegisterDto, ChangePasswordDto, RefreshTokenDto } from './dto';
 import { JwtAuthGuard } from './guards';
 
 @ApiTags('auth')
@@ -36,6 +36,18 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Credenciales inválidas.' })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Post('refresh')
+  @ApiOperation({
+    summary: 'Renovar access token',
+    description:
+      'Intercambia un refresh token válido (7d) por un nuevo par access + refresh token.',
+  })
+  @ApiResponse({ status: 200, description: 'Tokens renovados.' })
+  @ApiResponse({ status: 401, description: 'Refresh token inválido o expirado.' })
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refreshTokens(refreshTokenDto.refreshToken);
   }
 
   @UseGuards(JwtAuthGuard)

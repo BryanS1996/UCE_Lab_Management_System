@@ -1,0 +1,84 @@
+name: Terraform — Bootstrap S3 Backend
+
+# Ejecutar UNA VEZ por cuenta AWS (manual: Actions → Run workflow)
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Ambiente AWS
+        required: true
+        type: choice
+        options:
+          - qa
+          - prod
+
+jobs:
+  bootstrap:
+    name: Crear S3 + DynamoDB (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment == 'qa' && 'qa' || 'production' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.5.0'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Detectar si el backend ya existe
+        id: existing
+        env:
+          ENV_NAME: ${{ inputs.environment }}
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          BUCKET="uce-lab-tfstate-${ACCOUNT_ID}-${ENV_NAME}"
+          LOCK_TABLE="uce-lab-tflock-${ENV_NAME}"
+          echo "account_id=${ACCOUNT_ID}" >> "$GITHUB_OUTPUT"
+          echo "bucket=${BUCKET}" >> "$GITHUB_OUTPUT"
+          echo "lock_table=${LOCK_TABLE}" >> "$GITHUB_OUTPUT"
+          if aws s3api head-bucket --bucket "${BUCKET}" 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Terraform Init (bootstrap)
+        if: steps.existing.outputs.exists != 'true'
+        working-directory: infra/terraform/bootstrap
+        run: terraform init
+
+      - name: Terraform Apply (bootstrap)
+        if: steps.existing.outputs.exists != 'true'
+        working-directory: infra/terraform/bootstrap
+        run: |
+          terraform apply -auto-approve \
+            -var="environment=${{ inputs.environment }}"
+
+      - name: Resumen — configurar GitHub Variables
+        env:
+          GH_ENV: ${{ inputs.environment == 'qa' && 'qa' || 'production' }}
+        run: |
+          {
+            echo "## Bootstrap S3 — ${{ inputs.environment }}"
+            echo ""
+            if [ "${{ steps.existing.outputs.exists }}" = "true" ]; then
+              echo "El backend **ya existia** en esta cuenta. No se modifico infraestructura."
+            else
+              echo "Backend **creado** correctamente."
+            fi
+            echo ""
+            echo "Configura estas **Variables** en el Environment \`${GH_ENV}\`:"
+            echo ""
+            echo "| Variable | Valor |"
+            echo "|----------|-------|"
+            echo "| \`TF_STATE_BUCKET\` | \`${{ steps.existing.outputs.bucket }}\` |"
+            echo "| \`TF_LOCK_TABLE\` | \`${{ steps.existing.outputs.lock_table }}\` |"
+            echo "| \`TF_AWS_REGION\` | \`us-east-1\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

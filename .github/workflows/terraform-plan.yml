@@ -1,15 +1,17 @@
-name: Terraform — Plan
+name: Terraform — Plan Production
 
 on:
   pull_request:
     branches: [main]
     paths:
       - 'infra/terraform/**'
+      - '.github/workflows/terraform-plan.yml'
 
 jobs:
   terraform-plan:
-    name: Terraform Plan
+    name: Terraform Plan (Production)
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
 
@@ -17,7 +19,7 @@ jobs:
         with:
           terraform_version: '1.5.0'
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (cuenta PROD)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -25,14 +27,34 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
-      - name: Terraform Init (prod)
-        working-directory: infra/terraform/environments/prod
-        run: terraform init
+      - name: Verificar variables de backend S3
+        run: |
+          if [ -z "${{ vars.TF_STATE_BUCKET }}" ] || [ -z "${{ vars.TF_LOCK_TABLE }}" ]; then
+            echo "::error::Faltan TF_STATE_BUCKET o TF_LOCK_TABLE en Environment production. Ejecuta el workflow 'Terraform — Bootstrap S3 Backend'."
+            exit 1
+          fi
 
-      - name: Terraform Plan (prod)
+      - name: Terraform Init (S3 backend)
+        working-directory: infra/terraform/environments/prod
+        env:
+          TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          TF_LOCK_TABLE: ${{ vars.TF_LOCK_TABLE }}
+          TF_AWS_REGION: ${{ vars.TF_AWS_REGION }}
+        run: bash ../../scripts/init-backend.sh prod
+
+      - name: Terraform Plan
         working-directory: infra/terraform/environments/prod
         run: |
           terraform plan \
+            -var="key_pair_name=${{ vars.TF_KEY_PAIR_NAME }}" \
+            -var="enable_rds=true" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
             -out=tfplan
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-prod
+          path: infra/terraform/environments/prod/tfplan
+          retention-days: 5

@@ -1,0 +1,28 @@
+name: PR Validation — All Services
+
+on:
+  pull_request:
+    branches: [qa, main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test-all:
+    name: Test ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        service: [auth-service, reservation-service, laboratory-service, notification-service]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
+      - name: Install, Build & Test
+        working-directory: services/${{ matrix.service }}
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+          npm run test -- --forceExit

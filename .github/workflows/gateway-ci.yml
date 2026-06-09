@@ -1,15 +1,8 @@
 name: API Gateway — CI
 
+# Deshabilitado hasta que api-gateway tenga código implementado
 on:
-  push:
-    branches: [main, qa, feature/*]
-    paths:
-      - 'services/api-gateway/**'
-      - '.github/workflows/gateway-ci.yml'
-  pull_request:
-    branches: [main, qa]
-    paths:
-      - 'services/api-gateway/**'
+  workflow_dispatch:
 
 jobs:
   lint-and-test:

@@ -43,6 +43,7 @@ Responsabilidades:
     )
     .addTag('auth', 'Registro, Login y gestión de sesión')
     .addTag('users', 'Gestión de usuarios')
+    .addTag('health', 'Estado del servicio')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

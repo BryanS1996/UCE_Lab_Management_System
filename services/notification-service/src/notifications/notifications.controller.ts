@@ -19,7 +19,8 @@ import {
 } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { CurrentUserData } from '../common/decorators/current-user.decorator';
 
 @ApiTags('notifications')
 @ApiBearerAuth('JWT')
@@ -28,11 +29,6 @@ import { CurrentUser, CurrentUserData } from '../common/decorators/current-user.
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  /**
-   * GET /notifications/my
-   * Retorna las notificaciones del usuario autenticado
-   * Query param: unread_only=true para solo no leídas
-   */
   @Get('my')
   @ApiOperation({ summary: 'Obtener mis notificaciones' })
   @ApiQuery({
@@ -51,10 +47,6 @@ export class NotificationsController {
     });
   }
 
-  /**
-   * GET /notifications/my/unread-count
-   * Retorna el conteo de notificaciones no leídas
-   */
   @Get('my/unread-count')
   @ApiOperation({ summary: 'Contador de notificaciones no leídas' })
   @ApiResponse({ status: 200, description: 'Número de notificaciones sin leer' })
@@ -62,10 +54,6 @@ export class NotificationsController {
     return this.notificationsService.countUnread(user.user_id);
   }
 
-  /**
-   * PATCH /notifications/read-all
-   * Marca todas las notificaciones del usuario como leídas
-   */
   @Patch('read-all')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Marcar todas las notificaciones como leídas' })
@@ -74,10 +62,6 @@ export class NotificationsController {
     return this.notificationsService.markAllAsRead(user.user_id);
   }
 
-  /**
-   * PATCH /notifications/:id/read
-   * Marca una notificación específica como leída
-   */
   @Patch(':id/read')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Marcar una notificación como leída' })

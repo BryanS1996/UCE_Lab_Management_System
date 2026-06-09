@@ -23,7 +23,7 @@ yarn-error.log*
 
 # Terraform secrets
 *.tfvars
+backend.hcl
 *.tfstate
 *.tfstate.backup
 .terraform/
-.terraform.lock.hcl

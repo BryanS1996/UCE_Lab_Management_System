@@ -12,6 +12,7 @@ jobs:
     name: Run All Tests
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
         service: [auth-service, reservation-service, laboratory-service, notification-service]
     steps:
@@ -19,7 +20,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install & Test
+          cache: 'npm'
+          cache-dependency-path: services/${{ matrix.service }}/package-lock.json
+      - name: Install, Build & Test
         working-directory: services/${{ matrix.service }}
         run: |
           npm ci --legacy-peer-deps
@@ -57,6 +60,15 @@ jobs:
             docker push ${{ steps.login-ecr.outputs.registry }}/uce-$service:${{ github.sha }}
           done
 
+      - name: Copy compose file to Production EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: docker-compose.prod.yml
+          target: /home/ec2-user/app/
+
       - name: Deploy to Production EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -65,9 +77,13 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             cd /home/ec2-user/app
-            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            export IMAGE_TAG=${{ github.sha }}
+            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --no-deps
-            sleep 20
-            curl -f http://localhost:3000/health && echo "Auth PROD OK"
-            curl -f http://localhost:3001/health && echo "Reservation PROD OK"
+            docker compose -f docker-compose.prod.yml up -d
+            sleep 25
+            curl -f http://localhost:3000/health && echo " Auth PROD OK"
+            curl -f http://localhost:3001/health && echo " Reservation PROD OK"
+            curl -f http://localhost:3002/health && echo " Laboratory PROD OK"
+            curl -f http://localhost:3003/health && echo " Notification PROD OK"

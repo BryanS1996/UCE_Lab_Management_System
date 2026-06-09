@@ -1,3 +1,5 @@
+# QA — local: docker compose -f docker-compose.qa.yml up -d --build
+# QA — EC2:   export ECR_REGISTRY + IMAGE_TAG, luego pull + up (GitHub Actions)
 
 services:
   # ─── QA: Auth Database ───────────────────────────────
@@ -22,6 +24,7 @@ services:
 
   # ─── QA: Auth Service (puerto 3010) ──────────────────
   auth-service-qa:
+    image: ${ECR_REGISTRY:-uce-local}/uce-auth-service:${IMAGE_TAG:-local}
     build:
       context: ./services/auth-service
       dockerfile: Dockerfile
@@ -43,6 +46,12 @@ services:
         condition: service_healthy
     networks:
       - uce-qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # ─── QA: Reservation Database ────────────────────────
   reservation-db-qa:
@@ -60,6 +69,46 @@ services:
       - uce-qa-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U reservationuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── QA: Laboratory Database ─────────────────────────
+  laboratory-db-qa:
+    image: postgres:15-alpine
+    container_name: laboratory-db-qa
+    environment:
+      POSTGRES_USER: labuser
+      POSTGRES_PASSWORD: labpassword
+      POSTGRES_DB: laboratory_service_qa
+    ports:
+      - "5438:5432"
+    volumes:
+      - laboratory-db-qa-data:/var/lib/postgresql/data
+    networks:
+      - uce-qa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── QA: Notification Database ───────────────────────
+  notification-db-qa:
+    image: postgres:15-alpine
+    container_name: notification-db-qa
+    environment:
+      POSTGRES_USER: notifuser
+      POSTGRES_PASSWORD: notifpassword
+      POSTGRES_DB: notification_service_qa
+    ports:
+      - "5439:5432"
+    volumes:
+      - notification-db-qa-data:/var/lib/postgresql/data
+    networks:
+      - uce-qa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notifuser"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -86,6 +135,7 @@ services:
 
   # ─── QA: Reservation Service (puerto 3011) ───────────
   reservation-service-qa:
+    image: ${ECR_REGISTRY:-uce-local}/uce-reservation-service:${IMAGE_TAG:-local}
     build:
       context: ./services/reservation-service
       dockerfile: Dockerfile
@@ -112,10 +162,87 @@ services:
     networks:
       - uce-qa-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── QA: Laboratory Service (puerto 3012) ──────────
+  laboratory-service-qa:
+    image: ${ECR_REGISTRY:-uce-local}/uce-laboratory-service:${IMAGE_TAG:-local}
+    build:
+      context: ./services/laboratory-service
+      dockerfile: Dockerfile
+    container_name: laboratory-service-qa
+    environment:
+      NODE_ENV: qa
+      PORT: 3012
+      DB_HOST: laboratory-db-qa
+      DB_PORT: 5432
+      DB_USERNAME: labuser
+      DB_PASSWORD: labpassword
+      DB_NAME: laboratory_service_qa
+      DB_SSL: "false"
+      JWT_SECRET: qa-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
+    ports:
+      - "3012:3012"
+    depends_on:
+      laboratory-db-qa:
+        condition: service_healthy
+      rabbitmq-qa:
+        condition: service_healthy
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── QA: Notification Service (puerto 3013) ──────────
+  notification-service-qa:
+    image: ${ECR_REGISTRY:-uce-local}/uce-notification-service:${IMAGE_TAG:-local}
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service-qa
+    environment:
+      NODE_ENV: qa
+      PORT: 3013
+      DB_HOST: notification-db-qa
+      DB_PORT: 5432
+      DB_USERNAME: notifuser
+      DB_PASSWORD: notifpassword
+      DB_NAME: notification_service_qa
+      DB_SSL: "false"
+      JWT_SECRET: qa-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
+    ports:
+      - "3013:3013"
+    depends_on:
+      notification-db-qa:
+        condition: service_healthy
+      rabbitmq-qa:
+        condition: service_healthy
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3013/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   auth-db-qa-data:
   reservation-db-qa-data:
+  laboratory-db-qa-data:
+  notification-db-qa-data:
   rabbitmq-qa-data:
 
 networks:
