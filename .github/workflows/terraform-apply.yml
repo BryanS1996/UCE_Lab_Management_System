@@ -36,7 +36,7 @@ jobs:
       - name: Verificar variables de backend S3
         run: |
           if [ -z "${{ vars.TF_STATE_BUCKET }}" ] || [ -z "${{ vars.TF_LOCK_TABLE }}" ]; then
-            echo "::error::Faltan TF_STATE_BUCKET o TF_LOCK_TABLE en Environment ${{ github.ref == 'refs/heads/main' && 'production' || 'qa' }}. Ejecuta el workflow 'Terraform — Bootstrap S3 Backend'."
+            echo "::error::Faltan TF_STATE_BUCKET o TF_LOCK_TABLE en el Environment configurado."
             exit 1
           fi
 
