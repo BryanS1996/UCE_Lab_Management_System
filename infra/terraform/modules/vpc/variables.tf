@@ -22,8 +22,3 @@ variable "availability_zone_secondary" {
   default = "us-east-1b"
 }
 
-variable "enable_private_subnets" {
-  type        = bool
-  description = "Habilitar subredes privadas (requerido si enable_rds = true)"
-  default     = false
-}

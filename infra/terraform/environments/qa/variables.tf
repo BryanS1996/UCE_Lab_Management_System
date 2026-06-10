@@ -41,19 +41,20 @@ variable "iam_instance_profile" {
 
 variable "ssh_cidr_blocks" {
   type        = list(string)
-  description = "Restringir a tu IP en produccion: [\"x.x.x.x/32\"]"
+  description = "CIDRs permitidos para SSH al Bastion Host"
   default     = ["0.0.0.0/0"]
-}
-
-variable "allocate_eip" {
-  type    = bool
-  default = true
 }
 
 variable "enable_rds" {
   type        = bool
   description = "false = Postgres en Docker (recomendado AWS Academy QA)"
   default     = false
+}
+
+variable "monitoring_sns_topic_arn" {
+  type        = string
+  description = "SNS topic ARN for CloudWatch alarm notifications (optional)"
+  default     = ""
 }
 
 variable "db_instance_class" {

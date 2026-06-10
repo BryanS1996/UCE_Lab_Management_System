@@ -2,10 +2,26 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { WinstonModule } from 'nest-winston';
+import * as winston from 'winston';
 import { AppModule } from './app.module';
 
+const logger = WinstonModule.createLogger({
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.errors({ stack: true }),
+        winston.format.json(),
+      ),
+    }),
+  ],
+});
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger,
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.enableCors({ origin: process.env.CORS_ORIGIN || '*', credentials: true });
 
@@ -28,7 +44,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3003;
   await app.listen(port);
-  console.log(`Notification Service running on port ${port}`);
-  console.log(`WebSocket namespace: /notifications`);
+  logger.log(`Notification Service running on port ${port}`, 'Bootstrap');
+  logger.log(`WebSocket namespace: /notifications`, 'Bootstrap');
 }
 void bootstrap();

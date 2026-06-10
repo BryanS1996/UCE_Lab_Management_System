@@ -40,10 +40,16 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.PROD_AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set AWS credentials for SSH steps
+        run: |
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.PROD_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+          echo "AWS_SESSION_TOKEN=${{ secrets.PROD_AWS_SESSION_TOKEN }}" >> $GITHUB_ENV
 
       - name: Login ECR
         id: login-ecr
@@ -63,22 +69,36 @@ jobs:
       - name: Copy compose file to Production EC2
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.PROD_EC2_HOST }}
+          host: ${{ secrets.PROD_APP_PRIVATE_IP }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          proxy_host: ${{ secrets.PROD_BASTION_PUBLIC_IP }}
+          proxy_username: ec2-user
+          proxy_key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           source: docker-compose.prod.yml
           target: /home/ec2-user/app/
 
       - name: Deploy to Production EC2
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.PROD_AWS_SESSION_TOKEN }}
+          AWS_REGION: ${{ env.AWS_REGION }}
         with:
-          host: ${{ secrets.PROD_EC2_HOST }}
+          host: ${{ secrets.PROD_APP_PRIVATE_IP }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          proxy_host: ${{ secrets.PROD_BASTION_PUBLIC_IP }}
+          proxy_username: ec2-user
+          proxy_key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             cd /home/ec2-user/app
             export IMAGE_TAG=${{ github.sha }}
             export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+            export AWS_ACCESS_KEY_ID=${{ env.AWS_ACCESS_KEY_ID }}
+            export AWS_SECRET_ACCESS_KEY=${{ env.AWS_SECRET_ACCESS_KEY }}
+            export AWS_SESSION_TOKEN=${{ env.AWS_SESSION_TOKEN }}
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d

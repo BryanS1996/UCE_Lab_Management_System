@@ -22,7 +22,7 @@ output "github_variables" {
   description = "Copiar a Settings → Environments → Variables"
   value = {
     TF_STATE_BUCKET = aws_s3_bucket.tfstate.bucket
-    TF_LOCK_TABLE    = aws_dynamodb_table.tflock.name
-    TF_AWS_REGION    = var.aws_region
+    TF_LOCK_TABLE   = aws_dynamodb_table.tflock.name
+    TF_AWS_REGION   = var.aws_region
   }
 }

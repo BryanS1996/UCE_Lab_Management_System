@@ -7,5 +7,5 @@ output "public_subnet_id" {
 }
 
 output "private_subnet_ids" {
-  value = var.enable_private_subnets ? [aws_subnet.private_1[0].id, aws_subnet.private_2[0].id] : []
+  value = [aws_subnet.private_1.id, aws_subnet.private_2.id]
 }
