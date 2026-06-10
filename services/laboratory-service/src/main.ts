@@ -2,10 +2,26 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { WinstonModule } from 'nest-winston';
+import * as winston from 'winston';
 import { AppModule } from './app.module';
 
+const logger = WinstonModule.createLogger({
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.errors({ stack: true }),
+        winston.format.json(),
+      ),
+    }),
+  ],
+});
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger,
+  });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.enableCors({ origin: process.env.CORS_ORIGIN || '*', credentials: true });
@@ -32,8 +48,8 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3002;
   await app.listen(port);
-  console.log(`Laboratory Service running on port ${port}`);
-  console.log(`Swagger: http://localhost:${port}/api/docs`);
+  logger.log(`Laboratory Service running on port ${port}`, 'Bootstrap');
+  logger.log(`Swagger: http://localhost:${port}/api/docs`, 'Bootstrap');
 }
 
 void bootstrap();

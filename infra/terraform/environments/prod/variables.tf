@@ -40,19 +40,21 @@ variable "iam_instance_profile" {
 }
 
 variable "ssh_cidr_blocks" {
-  type    = list(string)
-  default = ["0.0.0.0/0"]
-}
-
-variable "allocate_eip" {
-  type    = bool
-  default = true
+  type        = list(string)
+  description = "CIDRs permitidos para SSH al Bastion Host (restringir en produccion)"
+  default     = ["0.0.0.0/0"]
 }
 
 variable "enable_rds" {
   type        = bool
   description = "true = RDS PostgreSQL para docker-compose.prod.yml"
   default     = true
+}
+
+variable "monitoring_sns_topic_arn" {
+  type        = string
+  description = "SNS topic ARN for CloudWatch alarm notifications (optional)"
+  default     = ""
 }
 
 variable "db_instance_class" {

@@ -16,20 +16,20 @@ resource "aws_security_group" "app" {
   dynamic "ingress" {
     for_each = var.allowed_service_ports
     content {
-      description = "Microservicio puerto ${ingress.value}"
-      from_port   = ingress.value
-      to_port     = ingress.value
-      protocol    = "tcp"
-      cidr_blocks = var.allowed_cidr_blocks
+      description     = "Microservicio puerto ${ingress.value} from ALB"
+      from_port       = ingress.value
+      to_port         = ingress.value
+      protocol        = "tcp"
+      security_groups = [var.alb_security_group_id]
     }
   }
 
   ingress {
-    description = "SSH para deploy GitHub Actions"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = var.ssh_cidr_blocks
+    description     = "SSH from Bastion Host"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [var.bastion_security_group_id]
   }
 
   egress {
@@ -49,9 +49,8 @@ resource "aws_instance" "app" {
   instance_type               = var.instance_type
   subnet_id                   = var.subnet_id
   vpc_security_group_ids      = [aws_security_group.app.id]
-  key_name                    = var.key_pair_name != "" ? var.key_pair_name : null
-  iam_instance_profile        = var.iam_instance_profile
-  associate_public_ip_address = true
+  key_name                    = var.key_pair_name
+  associate_public_ip_address = false
 
   root_block_device {
     volume_size = var.root_volume_size
@@ -64,15 +63,5 @@ resource "aws_instance" "app" {
 
   tags = {
     Name = "${var.project_name}-app-${var.environment}"
-  }
-}
-
-resource "aws_eip" "app" {
-  count    = var.allocate_eip ? 1 : 0
-  instance = aws_instance.app.id
-  domain   = "vpc"
-
-  tags = {
-    Name = "${var.project_name}-app-eip-${var.environment}"
   }
 }

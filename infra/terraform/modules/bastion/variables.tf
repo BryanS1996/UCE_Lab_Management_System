@@ -17,7 +17,7 @@ variable "subnet_id" {
 
 variable "instance_type" {
   type    = string
-  default = "t2.micro"
+  default = "t3.micro"
 }
 
 variable "key_pair_name" {
@@ -25,22 +25,13 @@ variable "key_pair_name" {
   description = "Key pair name for SSH access"
 }
 
-variable "allowed_service_ports" {
-  type        = list(number)
-  description = "Puertos expuestos de los microservicios"
-}
-
-variable "alb_security_group_id" {
-  type        = string
-  description = "Security Group ID of the ALB"
-}
-
-variable "bastion_security_group_id" {
-  type        = string
-  description = "Security Group ID of the Bastion Host"
+variable "ssh_cidr_blocks" {
+  type        = list(string)
+  description = "CIDR blocks allowed to SSH to bastion"
+  default     = ["0.0.0.0/0"]
 }
 
 variable "root_volume_size" {
   type    = number
-  default = 20
+  default = 8
 }
