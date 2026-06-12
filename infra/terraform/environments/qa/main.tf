@@ -7,7 +7,9 @@ locals {
     "uce-frontend",
   ]
   service_ports    = [3010, 3011, 3012, 3013]
-  api_gateway_port = 3010
+  # ALB forwards public traffic to port 80 (nginx frontend).
+  # Nginx serves the React SPA and proxies /api/* calls to the backend services.
+  api_gateway_port = 80
 }
 
 module "vpc" {
@@ -46,7 +48,9 @@ module "alb" {
   # Now uses both public subnets for multi-AZ ALB support
   public_subnet_ids = module.vpc.public_subnet_ids
   target_port       = local.api_gateway_port
-  health_check_path = "/health"
+  # /health.html is served by nginx with a static 200 response.
+  # Must match the frontend container's health endpoint, not the NestJS /health.
+  health_check_path = "/health.html"
 }
 
 module "app" {
