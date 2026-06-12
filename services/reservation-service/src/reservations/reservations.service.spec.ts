@@ -7,7 +7,7 @@ import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 import { BadRequestException, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 
-// Factory de mock para QueryBuilder
+// Mock factory for QueryBuilder
 const mockQueryBuilder = {
   where: jest.fn().mockReturnThis(),
   andWhere: jest.fn().mockReturnThis(),
@@ -34,12 +34,14 @@ const mockRabbitmqService = {
   publishReservationCancelled: jest.fn().mockResolvedValue(undefined),
 };
 
+// Mock for a regular student user
 const mockUser: CurrentUserData = {
   user_id: 'user-uuid-123',
   email: 'student@uce.edu.ec',
   role: 'STUDENT',
 };
 
+// Mock for an administrator user
 const mockAdminUser: CurrentUserData = {
   user_id: 'admin-uuid-456',
   email: 'admin@uce.edu.ec',
@@ -76,7 +78,7 @@ describe('ReservationsService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    // Reset mock query builder
+    // Reset mock query builder before each test
     mockQueryBuilder.where.mockReturnThis();
     mockQueryBuilder.andWhere.mockReturnThis();
     mockQueryBuilder.orderBy.mockReturnThis();
@@ -178,7 +180,7 @@ describe('ReservationsService', () => {
 
     it('debe lanzar ConflictException si hay conflicto de horario', async () => {
       mockLaboratoryRepository.findOne.mockResolvedValue(mockLaboratory);
-      mockQueryBuilder.getCount.mockResolvedValue(1); // Hay conflicto
+      mockQueryBuilder.getCount.mockResolvedValue(1); // Indicates a schedule conflict
 
       const dto = {
         lab_id: 1,
@@ -262,7 +264,7 @@ describe('ReservationsService', () => {
   // CONFIRM
   // ─────────────────────────────────────────────
   describe('confirm()', () => {
-    it('debe confirmar una reserva PENDING', async () => {
+    it('debe confirmar una reserva PENDING si el usuario es ADMIN', async () => {
       const confirmedReservation = {
         ...mockReservation,
         status: ReservationStatus.CONFIRMED,
@@ -270,10 +272,18 @@ describe('ReservationsService', () => {
       mockReservationRepository.findOne.mockResolvedValue(mockReservation);
       mockReservationRepository.save.mockResolvedValue(confirmedReservation);
 
-      const result = await service.confirm('res-uuid-789');
+      // Pass the mockAdminUser to satisfy the 2 arguments requirement
+      const result = await service.confirm('res-uuid-789', mockAdminUser);
 
       expect(result.status).toBe(ReservationStatus.CONFIRMED);
       expect(mockRabbitmqService.publishReservationConfirmed).toHaveBeenCalledTimes(1);
+    });
+
+    it('debe lanzar ForbiddenException si el usuario no es ADMIN', async () => {
+      // Pass a regular mockUser, it should trigger the ForbiddenException
+      await expect(
+        service.confirm('res-uuid-789', mockUser),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('debe lanzar BadRequestException si la reserva no está PENDING', async () => {
@@ -282,8 +292,9 @@ describe('ReservationsService', () => {
         status: ReservationStatus.CONFIRMED,
       });
 
+      // Pass the mockAdminUser to bypass the role check and test the status validation
       await expect(
-        service.confirm('res-uuid-789'),
+        service.confirm('res-uuid-789', mockAdminUser),
       ).rejects.toThrow(BadRequestException);
     });
   });
