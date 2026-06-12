@@ -88,6 +88,15 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-latest
 
+      - name: Build & Push — Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/frontend
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-frontend:qa-${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/uce-frontend:qa-latest
+
       # ── Dynamic IP Discovery ────────────────────────────────────────────────
       # Queries AWS for all RUNNING instances in the QA ASG by Name tag.
       # Formats the private IPs as a comma-separated string for appleboy/ssh-action.
@@ -165,13 +174,14 @@ jobs:
             aws ecr get-login-password --region "$AWS_REGION" \
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
             docker compose -f docker-compose.qa.yml pull \
-              auth-service-qa reservation-service-qa laboratory-service-qa notification-service-qa
+              auth-service-qa reservation-service-qa laboratory-service-qa notification-service-qa frontend-qa
             docker compose -f docker-compose.qa.yml up -d
             sleep 20
             curl -sf http://localhost:3010/health && echo "✅ Auth QA OK"
             curl -sf http://localhost:3011/health && echo "✅ Reservation QA OK"
             curl -sf http://localhost:3012/health && echo "✅ Laboratory QA OK"
             curl -sf http://localhost:3013/health && echo "✅ Notification QA OK"
+            curl -sf http://localhost/health.html && echo "✅ Frontend QA OK"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.QA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.QA_AWS_SECRET_ACCESS_KEY }}

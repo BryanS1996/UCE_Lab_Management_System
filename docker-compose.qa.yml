@@ -207,6 +207,28 @@ services:
       - uce-qa-network
     restart: unless-stopped
 
+  # ─── QA: Frontend (puerto 80) ────────────────────────
+  frontend-qa:
+    image: ${ECR_REGISTRY}/uce-frontend:${IMAGE_TAG:-qa-latest}
+    container_name: frontend-qa
+    pull_policy: always
+    ports:
+      - "80:80"
+    networks:
+      - uce-qa-network
+    depends_on:
+      - auth-service-qa
+      - reservation-service-qa
+      - laboratory-service-qa
+      - notification-service-qa
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health.html"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
 volumes:
   auth-db-qa-data:
   reservation-db-qa-data:
