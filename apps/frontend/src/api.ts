@@ -5,6 +5,17 @@ const REFRESH_KEY = 'uce_refresh_token';
 
 let refreshInFlight: Promise<string | null> | null = null;
 
+// Use relative /api paths for production/QA to work with Nginx reverse proxy
+// Fallback to services config for local development
+const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+const apiUrls = {
+  auth: isLocalDev ? services.auth : '/api/auth',
+  reservation: isLocalDev ? services.reservation : '/api/reservations',
+  laboratory: isLocalDev ? services.laboratory : '/api/laboratories',
+  notification: isLocalDev ? services.notification : '/api/notifications',
+};
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -57,7 +68,7 @@ async function requestRefreshToken(): Promise<string | null> {
   const refresh = getRefreshToken();
   if (!refresh) return null;
 
-  const res = await fetch(`${services.auth}/auth/refresh`, {
+  const res = await fetch(`${apiUrls.auth}/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken: refresh }),
@@ -122,26 +133,26 @@ export async function apiFetch(
 }
 
 export const endpoints = {
-  authHealth: () => apiFetch(services.auth, '/health'),
+  authHealth: () => apiFetch(apiUrls.auth, '/health'),
   authLogin: (email: string, password: string) =>
-    apiFetch(services.auth, '/auth/login', {
+    apiFetch(apiUrls.auth, '/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
   authRegister: (body: Record<string, string>) =>
-    apiFetch(services.auth, '/auth/register', {
+    apiFetch(apiUrls.auth, '/auth/register', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
   authRefresh: () => refreshAccessToken(),
-  authMe: () => apiFetch(services.auth, '/auth/me'),
-  reservationHealth: () => apiFetch(services.reservation, '/health'),
-  reservationMy: () => apiFetch(services.reservation, '/reservations/my'),
-  reservationLabs: () => apiFetch(services.reservation, '/laboratories'),
-  laboratoryHealth: () => apiFetch(services.laboratory, '/health'),
-  laboratoryList: () => apiFetch(services.laboratory, '/laboratories'),
-  notificationHealth: () => apiFetch(services.notification, '/health'),
-  notificationMy: () => apiFetch(services.notification, '/notifications/my'),
+  authMe: () => apiFetch(apiUrls.auth, '/auth/me'),
+  reservationHealth: () => apiFetch(apiUrls.reservation, '/health'),
+  reservationMy: () => apiFetch(apiUrls.reservation, '/reservations/my'),
+  reservationLabs: () => apiFetch(apiUrls.reservation, '/laboratories'),
+  laboratoryHealth: () => apiFetch(apiUrls.laboratory, '/health'),
+  laboratoryList: () => apiFetch(apiUrls.laboratory, '/laboratories'),
+  notificationHealth: () => apiFetch(apiUrls.notification, '/health'),
+  notificationMy: () => apiFetch(apiUrls.notification, '/notifications/my'),
   notificationUnread: () =>
-    apiFetch(services.notification, '/notifications/my/unread-count'),
+    apiFetch(apiUrls.notification, '/notifications/my/unread-count'),
 };
