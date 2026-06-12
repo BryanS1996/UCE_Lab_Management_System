@@ -34,6 +34,7 @@ services:
       DB_USERNAME: authuser
       DB_PASSWORD: authpassword
       DB_NAME: auth_service_qa
+      DB_SSL: "false"
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
     ports:
@@ -113,6 +114,26 @@ services:
       - uce-qa-network
     restart: unless-stopped
 
+  # ─── QA: Laboratory Database ─────────────────────────
+  laboratory-db-qa:
+    image: postgres:15-alpine
+    container_name: laboratory-db-qa
+    environment:
+      POSTGRES_USER: labuser
+      POSTGRES_PASSWORD: labpassword
+      POSTGRES_DB: laboratory_service_qa
+    ports:
+      - "5436:5432"
+    volumes:
+      - laboratory-db-qa-data:/var/lib/postgresql/data
+    networks:
+      - uce-qa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ─── QA: Laboratory Service (puerto 3012) ────────────
   laboratory-service-qa:
     image: ${ECR_REGISTRY}/uce-laboratory-service:${IMAGE_TAG:-qa-latest}
@@ -121,15 +142,42 @@ services:
     environment:
       NODE_ENV: qa
       PORT: 3012
+      DB_HOST: laboratory-db-qa
+      DB_PORT: 5432
+      DB_USERNAME: labuser
+      DB_PASSWORD: labpassword
+      DB_NAME: laboratory_service_qa
+      DB_SSL: "false"
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
-      # Si laboratory-service tiene su propia base de datos, 
-      # agrega las variables DB_HOST, DB_NAME, etc. aquí.
     ports:
       - "3012:3012"
+    depends_on:
+      laboratory-db-qa:
+        condition: service_healthy
     networks:
       - uce-qa-network
     restart: unless-stopped
+
+  # ─── QA: Notification Database ───────────────────────
+  notification-db-qa:
+    image: postgres:15-alpine
+    container_name: notification-db-qa
+    environment:
+      POSTGRES_USER: notifuser
+      POSTGRES_PASSWORD: notifpassword
+      POSTGRES_DB: notification_service_qa
+    ports:
+      - "5437:5432"
+    volumes:
+      - notification-db-qa-data:/var/lib/postgresql/data
+    networks:
+      - uce-qa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notifuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ─── QA: Notification Service (puerto 3013) ──────────
   notification-service-qa:
@@ -139,12 +187,20 @@ services:
     environment:
       NODE_ENV: qa
       PORT: 3013
+      DB_HOST: notification-db-qa
+      DB_PORT: 5432
+      DB_USERNAME: notifuser
+      DB_PASSWORD: notifpassword
+      DB_NAME: notification_service_qa
+      DB_SSL: "false"
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
       RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
     ports:
       - "3013:3013"
     depends_on:
+      notification-db-qa:
+        condition: service_healthy
       rabbitmq-qa:
         condition: service_healthy
     networks:
@@ -154,6 +210,8 @@ services:
 volumes:
   auth-db-qa-data:
   reservation-db-qa-data:
+  laboratory-db-qa-data:
+  notification-db-qa-data:
   rabbitmq-qa-data:
 
 networks:
