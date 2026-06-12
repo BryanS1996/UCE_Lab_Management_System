@@ -13,13 +13,13 @@ output "bastion_public_ip" {
   value       = module.bastion.public_ip
 }
 
-output "app_private_ip" {
-  description = "EC2 instance private IP"
-  value       = module.app.private_ip
-}
+# instance_id and app_private_ip are removed — the ASG manages a dynamic fleet.
+# Use asg_name to query running instances via:
+#   aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names <asg_name>
 
-output "ec2_instance_id" {
-  value = module.app.instance_id
+output "asg_name" {
+  description = "Auto Scaling Group name — use to discover running EC2 instances"
+  value       = module.app.asg_name
 }
 
 output "ecr_repository_urls" {
@@ -50,8 +50,9 @@ output "github_secrets_hint" {
   value = {
     QA_ALB_DNS           = module.alb.alb_dns_name
     QA_BASTION_PUBLIC_IP = module.bastion.public_ip
-    QA_APP_PRIVATE_IP    = module.app.private_ip
+    QA_ASG_NAME          = module.app.asg_name
     ECR_REPOS            = join(", ", local.service_repos)
     RDS_ENDPOINT         = var.enable_rds ? module.rds[0].endpoint : "PostgreSQL in Docker"
+    NOTE                 = "QA_APP_PRIVATE_IP is no longer static — SSH via Bastion to any ASG instance"
   }
 }
