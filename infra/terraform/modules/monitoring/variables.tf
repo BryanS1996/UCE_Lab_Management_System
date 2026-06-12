@@ -7,21 +7,31 @@ variable "project_name" {
   default = "uce-lab"
 }
 
-variable "ec2_instance_ids" {
-  type        = list(string)
-  description = "List of EC2 instance IDs to monitor"
-  default     = []
+# Replaced ec2_instance_ids (list) with asg_name (single string).
+# CloudWatch ASG-level metrics use AutoScalingGroupName as the dimension,
+# which aggregates across all instances in the group automatically.
+variable "asg_name" {
+  type        = string
+  description = "Name of the Auto Scaling Group to monitor. Leave empty to skip EC2/ASG alarms."
+  default     = ""
 }
 
 variable "alb_arn" {
   type        = string
-  description = "ALB ARN to monitor"
+  description = "ALB ARN to monitor. Leave empty to skip ALB alarms."
   default     = ""
 }
 
+variable "create_alb_alarms" {
+  type        = bool
+  description = "Set to true to create ALB 5XX and response-time alarms. Must be a static value — cannot depend on a resource attribute (Terraform count constraint)."
+  default     = false
+}
+
+
 variable "cpu_threshold" {
   type        = number
-  description = "CPU utilization threshold percentage"
+  description = "CPU utilization threshold percentage for the ASG scale-out alarm"
   default     = 80
 }
 

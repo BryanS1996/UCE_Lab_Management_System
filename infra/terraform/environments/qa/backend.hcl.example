@@ -2,5 +2,5 @@
 bucket         = "uce-lab-tfstate-123456789012-qa"
 key            = "qa/terraform.tfstate"
 region         = "us-east-1"
-dynamodb_table = "uce-lab-tflock-qa"
+use_lockfile = true
 encrypt        = true

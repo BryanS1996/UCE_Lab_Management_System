@@ -32,6 +32,8 @@ variable "ec2_instance_type" {
 variable "key_pair_name" {
   type        = string
   description = "Key pair creado en la consola AWS de la cuenta PROD"
+  # AWS Academy Learner Lab default key pair — available in every session.
+  default     = "vockey"
 }
 
 variable "iam_instance_profile" {

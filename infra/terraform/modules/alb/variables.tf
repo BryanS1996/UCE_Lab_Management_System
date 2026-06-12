@@ -12,11 +12,8 @@ variable "vpc_id" {
 }
 
 variable "public_subnet_ids" {
-  type = list(string)
-}
-
-variable "ec2_instance_ids" {
-  type = list(string)
+  type        = list(string)
+  description = "List of public subnet IDs for the ALB (minimum 2, in different AZs)"
 }
 
 variable "target_port" {

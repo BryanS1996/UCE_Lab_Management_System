@@ -12,7 +12,6 @@ output "backend_config" {
   description = "Valores para backend.hcl o GitHub Actions"
   value = {
     bucket         = aws_s3_bucket.tfstate.bucket
-    dynamodb_table = aws_dynamodb_table.tflock.name
     region         = var.aws_region
     encrypt        = true
   }

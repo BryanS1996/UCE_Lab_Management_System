@@ -36,5 +36,4 @@ terraform init \
   -backend-config="bucket=${TF_STATE_BUCKET}" \
   -backend-config="key=${STATE_KEY}" \
   -backend-config="region=${REGION}" \
-  -backend-config="dynamodb_table=${TF_LOCK_TABLE}" \
   -backend-config="encrypt=true"
