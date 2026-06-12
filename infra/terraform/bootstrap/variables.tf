@@ -24,9 +24,3 @@ variable "bucket_name" {
   description = "Opcional. Por defecto: uce-lab-tfstate-{account_id}-{environment}"
   default     = null
 }
-
-variable "lock_table_name" {
-  type        = string
-  description = "Opcional. Por defecto: uce-lab-tflock-{environment}"
-  default     = null
-}

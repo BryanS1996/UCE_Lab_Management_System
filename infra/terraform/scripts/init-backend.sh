@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Inicializa Terraform con backend S3.
 # Uso local:  ./init-backend.sh qa
-# Uso CI:     TF_STATE_BUCKET=... TF_LOCK_TABLE=... ./init-backend.sh qa
+# Uso CI:     TF_STATE_BUCKET=... ./init-backend.sh qa
 
 set -euo pipefail
 
@@ -25,8 +25,8 @@ if [[ -f backend.hcl ]]; then
   exit 0
 fi
 
-if [[ -z "${TF_STATE_BUCKET:-}" || -z "${TF_LOCK_TABLE:-}" ]]; then
-  echo "ERROR: Define TF_STATE_BUCKET y TF_LOCK_TABLE, o crea backend.hcl desde backend.hcl.example" >&2
+if [[ -z "${TF_STATE_BUCKET:-}" ]]; then
+  echo "ERROR: Define TF_STATE_BUCKET, o crea backend.hcl desde backend.hcl.example" >&2
   echo "Ejecuta primero: cd infra/terraform/bootstrap && terraform apply" >&2
   exit 1
 fi

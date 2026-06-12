@@ -1,4 +1,4 @@
-# Bootstrap: crear bucket S3 + tabla DynamoDB para estado remoto.
+# Bootstrap: crear bucket S3 para estado remoto de Terraform.
 # Ejecutar UNA VEZ por cuenta AWS (QA y Prod por separado).
 # Usa backend local; no depende de otro estado remoto.
 
@@ -24,10 +24,6 @@ locals {
   bucket_name = coalesce(
     var.bucket_name,
     "${var.project_name}-tfstate-${data.aws_caller_identity.current.account_id}-${var.environment}"
-  )
-  lock_table_name = coalesce(
-    var.lock_table_name,
-    "${var.project_name}-tflock-${var.environment}"
   )
 }
 
