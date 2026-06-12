@@ -13,10 +13,10 @@ const dev: ServiceUrls = {
 };
 
 const qa: ServiceUrls = {
-  auth: 'http://localhost:3010',
-  reservation: 'http://localhost:3011',
-  laboratory: 'http://localhost:3012',
-  notification: 'http://localhost:3013',
+  auth: '/api/auth',
+  reservation: '/api/reservations',
+  laboratory: '/api/laboratories',
+  notification: '/api/notifications',
 };
 
 const env = new URLSearchParams(window.location.search).get('env');
