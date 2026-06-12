@@ -1,19 +1,19 @@
-output "ec2_cpu_alarm_arns" {
-  value       = aws_cloudwatch_metric_alarm.ec2_cpu_high[*].arn
-  description = "ARNs of EC2 CPU utilization alarms"
+output "asg_cpu_alarm_arn" {
+  description = "ARN of the ASG CPU utilization alarm (null when asg_name is not provided)"
+  value       = var.asg_name != "" ? aws_cloudwatch_metric_alarm.asg_cpu_high[0].arn : null
 }
 
-output "ec2_status_check_alarm_arns" {
-  value       = aws_cloudwatch_metric_alarm.ec2_status_check[*].arn
-  description = "ARNs of EC2 status check alarms"
+output "asg_status_check_alarm_arn" {
+  description = "ARN of the ASG status check alarm (null when asg_name is not provided)"
+  value       = var.asg_name != "" ? aws_cloudwatch_metric_alarm.asg_status_check[0].arn : null
 }
 
 output "alb_5xx_alarm_arn" {
-  value       = var.alb_arn != "" ? aws_cloudwatch_metric_alarm.alb_5xx_errors[0].arn : null
-  description = "ARN of ALB 5XX error alarm"
+  description = "ARN of the ALB 5XX error alarm (null when alb_arn is not provided)"
+  value       = var.create_alb_alarms ? aws_cloudwatch_metric_alarm.alb_5xx_errors[0].arn : null
 }
 
 output "alb_response_time_alarm_arn" {
-  value       = var.alb_arn != "" ? aws_cloudwatch_metric_alarm.alb_target_response_time[0].arn : null
-  description = "ARN of ALB response time alarm"
+  description = "ARN of the ALB response time alarm (null when alb_arn is not provided)"
+  value       = var.create_alb_alarms ? aws_cloudwatch_metric_alarm.alb_target_response_time[0].arn : null
 }

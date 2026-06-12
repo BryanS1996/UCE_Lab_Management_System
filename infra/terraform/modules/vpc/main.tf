@@ -23,7 +23,18 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "${var.project_name}-public-${var.environment}"
+    Name = "${var.project_name}-public-1-${var.environment}"
+  }
+}
+
+resource "aws_subnet" "public_2" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet(var.cidr_block, 8, 2)
+  availability_zone       = var.availability_zone_secondary
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "${var.project_name}-public-2-${var.environment}"
   }
 }
 
@@ -62,6 +73,11 @@ resource "aws_route_table" "public" {
 
 resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "public_2" {
+  subnet_id      = aws_subnet.public_2.id
   route_table_id = aws_route_table.public.id
 }
 

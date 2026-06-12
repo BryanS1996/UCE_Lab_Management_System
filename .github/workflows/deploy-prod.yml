@@ -37,6 +37,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ── AWS Auth ────────────────────────────────────────────────────────────
+      # Explicitly passes AWS_SESSION_TOKEN for AWS Academy temporary credentials.
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -45,65 +47,104 @@ jobs:
           aws-session-token: ${{ secrets.PROD_AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set AWS credentials for SSH steps
-        run: |
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.PROD_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-          echo "AWS_SESSION_TOKEN=${{ secrets.PROD_AWS_SESSION_TOKEN }}" >> $GITHUB_ENV
-
       - name: Login ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # ── Build & Push ────────────────────────────────────────────────────────
       - name: Build & Push all services
         run: |
           for service in auth-service reservation-service laboratory-service notification-service; do
             echo "Building $service..."
-            docker build -t ${{ steps.login-ecr.outputs.registry }}/uce-$service:latest \
+            docker build \
+              -t ${{ steps.login-ecr.outputs.registry }}/uce-$service:latest \
               -t ${{ steps.login-ecr.outputs.registry }}/uce-$service:${{ github.sha }} \
               services/$service
             docker push ${{ steps.login-ecr.outputs.registry }}/uce-$service:latest
             docker push ${{ steps.login-ecr.outputs.registry }}/uce-$service:${{ github.sha }}
           done
 
-      - name: Copy compose file to Production EC2
+      # ── Dynamic IP Discovery ────────────────────────────────────────────────
+      # Queries AWS for all RUNNING instances in the Production ASG by Name tag.
+      # Formats the private IPs as a comma-separated string for appleboy/ssh-action.
+      # No hardcoded IP secrets needed — works with ephemeral ASG instances.
+      - name: Discover Production ASG instance IPs
+        id: discover-ips
+        run: |
+          ASG_NAME="uce-lab-asg-prod"
+
+          # Fetch private IPs of all running instances tagged with the ASG name.
+          # The ASG automatically tags instances with: Name=<asg-name> and
+          # aws:autoscaling:groupName=<asg-name>. We filter on the latter to be
+          # precise, falling back to the Name tag which the launch template sets.
+          PRIVATE_IPS=$(aws ec2 describe-instances \
+            --filters \
+              "Name=tag:aws:autoscaling:groupName,Values=${ASG_NAME}" \
+              "Name=instance-state-name,Values=running" \
+            --query "Reservations[*].Instances[*].PrivateIpAddress" \
+            --output text \
+            --region ${{ env.AWS_REGION }} \
+          | tr '\t\n' ',' | sed 's/,$//')
+
+          # Validate that we found at least one IP before proceeding.
+          if [ -z "$PRIVATE_IPS" ]; then
+            echo "::error::No running instances found in ASG '${ASG_NAME}'. " \
+                 "Ensure the Production environment was applied and instances are healthy."
+            exit 1
+          fi
+
+          echo "Discovered Production instance IPs: ${PRIVATE_IPS}"
+          # Write to GITHUB_OUTPUT so subsequent steps can reference it.
+          echo "app_ips=${PRIVATE_IPS}" >> "$GITHUB_OUTPUT"
+
+      # ── SCP: copy compose file to ALL app instances ─────────────────────────
+      # appleboy/scp-action also supports comma-separated hosts.
+      - name: Copy compose file to Production EC2 instances
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.PROD_APP_PRIVATE_IP }}
+          host: ${{ steps.discover-ips.outputs.app_ips }}
           username: ec2-user
-          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          key: ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}
           proxy_host: ${{ secrets.PROD_BASTION_PUBLIC_IP }}
           proxy_username: ec2-user
-          proxy_key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          proxy_key: ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}
           source: docker-compose.prod.yml
           target: /home/ec2-user/app/
 
-      - name: Deploy to Production EC2
+      # ── SSH Deploy ──────────────────────────────────────────────────────────
+      # appleboy/ssh-action runs the script on ALL hosts when given a comma-
+      # separated list — each instance pulls and restarts its containers.
+      - name: Deploy to Production EC2 instances
         uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ steps.discover-ips.outputs.app_ips }}
+          username: ec2-user
+          key: ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}
+          proxy_host: ${{ secrets.PROD_BASTION_PUBLIC_IP }}
+          proxy_username: ec2-user
+          proxy_key: ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}
+          # 'envs' securely injects variables into the remote shell.
+          # They are NOT interpolated as plaintext into the script string.
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,IMAGE_TAG,ECR_REGISTRY
+          # sync: true ensures the script runs sequentially on each host,
+          # providing a controlled rolling-style deploy across the ASG fleet.
+          sync: true
+          script: |
+            cd /home/ec2-user/app
+            # Re-authenticate with ECR using the session credentials passed via envs.
+            aws ecr get-login-password --region "$AWS_REGION" \
+              | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
+            sleep 25
+            curl -sf http://localhost:3000/health && echo "✅ Auth PROD OK"
+            curl -sf http://localhost:3001/health && echo "✅ Reservation PROD OK"
+            curl -sf http://localhost:3002/health && echo "✅ Laboratory PROD OK"
+            curl -sf http://localhost:3003/health && echo "✅ Notification PROD OK"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
           AWS_SESSION_TOKEN: ${{ secrets.PROD_AWS_SESSION_TOKEN }}
           AWS_REGION: ${{ env.AWS_REGION }}
-        with:
-          host: ${{ secrets.PROD_APP_PRIVATE_IP }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          proxy_host: ${{ secrets.PROD_BASTION_PUBLIC_IP }}
-          proxy_username: ec2-user
-          proxy_key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          script: |
-            cd /home/ec2-user/app
-            export IMAGE_TAG=${{ github.sha }}
-            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-            export AWS_ACCESS_KEY_ID=${{ env.AWS_ACCESS_KEY_ID }}
-            export AWS_SECRET_ACCESS_KEY=${{ env.AWS_SECRET_ACCESS_KEY }}
-            export AWS_SESSION_TOKEN=${{ env.AWS_SESSION_TOKEN }}
-            aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
-            sleep 25
-            curl -f http://localhost:3000/health && echo " Auth PROD OK"
-            curl -f http://localhost:3001/health && echo " Reservation PROD OK"
-            curl -f http://localhost:3002/health && echo " Laboratory PROD OK"
-            curl -f http://localhost:3003/health && echo " Notification PROD OK"
+          IMAGE_TAG: ${{ github.sha }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}

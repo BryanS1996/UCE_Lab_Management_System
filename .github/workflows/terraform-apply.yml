@@ -52,7 +52,6 @@ jobs:
         working-directory: infra/terraform/environments/${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}
         run: |
           terraform apply -auto-approve \
-            -var="key_pair_name=${{ vars.TF_KEY_PAIR_NAME }}" \
             -var="enable_rds=${{ github.ref == 'refs/heads/main' && 'true' || 'false' }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             ${{ github.ref == 'refs/heads/main' && '-var="jwt_secret=${{ secrets.JWT_SECRET }}"' || '' }} \

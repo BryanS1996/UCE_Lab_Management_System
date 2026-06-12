@@ -52,7 +52,6 @@ jobs:
         working-directory: infra/terraform/environments/${{ github.base_ref == 'main' && 'prod' || 'qa' }}
         run: |
           terraform plan \
-            -var="key_pair_name=${{ vars.TF_KEY_PAIR_NAME }}" \
             -var="enable_rds=${{ github.base_ref == 'main' && 'true' || 'false' }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             ${{ github.base_ref == 'main' && '-var="jwt_secret=${{ secrets.JWT_SECRET }}"' || '' }} \
