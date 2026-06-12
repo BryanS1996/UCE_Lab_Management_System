@@ -6,7 +6,9 @@ locals {
     "uce-notification-service",
     "uce-frontend",
   ]
-  service_ports    = [3010, 3011, 3012, 3013]
+  # ¡Aquí está el cambio! Agregamos el puerto 80 para permitir el tráfico del Balanceador y el Health Check
+  service_ports    = [80, 3010, 3011, 3012, 3013]
+  
   # ALB forwards public traffic to port 80 (nginx frontend).
   # Nginx serves the React SPA and proxies /api/* calls to the backend services.
   api_gateway_port = 80
