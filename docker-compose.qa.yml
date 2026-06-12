@@ -1,3 +1,4 @@
+version: '3.8'
 
 services:
   # ─── QA: Auth Database ───────────────────────────────
@@ -22,7 +23,7 @@ services:
 
   # ─── QA: Auth Service (puerto 3010) ──────────────────
   auth-service-qa:
-    image: bryanfabricio96/auth-service:qa
+    image: ${ECR_REGISTRY}/uce-auth-service:${IMAGE_TAG:-qa-latest}
     container_name: auth-service-qa
     pull_policy: always
     environment:
@@ -42,6 +43,7 @@ services:
         condition: service_healthy
     networks:
       - uce-qa-network
+    restart: unless-stopped
 
   # ─── QA: Reservation Database ────────────────────────
   reservation-db-qa:
@@ -85,7 +87,7 @@ services:
 
   # ─── QA: Reservation Service (puerto 3011) ───────────
   reservation-service-qa:
-    image: bryanfabricio96/reservation-service:qa
+    image: ${ECR_REGISTRY}/uce-reservation-service:${IMAGE_TAG:-qa-latest}
     container_name: reservation-service-qa
     pull_policy: always
     environment:
@@ -105,6 +107,44 @@ services:
     depends_on:
       reservation-db-qa:
         condition: service_healthy
+      rabbitmq-qa:
+        condition: service_healthy
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+
+  # ─── QA: Laboratory Service (puerto 3012) ────────────
+  laboratory-service-qa:
+    image: ${ECR_REGISTRY}/uce-laboratory-service:${IMAGE_TAG:-qa-latest}
+    container_name: laboratory-service-qa
+    pull_policy: always
+    environment:
+      NODE_ENV: qa
+      PORT: 3012
+      JWT_SECRET: qa-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+      # Si laboratory-service tiene su propia base de datos, 
+      # agrega las variables DB_HOST, DB_NAME, etc. aquí.
+    ports:
+      - "3012:3012"
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+
+  # ─── QA: Notification Service (puerto 3013) ──────────
+  notification-service-qa:
+    image: ${ECR_REGISTRY}/uce-notification-service:${IMAGE_TAG:-qa-latest}
+    container_name: notification-service-qa
+    pull_policy: always
+    environment:
+      NODE_ENV: qa
+      PORT: 3013
+      JWT_SECRET: qa-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
+    ports:
+      - "3013:3013"
+    depends_on:
       rabbitmq-qa:
         condition: service_healthy
     networks:
