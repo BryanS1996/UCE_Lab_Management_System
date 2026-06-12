@@ -70,6 +70,8 @@ module "app" {
   bastion_security_group_id = module.bastion.security_group_id
   # Wire the ALB Target Group ARN so the ASG auto-registers instances
   target_group_arn          = module.alb.target_group_arn
+  # ECR registry URL for auto-healing
+  ecr_registry              = "${module.ecr.registry_id}.dkr.ecr.us-east-1.amazonaws.com"
   # QA cost optimization: run minimum instances
   min_size                  = 1
   desired_capacity          = 1

@@ -57,9 +57,10 @@ resource "aws_lb_target_group" "main" {
 
   health_check {
     enabled             = true
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    interval            = 30
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+    interval            = 60
+    timeout             = 30
     # "traffic-port" is the correct string sentinel — uses the TG port automatically
     port     = "traffic-port"
     path     = var.health_check_path

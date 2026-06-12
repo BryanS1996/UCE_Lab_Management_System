@@ -42,6 +42,11 @@ variable "bastion_security_group_id" {
   description = "Security Group ID of the Bastion Host"
 }
 
+variable "ecr_registry" {
+  type        = string
+  description = "ECR Registry URL for pulling Docker images"
+}
+
 variable "target_group_arn" {
   type        = string
   description = "ARN of the ALB Target Group to attach the ASG to"

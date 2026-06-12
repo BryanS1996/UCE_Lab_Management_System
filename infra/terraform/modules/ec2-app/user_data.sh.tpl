@@ -29,4 +29,78 @@ docker compose version
 mkdir -p /home/ec2-user/app
 chown -R ec2-user:ec2-user /home/ec2-user/app
 
-echo "UCE Lab app server (${environment}) listo para deploy via GitHub Actions" > /home/ec2-user/app/README.txt
+# --- 5. Auto-Healing: Login a ECR y levantar contenedores iniciales ---
+# Login a ECR usando el perfil IAM de la instancia
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${ecr_registry}
+
+# Crear docker-compose básico para auto-healing
+cat > /home/ec2-user/app/docker-compose.autoheal.yml <<'EOF'
+version: '3.8'
+services:
+  auth-service:
+    image: ${ecr_registry}/uce-auth-service:latest
+    container_name: auth-service-autoheal
+    ports:
+      - "3010:3010"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  reservation-service:
+    image: ${ecr_registry}/uce-reservation-service:latest
+    container_name: reservation-service-autoheal
+    ports:
+      - "3011:3011"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  laboratory-service:
+    image: ${ecr_registry}/uce-laboratory-service:latest
+    container_name: laboratory-service-autoheal
+    ports:
+      - "3012:3012"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  notification-service:
+    image: ${ecr_registry}/uce-notification-service:latest
+    container_name: notification-service-autoheal
+    ports:
+      - "3013:3013"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3013/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    image: ${ecr_registry}/uce-frontend:latest
+    container_name: frontend-autoheal
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health.html"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+EOF
+
+# Pull y levantar contenedores para auto-healing
+cd /home/ec2-user/app
+docker compose -f docker-compose.autoheal.yml pull
+docker compose -f docker-compose.autoheal.yml up -d
+
+echo "UCE Lab app server (${environment}) inicializado con auto-healing via ECR" > /home/ec2-user/app/README.txt
