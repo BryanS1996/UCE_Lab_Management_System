@@ -154,6 +154,12 @@ jobs:
           # providing a controlled rolling-style deploy across the ASG fleet.
           sync: true
           script: |
+            # Wait for EC2 user_data script to finish installing Docker
+            while ! command -v docker &> /dev/null; do
+              echo "⏳ Waiting for Docker to finish installing..."
+              sleep 10
+            done
+            
             cd /home/ec2-user/app
             # Re-authenticate with ECR using the session credentials passed via envs.
             aws ecr get-login-password --region "$AWS_REGION" \
