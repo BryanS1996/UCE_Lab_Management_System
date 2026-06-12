@@ -6,10 +6,19 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { LoginDto, RegisterDto, ChangePasswordDto } from './dto';
+import { JwtPayload, JwtSigningPayload } from './interfaces';
+import { User } from '../database/entities';
 import * as bcrypt from 'bcrypt';
+
+type UserWithRoles = Pick<User, 'id' | 'email' | 'firstName' | 'lastName'> & {
+  roles?: { name: string }[];
+};
 
 @Injectable()
 export class AuthService {
+  private static readonly ACCESS_TOKEN_TTL = '15m';
+  private static readonly REFRESH_TOKEN_TTL = '7d';
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -32,13 +41,18 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.usersService.findByEmailWithPassword(loginDto.email);
+    const user = await this.usersService.findByEmailWithPassword(
+      loginDto.email,
+    );
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const passwordMatch = await bcrypt.compare(loginDto.password, user.password);
+    const passwordMatch = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
     if (!passwordMatch) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -68,6 +82,30 @@ export class AuthService {
     return { message: 'Password updated successfully' };
   }
 
+  async refreshTokens(refreshToken: string) {
+    let payload: JwtPayload;
+
+    try {
+      payload = this.jwtService.verify<JwtPayload>(refreshToken, {
+        issuer: 'auth-service',
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    if (!payload.sub || !payload.email || !payload.role) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
+
+    const user = await this.usersService.findById(payload.sub);
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('User not found or inactive');
+    }
+
+    return this.generateTokens(user);
+  }
+
   async validateUser(email: string, password: string) {
     const user = await this.usersService.findByEmailWithPassword(email);
 
@@ -78,19 +116,23 @@ export class AuthService {
     return null;
   }
 
-  private generateTokens(user: any) {
-    const payload = {
-      email: user.email,
+  private buildSigningPayload(user: UserWithRoles): JwtSigningPayload {
+    return {
       sub: user.id,
+      email: user.email,
       role: user.roles?.[0]?.name ?? 'STUDENT',
     };
+  }
+
+  private generateTokens(user: UserWithRoles) {
+    const payload = this.buildSigningPayload(user);
 
     return {
       accessToken: this.jwtService.sign(payload, {
-        expiresIn: '15m',
+        expiresIn: AuthService.ACCESS_TOKEN_TTL,
       }),
       refreshToken: this.jwtService.sign(payload, {
-        expiresIn: '7d',
+        expiresIn: AuthService.REFRESH_TOKEN_TTL,
       }),
       user: {
         id: user.id,

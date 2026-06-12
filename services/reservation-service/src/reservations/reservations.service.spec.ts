@@ -270,7 +270,7 @@ describe('ReservationsService', () => {
       mockReservationRepository.findOne.mockResolvedValue(mockReservation);
       mockReservationRepository.save.mockResolvedValue(confirmedReservation);
 
-      const result = await service.confirm('res-uuid-789', mockAdminUser);
+      const result = await service.confirm('res-uuid-789');
 
       expect(result.status).toBe(ReservationStatus.CONFIRMED);
       expect(mockRabbitmqService.publishReservationConfirmed).toHaveBeenCalledTimes(1);
@@ -283,7 +283,7 @@ describe('ReservationsService', () => {
       });
 
       await expect(
-        service.confirm('res-uuid-789', mockAdminUser),
+        service.confirm('res-uuid-789'),
       ).rejects.toThrow(BadRequestException);
     });
   });

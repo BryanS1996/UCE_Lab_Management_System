@@ -131,10 +131,122 @@ services:
       - uce-network
     restart: unless-stopped
 
+  # ─────────────────────────────────────────────────────
+  # BASE DE DATOS: Laboratory Service
+  # ─────────────────────────────────────────────────────
+  laboratory-db:
+    image: postgres:15-alpine
+    container_name: laboratory-db
+    environment:
+      POSTGRES_USER: labuser
+      POSTGRES_PASSWORD: labpassword
+      POSTGRES_DB: laboratory_service
+    ports:
+      - "5436:5432"
+    volumes:
+      - laboratory-db-data:/var/lib/postgresql/data
+    networks:
+      - uce-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────────────
+  # MICROSERVICIO: Laboratory Service
+  # ─────────────────────────────────────────────────────
+  laboratory-service:
+    build:
+      context: ./services/laboratory-service
+      dockerfile: Dockerfile
+    container_name: laboratory-service
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DB_HOST: laboratory-db
+      DB_PORT: 5432
+      DB_USERNAME: labuser
+      DB_PASSWORD: labpassword
+      DB_NAME: laboratory_service
+      DB_SSL: "false"
+      JWT_SECRET: your-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "3002:3002"
+    depends_on:
+      laboratory-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./services/laboratory-service/src:/app/src
+    networks:
+      - uce-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────────────────
+  # BASE DE DATOS: Notification Service
+  # ─────────────────────────────────────────────────────
+  notification-db:
+    image: postgres:15-alpine
+    container_name: notification-db
+    environment:
+      POSTGRES_USER: notifuser
+      POSTGRES_PASSWORD: notifpassword
+      POSTGRES_DB: notification_service
+    ports:
+      - "5437:5432"
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+    networks:
+      - uce-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notifuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────────────
+  # MICROSERVICIO: Notification Service
+  # ─────────────────────────────────────────────────────
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      DB_HOST: notification-db
+      DB_PORT: 5432
+      DB_USERNAME: notifuser
+      DB_PASSWORD: notifpassword
+      DB_NAME: notification_service
+      DB_SSL: "false"
+      JWT_SECRET: your-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "3003:3003"
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./services/notification-service/src:/app/src
+    networks:
+      - uce-network
+    restart: unless-stopped
+
 volumes:
   auth-db-data:
   reservation-db-data:
   rabbitmq-data:
+  laboratory-db-data:
+  notification-db-data:
 
 networks:
   uce-network:

@@ -1,0 +1,11 @@
+# Copiar a terraform.tfvars (esta archivo esta en .gitignore)
+aws_region        = "us-east-1"
+aws_profile       = "qa"
+key_pair_name     = "uce-lab-qa-key"
+ec2_instance_type = "t2.micro"
+enable_rds        = false
+allocate_eip      = true
+ssh_cidr_blocks   = ["0.0.0.0/0"]
+
+# Solo si enable_rds = true:
+# db_password = "cambiar-password-seguro"
