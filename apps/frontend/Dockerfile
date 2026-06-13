@@ -12,7 +12,7 @@ RUN npm ci --legacy-peer-deps
 # Copiar el código fuente
 COPY . .
 
-# Compilar la aplicación Vite (genera carpeta dist/)
+# Compilar la aplicación React con Vite (genera carpeta dist/)
 RUN npm run build
 
 # ─── Stage 2: Runtime (Nginx) ────────────────────────────────────────
@@ -23,6 +23,9 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copiar archivos compilados del stage anterior a la carpeta de Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Crear archivo health.html para health checks
+RUN echo "healthy" > /usr/share/nginx/html/health.html
 
 # Exponer puerto 80
 EXPOSE 80

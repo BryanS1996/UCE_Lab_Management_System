@@ -149,6 +149,11 @@ export const endpoints = {
   reservationHealth: () => apiFetch(apiUrls.reservation, '/health'),
   reservationMy: () => apiFetch(apiUrls.reservation, '/reservations/my'),
   reservationLabs: () => apiFetch(apiUrls.reservation, '/laboratories'),
+  reservationCreate: (body: Record<string, unknown>) =>
+    apiFetch(apiUrls.reservation, '/reservations', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   laboratoryHealth: () => apiFetch(apiUrls.laboratory, '/health'),
   laboratoryList: () => apiFetch(apiUrls.laboratory, '/laboratories'),
   notificationHealth: () => apiFetch(apiUrls.notification, '/health'),
