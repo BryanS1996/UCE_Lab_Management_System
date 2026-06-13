@@ -13,9 +13,25 @@ interface Reservation {
 
 interface ReservationsSectionProps {
   isAuthenticated: boolean;
+  selectedLabId?: string;
+  selectedLabName?: string;
+  onClearSelection?: () => void;
 }
 
-const ReservationsSection: React.FC<ReservationsSectionProps> = ({ isAuthenticated }) => {
+const TIME_SLOTS = [
+  { label: '07:00 - 09:00', start: '07:00', end: '09:00' },
+  { label: '09:00 - 11:00', start: '09:00', end: '11:00' },
+  { label: '11:00 - 13:00', start: '11:00', end: '13:00' },
+  { label: '14:00 - 16:00', start: '14:00', end: '16:00' },
+  { label: '16:00 - 18:00', start: '16:00', end: '18:00' },
+];
+
+const ReservationsSection: React.FC<ReservationsSectionProps> = ({ 
+  isAuthenticated, 
+  selectedLabId, 
+  selectedLabName,
+  onClearSelection 
+}) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,11 +39,19 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ isAuthenticat
 
   // Form state
   const [formData, setFormData] = useState({
-    laboratoryId: '',
-    startTime: '',
-    endTime: '',
+    laboratoryId: selectedLabId || '',
+    date: '',
+    slot: '',
     purpose: '',
   });
+
+  // Update laboratoryId when selectedLabId changes
+  useEffect(() => {
+    if (selectedLabId) {
+      setFormData(prev => ({ ...prev, laboratoryId: selectedLabId }));
+      setShowForm(true);
+    }
+  }, [selectedLabId]);
 
   const fetchReservations = async () => {
     setLoading(true);
@@ -48,20 +72,48 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ isAuthenticat
     }
   }, [isAuthenticated]);
 
+  const combineDateAndSlot = (date: string, slot: string) => {
+    const selectedSlot = TIME_SLOTS.find(s => s.label === slot);
+    if (!selectedSlot) return null;
+
+    const [startHour, startMin] = selectedSlot.start.split(':').map(Number);
+    const [endHour, endMin] = selectedSlot.end.split(':').map(Number);
+
+    const startDate = new Date(date);
+    startDate.setHours(startHour, startMin, 0, 0);
+
+    const endDate = new Date(date);
+    endDate.setHours(endHour, endMin, 0, 0);
+
+    return {
+      startTime: startDate.toISOString(),
+      endTime: endDate.toISOString(),
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
+      const times = combineDateAndSlot(formData.date, formData.slot);
+      if (!times) {
+        setError('Por favor selecciona un horario válido');
+        setLoading(false);
+        return;
+      }
+
       await endpoints.reservationCreate({
-        laboratoryId: formData.laboratoryId,
-        startTime: formData.startTime,
-        endTime: formData.endTime,
+        laboratoryId: Number(formData.laboratoryId),
+        startTime: times.startTime,
+        endTime: times.endTime,
         purpose: formData.purpose,
       });
+
       setShowForm(false);
-      setFormData({ laboratoryId: '', startTime: '', endTime: '', purpose: '' });
+      setFormData({ laboratoryId: '', date: '', slot: '', purpose: '' });
+      if (onClearSelection) onClearSelection();
       fetchReservations();
     } catch (err: any) {
       setError(err.message || 'Error al crear reservación');
@@ -109,7 +161,10 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ isAuthenticat
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-uce-navy">Mis Reservaciones</h2>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            setShowForm(!showForm);
+            if (!showForm && onClearSelection) onClearSelection();
+          }}
           className="px-4 py-2 text-sm font-medium text-white bg-uce-blue rounded-md hover:bg-uce-purple transition-colors"
         >
           {showForm ? 'Cancelar' : 'Nueva Reservación'}
@@ -124,38 +179,48 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({ isAuthenticat
 
       {showForm && (
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-semibold text-gray-900 mb-4">Crear Nueva Reservación</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">
+            {selectedLabName ? `Reservar: ${selectedLabName}` : 'Crear Nueva Reservación'}
+          </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">ID del Laboratorio</label>
               <input
-                type="text"
+                type="number"
+                min="1"
                 value={formData.laboratoryId}
                 onChange={(e) => setFormData({ ...formData, laboratoryId: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-uce-blue"
                 required
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora Inicio</label>
-                <input
-                  type="datetime-local"
-                  value={formData.startTime}
-                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-uce-blue"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora Fin</label>
-                <input
-                  type="datetime-local"
-                  value={formData.endTime}
-                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-uce-blue"
-                  required
-                />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-uce-blue"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Bloque de Horario</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {TIME_SLOTS.map((slot) => (
+                  <button
+                    key={slot.label}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, slot: slot.label })}
+                    className={`px-3 py-2 text-sm font-medium rounded-lg border-2 transition-all ${
+                      formData.slot === slot.label
+                        ? 'border-uce-purple bg-uce-purple text-white'
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-uce-blue'
+                    }`}
+                  >
+                    {slot.label}
+                  </button>
+                ))}
               </div>
             </div>
             <div>

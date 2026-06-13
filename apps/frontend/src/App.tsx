@@ -17,6 +17,8 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedLabId, setSelectedLabId] = useState<string>('');
+  const [selectedLabName, setSelectedLabName] = useState<string>('');
 
   useEffect(() => {
     checkAuth();
@@ -53,6 +55,18 @@ function App() {
     setUnreadCount(count);
   };
 
+  const handleReserveLab = (labId: string, labName: string) => {
+    setSelectedLabId(labId);
+    setSelectedLabName(labName);
+    // Scroll to reservations section
+    document.getElementById('reservations-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedLabId('');
+    setSelectedLabName('');
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
       <Header 
@@ -77,8 +91,16 @@ function App() {
           <div className="lg:col-span-2 space-y-6">
             {isAuthenticated && (
               <>
-                <LaboratoriesSection isAuthenticated={isAuthenticated} />
-                <ReservationsSection isAuthenticated={isAuthenticated} />
+                <LaboratoriesSection 
+                  isAuthenticated={isAuthenticated} 
+                  onReserveLab={handleReserveLab}
+                />
+                <ReservationsSection 
+                  isAuthenticated={isAuthenticated}
+                  selectedLabId={selectedLabId}
+                  selectedLabName={selectedLabName}
+                  onClearSelection={handleClearSelection}
+                />
               </>
             )}
           </div>
