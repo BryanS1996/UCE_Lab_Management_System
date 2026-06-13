@@ -28,10 +28,10 @@ function App() {
       const payload = decodeJwtPayload(token);
       if (payload) {
         setUser({
-          email: payload.email || '',
-          role: payload.role || 'USER',
-          firstName: payload.firstName,
-          lastName: payload.lastName,
+          email: (payload.email as string) || '',
+          role: (payload.role as string) || 'USER',
+          firstName: payload.firstName as string | undefined,
+          lastName: payload.lastName as string | undefined,
         });
         setIsAuthenticated(true);
       }
