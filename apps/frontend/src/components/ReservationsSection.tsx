@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, Plus, Building2 } from 'lucide-react';
 import { endpoints } from '../api';
 
 interface Reservation {
@@ -8,6 +9,16 @@ interface Reservation {
   startTime: string;
   endTime: string;
   purpose: string;
+  status: string;
+}
+
+interface Laboratory {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  capacity: number;
+  type: string;
   status: string;
 }
 
@@ -33,6 +44,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
   onClearSelection 
 }) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [laboratories, setLaboratories] = useState<Laboratory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -66,9 +78,19 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
     }
   };
 
+  const fetchLaboratories = async () => {
+    try {
+      const data = await endpoints.laboratoryList() as Laboratory[];
+      setLaboratories(data);
+    } catch (err: any) {
+      console.error('Error al cargar laboratorios:', err);
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchReservations();
+      fetchLaboratories();
     }
   }, [isAuthenticated]);
 
@@ -105,9 +127,9 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
       }
 
       await endpoints.reservationCreate({
-        laboratoryId: Number(formData.laboratoryId),
-        startTime: times.startTime,
-        endTime: times.endTime,
+        lab_id: Number(formData.laboratoryId),
+        start_time: times.startTime,
+        end_time: times.endTime,
         purpose: formData.purpose,
       });
 
@@ -122,34 +144,45 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch ((status || '').toUpperCase()) {
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'CONFIRMED':
-        return 'bg-green-100 text-green-800';
-      case 'CANCELLED':
-        return 'bg-red-100 text-red-800';
-      case 'COMPLETED':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const getStatusBadge = (status: string) => {
+    const statusUpper = (status || '').toUpperCase();
+    if (statusUpper === 'CONFIRMED') {
+      return (
+        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-xs font-semibold tracking-wide flex items-center gap-1">
+          <CheckCircle className="w-3 h-3" />
+          Confirmada
+        </span>
+      );
     }
-  };
-
-  const getStatusText = (status: string) => {
-    switch ((status || '').toUpperCase()) {
-      case 'PENDING':
-        return 'Pendiente';
-      case 'CONFIRMED':
-        return 'Confirmada';
-      case 'CANCELLED':
-        return 'Cancelada';
-      case 'COMPLETED':
-        return 'Completada';
-      default:
-        return status;
+    if (statusUpper === 'PENDING') {
+      return (
+        <span className="bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-1 rounded-full text-xs font-semibold tracking-wide flex items-center gap-1">
+          <AlertCircle className="w-3 h-3" />
+          Pendiente
+        </span>
+      );
     }
+    if (statusUpper === 'CANCELLED') {
+      return (
+        <span className="bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full text-xs font-semibold tracking-wide flex items-center gap-1">
+          <XCircle className="w-3 h-3" />
+          Cancelada
+        </span>
+      );
+    }
+    if (statusUpper === 'COMPLETED') {
+      return (
+        <span className="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full text-xs font-semibold tracking-wide flex items-center gap-1">
+          <CheckCircle className="w-3 h-3" />
+          Completada
+        </span>
+      );
+    }
+    return (
+      <span className="bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1 rounded-full text-xs font-semibold tracking-wide flex items-center gap-1">
+        {status || 'Desconocido'}
+      </span>
+    );
   };
 
   if (!isAuthenticated) {
@@ -157,65 +190,94 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
   }
 
   return (
-    <div id="reservations-section" className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-uce-navy">Mis Reservaciones</h2>
+    <div id="reservations-section" className="bg-white rounded-2xl shadow-sm p-8">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Mis Reservaciones</h2>
+          <p className="text-sm text-gray-500 mt-1">Gestiona tus reservas de laboratorios</p>
+        </div>
         <button
           onClick={() => {
             setShowForm(!showForm);
             if (!showForm && onClearSelection) onClearSelection();
           }}
-          className="px-4 py-2 text-sm font-medium text-white bg-uce-blue rounded-md hover:bg-uce-purple transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md hover:shadow-lg"
         >
-          {showForm ? 'Cancelar' : 'Nueva Reservación'}
+          {showForm ? (
+            <>
+              <XCircle className="w-4 h-4" />
+              Cancelar
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4" />
+              Nueva Reservación
+            </>
+          )}
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
           <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
 
       {showForm && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-semibold text-gray-900 mb-4">
+        <div className="mb-8 p-6 bg-gray-50 rounded-2xl">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">
             {selectedLabName ? `Reservar: ${selectedLabName}` : 'Crear Nueva Reservación'}
           </h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ID del Laboratorio</label>
-              <input
-                type="number"
-                min="1"
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                <Building2 className="w-4 h-4" />
+                Laboratorio
+              </label>
+              <select
                 value={formData.laboratoryId}
                 onChange={(e) => setFormData({ ...formData, laboratoryId: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-uce-blue"
+                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-xl px-4 py-3 transition-all"
                 required
-              />
+              >
+                <option value="">Selecciona un laboratorio</option>
+                {laboratories
+                  .filter((lab) => (lab.status || '').toUpperCase() === 'ACTIVE' || (lab.status || '').toUpperCase() === 'AVAILABLE')
+                  .map((lab) => (
+                    <option key={lab.id} value={lab.id}>
+                      {lab.name} - {lab.location}
+                    </option>
+                  ))}
+              </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Fecha
+              </label>
               <input
                 type="date"
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-uce-blue"
+                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-xl px-4 py-3 transition-all"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Bloque de Horario</label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              <label className="block text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Bloque de Horario
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {TIME_SLOTS.map((slot) => (
                   <button
                     key={slot.label}
                     type="button"
                     onClick={() => setFormData({ ...formData, slot: slot.label })}
-                    className={`px-3 py-2 text-sm font-medium rounded-lg border-2 transition-all ${
+                    className={`px-4 py-3 text-sm font-medium rounded-xl transition-all ${
                       formData.slot === slot.label
-                        ? 'border-uce-purple bg-uce-purple text-white'
-                        : 'border-gray-300 bg-white text-gray-700 hover:border-uce-blue'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
                     {slot.label}
@@ -224,11 +286,11 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Propósito</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Propósito</label>
               <textarea
                 value={formData.purpose}
                 onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-uce-blue"
+                className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-xl px-4 py-3 transition-all resize-none"
                 rows={3}
                 required
               />
@@ -236,7 +298,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2 px-4 bg-uce-purple text-white rounded-md hover:bg-uce-blue transition-colors disabled:opacity-50"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg rounded-xl px-5 py-3 font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? 'Creando...' : 'Crear Reservación'}
             </button>
@@ -245,52 +307,52 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
       )}
 
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <table className="min-w-full">
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Laboratorio
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Inicio
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Fecha y Hora
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Fin
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Propósito
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Estado
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-50">
             {reservations.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                  No hay reservaciones
+                <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                  <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium">No hay reservaciones</p>
+                  <p className="text-sm mt-1">Crea tu primera reservación para comenzar</p>
                 </td>
               </tr>
             ) : (
               reservations.map((reservation) => (
-                <tr key={reservation.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <tr key={reservation.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {reservation.laboratoryName || reservation.laboratoryId}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(reservation.startTime).toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(reservation.endTime).toLocaleString()}
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-gray-400" />
+                      <span>{new Date(reservation.startTime).toLocaleString()}</span>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      hasta {new Date(reservation.endTime).toLocaleString()}
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {reservation.purpose}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(reservation.status)}`}>
-                      {getStatusText(reservation.status)}
-                    </span>
+                    {getStatusBadge(reservation.status)}
                   </td>
                 </tr>
               ))
