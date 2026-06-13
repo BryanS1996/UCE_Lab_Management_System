@@ -126,12 +126,26 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
         return;
       }
 
-      await endpoints.reservationCreate({
-        lab_id: Number(formData.laboratoryId),
+      // 1. Convertimos el ID a un número entero seguro
+      const finalLabId = parseInt(String(formData.laboratoryId), 10);
+
+      // 2. Verificamos que no sea NaN y que sea mayor a 0 para que NestJS no explote
+      if (isNaN(finalLabId) || finalLabId < 1) {
+        setError('Por favor selecciona un laboratorio válido de la lista.');
+        setLoading(false);
+        return;
+      }
+
+      const payload = {
+        lab_id: finalLabId,
         start_time: times.startTime,
         end_time: times.endTime,
         purpose: formData.purpose,
-      });
+      };
+
+      console.log("🕵️ Payload exacto que sale de React:", payload);
+
+      await endpoints.reservationCreate(payload);
 
       setShowForm(false);
       setFormData({ laboratoryId: '', date: '', slot: '', purpose: '' });

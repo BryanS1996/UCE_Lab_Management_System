@@ -34,17 +34,12 @@ resource "aws_db_subnet_group" "main" {
 }
 
 # ─── Snapshot Restore Logic ────────────────────────────────────────────────────
-# Look up the most recent final snapshot for this DB identifier.
-# On first apply: no snapshot exists → data source returns empty → fresh DB.
-# On subsequent applies after a destroy: snapshot is found → DB restored from it.
-data "aws_db_snapshot" "latest" {
-  db_instance_identifier = "${var.project_name}-db-${var.environment}"
-  most_recent            = true
-  snapshot_type          = "manual"
-
-  # Suppress error when no snapshot exists yet (first deploy)
-  # The data source returns null results when no match is found.
-}
+# COMENTADO TEMPORALMENTE PARA EL PRIMER DESPLIEGUE (No hay snapshots todavía)
+# data "aws_db_snapshot" "latest" {
+#   db_instance_identifier = "${var.project_name}-db-${var.environment}"
+#   most_recent            = true
+#   snapshot_type          = "manual"
+# }
 
 # ─── RDS Instance ──────────────────────────────────────────────────────────────
 resource "aws_db_instance" "postgres" {
@@ -64,23 +59,18 @@ resource "aws_db_instance" "postgres" {
   apply_immediately   = true
   storage_encrypted   = false
 
-  # ── Snapshot configuration ──────────────────────────────────────────────────
-  # Never destroy data silently — always save a final snapshot on destroy.
   skip_final_snapshot       = false
   final_snapshot_identifier = "${var.project_name}-db-${var.environment}-final-${formatdate("YYYYMMDDhhmmss", timestamp())}"
 
-  # Restore from the latest snapshot if one exists; otherwise create a fresh DB.
-  # The `try()` function returns null when no snapshot is found, causing RDS
-  # to create a fresh instance (standard behavior).
-  snapshot_identifier = try(data.aws_db_snapshot.latest.id, null)
+  # COMENTADO TEMPORALMENTE PARA EL PRIMER DESPLIEGUE
+  # snapshot_identifier = try(data.aws_db_snapshot.latest.id, null)
 
   tags = {
     Name = "${var.project_name}-rds-${var.environment}"
   }
 
   lifecycle {
-    # Prevent Terraform from replacing the DB if the snapshot lookup changes
-    # between plans (e.g., after a restore the snapshot_identifier becomes null).
-    ignore_changes = [snapshot_identifier, final_snapshot_identifier]
+    # Evitamos ignorar "snapshot_identifier" mientras esté comentado
+    ignore_changes = [final_snapshot_identifier]
   }
 }
