@@ -11,6 +11,7 @@ function App() {
   const [userRole, setUserRole] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard'); // dashboard, labs, reservations
   const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Verificamos si ya hay sesión al cargar
@@ -23,11 +24,12 @@ function App() {
     }
   }, []);
 
-  const handleLogin = (token: string, email: string) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('email', email);
+  const handleLogin = (userData: { email: string; role: string; firstName?: string; lastName?: string }) => {
+    // El token ya es manejado por setTokens en AuthSection
+    localStorage.setItem('email', userData.email);
     setIsAuthenticated(true);
-    setUserEmail(email);
+    setUserEmail(userData.email);
+    setUserRole(userData.role);
   };
 
   const handleLogout = () => {
@@ -172,7 +174,10 @@ function App() {
               
               {showNotifications && (
                 <div className="absolute right-0 mt-3 w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
-                  <NotificationsSection isAuthenticated={isAuthenticated} />
+                  <NotificationsSection 
+                    isAuthenticated={isAuthenticated} 
+                    onUpdateUnreadCount={setUnreadNotifications} 
+                  />
                 </div>
               )}
             </div>
