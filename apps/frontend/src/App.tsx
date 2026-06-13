@@ -96,7 +96,11 @@ function App() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <AuthSection onLogin={handleLogin} />
+        <AuthSection 
+          isAuthenticated={isAuthenticated}
+          user={userEmail ? { email: userEmail, role: userRole } : null}
+          onLogin={handleLogin} 
+        />
       </div>
     );
   }
