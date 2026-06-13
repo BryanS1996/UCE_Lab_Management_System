@@ -57,6 +57,14 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
     purpose: '',
   });
 
+  // Separate state for better control
+  const [selectedSlot, setSelectedSlot] = useState('');
+
+  // Sync selectedSlot with formData.slot
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, slot: selectedSlot }));
+  }, [selectedSlot]);
+
   // Update laboratoryId when selectedLabId changes
   useEffect(() => {
     if (selectedLabId) {
@@ -64,6 +72,14 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
       setShowForm(true);
     }
   }, [selectedLabId]);
+
+  // Reset form when showForm changes to false
+  useEffect(() => {
+    if (!showForm) {
+      setSelectedSlot('');
+      setFormData({ laboratoryId: selectedLabId || '', date: '', slot: '', purpose: '' });
+    }
+  }, [showForm, selectedLabId]);
 
   const fetchReservations = async () => {
     setLoading(true);
@@ -287,9 +303,9 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
                   <button
                     key={slot.label}
                     type="button"
-                    onClick={() => setFormData({ ...formData, slot: slot.label })}
+                    onClick={() => setSelectedSlot(slot.label)}
                     className={`px-4 py-3 text-sm font-medium rounded-xl transition-all ${
-                      formData.slot === slot.label
+                      selectedSlot === slot.label
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}

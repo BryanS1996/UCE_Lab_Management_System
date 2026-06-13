@@ -53,6 +53,18 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({ isAuthentic
     }
   }, [isAuthenticated]);
 
+  // Auto-refresh notifications every 30 seconds
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(() => {
+      fetchNotifications();
+      fetchUnreadCount();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
   const getTypeColor = (type: string) => {
     switch (type.toUpperCase()) {
       case 'INFO':

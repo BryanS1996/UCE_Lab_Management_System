@@ -4,10 +4,12 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/entities/notification.entity';
 
 interface ReservationEventPayload {
-  reservationId: string;
-  userId: string;
-  labName: string;
-  startTime: Date;
+  reservation_id: string;
+  user_id: string;
+  lab_id: number;
+  start_time: Date;
+  end_time: Date;
+  purpose?: string;
 }
 
 @Injectable()
@@ -23,11 +25,11 @@ export class ReservationEventsConsumer {
     queueOptions: { durable: true },
   })
   async handleReservationCreated(payload: ReservationEventPayload) {
-    this.logger.log(`[Consumer] ReservationCreated: ${payload.reservationId}`);
+    this.logger.log(`[Consumer] ReservationCreated: ${payload.reservation_id}`);
     await this.notificationsService.create({
-      user_id: payload.userId,
+      user_id: payload.user_id,
       title: 'Reserva Creada',
-      message: `Tu reserva para el ${payload.labName} el ${new Date(payload.startTime).toLocaleDateString('es-EC')} fue registrada exitosamente. Estado: PENDIENTE de confirmación.`,
+      message: `Tu reserva para el laboratorio ID ${payload.lab_id} el ${new Date(payload.start_time).toLocaleDateString('es-EC')} fue registrada exitosamente. Estado: PENDIENTE de confirmación.`,
       type: NotificationType.RESERVATION_CREATED,
       metadata: payload,
     });
@@ -41,12 +43,12 @@ export class ReservationEventsConsumer {
   })
   async handleReservationConfirmed(payload: ReservationEventPayload) {
     this.logger.log(
-      `[Consumer] ReservationConfirmed: ${payload.reservationId}`,
+      `[Consumer] ReservationConfirmed: ${payload.reservation_id}`,
     );
     await this.notificationsService.create({
-      user_id: payload.userId,
+      user_id: payload.user_id,
       title: 'Reserva Confirmada ✅',
-      message: `Tu reserva para el ${payload.labName} el ${new Date(payload.startTime).toLocaleDateString('es-EC')} ha sido CONFIRMADA.`,
+      message: `Tu reserva para el laboratorio ID ${payload.lab_id} el ${new Date(payload.start_time).toLocaleDateString('es-EC')} ha sido CONFIRMADA.`,
       type: NotificationType.RESERVATION_CONFIRMED,
       metadata: payload,
     });
@@ -60,12 +62,12 @@ export class ReservationEventsConsumer {
   })
   async handleReservationCancelled(payload: ReservationEventPayload) {
     this.logger.log(
-      `[Consumer] ReservationCancelled: ${payload.reservationId}`,
+      `[Consumer] ReservationCancelled: ${payload.reservation_id}`,
     );
     await this.notificationsService.create({
-      user_id: payload.userId,
+      user_id: payload.user_id,
       title: 'Reserva Cancelada',
-      message: `Tu reserva (ID: ${payload.reservationId}) ha sido cancelada.`,
+      message: `Tu reserva (ID: ${payload.reservation_id}) ha sido cancelada.`,
       type: NotificationType.RESERVATION_CANCELLED,
       metadata: payload,
     });

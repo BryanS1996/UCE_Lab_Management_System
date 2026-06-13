@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Building2, CalendarClock, LogOut, Menu, Bell, Activity, Clock } from 'lucide-react';
+import { Activity, Building2, Clock } from 'lucide-react';
 import AuthSection from './components/AuthSection';
 import LaboratoriesSection from './components/LaboratoriesSection';
 import ReservationsSection from './components/ReservationsSection';
 import NotificationsSection from './components/NotificationsSection';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState('');
+  const [userFirstName, setUserFirstName] = useState('');
+  const [userLastName, setUserLastName] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard'); // dashboard, labs, reservations
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Verificamos si ya hay sesión al cargar
   useEffect(() => {
@@ -24,12 +29,28 @@ function App() {
     }
   }, []);
 
+  // Detectar pantalla móvil para colapsar sidebar automáticamente
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+      if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const handleLogin = (userData: { email: string; role: string; firstName?: string; lastName?: string }) => {
     // El token ya es manejado por setTokens en AuthSection
     localStorage.setItem('email', userData.email);
     setIsAuthenticated(true);
     setUserEmail(userData.email);
     setUserRole(userData.role);
+    setUserFirstName(userData.firstName || '');
+    setUserLastName(userData.lastName || '');
   };
 
   const handleLogout = () => {
@@ -37,6 +58,8 @@ function App() {
     localStorage.removeItem('email');
     setIsAuthenticated(false);
     setUserEmail('');
+    setUserFirstName('');
+    setUserLastName('');
   };
 
   // --- MÓDULO QUEMADO: INICIO / DASHBOARD ---
@@ -95,11 +118,11 @@ function App() {
   // --- RENDER DE LOGIN ---
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <AuthSection 
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <AuthSection
           isAuthenticated={isAuthenticated}
           user={userEmail ? { email: userEmail, role: userRole } : null}
-          onLogin={handleLogin} 
+          onLogin={handleLogin}
         />
       </div>
     );
@@ -107,100 +130,50 @@ function App() {
 
   // --- RENDER DEL DASHBOARD PRINCIPAL ---
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-gray-900">
-      {/* 1. SIDEBAR (Navegación Lateral) */}
-      <aside className={`bg-white border-r border-gray-200 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'} flex flex-col shadow-sm z-20 relative`}>
-        <div className="h-20 flex items-center justify-between px-5 border-b border-gray-100">
-          {isSidebarOpen && (
-            <div className="flex flex-col">
-              <span className="font-black text-xl text-blue-700 tracking-tight">UCE Labs</span>
-              <span className="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Management</span>
-            </div>
-          )}
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
-            <Menu className="w-5 h-5" />
-          </button>
-        </div>
-        
-        <nav className="flex-1 py-6 px-4 space-y-2">
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
-          >
-            <LayoutDashboard className="w-5 h-5 shrink-0" />
-            {isSidebarOpen && <span className="font-medium text-sm">Inicio</span>}
-          </button>
-          <button 
-            onClick={() => setActiveTab('labs')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'labs' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
-          >
-            <Building2 className="w-5 h-5 shrink-0" />
-            {isSidebarOpen && <span className="font-medium text-sm">Laboratorios</span>}
-          </button>
-          <button 
-            onClick={() => setActiveTab('reservations')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === 'reservations' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
-          >
-            <CalendarClock className="w-5 h-5 shrink-0" />
-            {isSidebarOpen && <span className="font-medium text-sm">Mis Reservas</span>}
-          </button>
-        </nav>
+    <div className="min-h-screen bg-slate-50 flex font-sans text-gray-900 relative">
+      {/* Overlay para móvil cuando sidebar está abierto */}
+      {isMobile && isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
-        <div className="p-4 border-t border-gray-100">
-          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors">
-            <LogOut className="w-5 h-5 shrink-0" />
-            {isSidebarOpen && <span className="font-medium text-sm">Cerrar Sesión</span>}
-          </button>
-        </div>
-      </aside>
+      {/* Sidebar */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
+        userEmail={userEmail}
+        userRole={userRole}
+      />
 
-      {/* 2. ÁREA PRINCIPAL */}
+      {/* ÁREA PRINCIPAL */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
-        {/* CABECERA (Header) */}
-        <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-10">
-          <h1 className="text-2xl font-bold text-gray-800">
-            {activeTab === 'dashboard' && 'Panel de Control'}
-            {activeTab === 'labs' && 'Catálogo de Laboratorios'}
-            {activeTab === 'reservations' && 'Mis Reservaciones'}
-          </h1>
-          
-          <div className="flex items-center gap-6">
-            {/* Notificaciones (Usa tu componente real) */}
-            <div className="relative">
-              <button 
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-full transition-colors"
-              >
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-              </button>
-              
-              {showNotifications && (
-                <div className="absolute right-0 mt-3 w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
-                  <NotificationsSection 
-                    isAuthenticated={isAuthenticated} 
-                    onUpdateUnreadCount={setUnreadNotifications} 
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* Perfil de Usuario */}
-            <div className="flex items-center gap-3 pl-6 border-l border-gray-200">
-              <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-blue-400 text-white rounded-full flex items-center justify-center font-bold shadow-sm">
-                {userEmail.charAt(0).toUpperCase()}
-              </div>
-              <div className="hidden md:block">
-                <p className="text-sm font-bold text-gray-800">{userEmail}</p>
-                <p className="text-xs font-medium text-gray-500">{userRole}</p>
-              </div>
-            </div>
-          </div>
-        </header>
+        {/* Header */}
+        <Header
+          user={userEmail ? { email: userEmail, role: userRole, firstName: userFirstName, lastName: userLastName } : null}
+          isAuthenticated={isAuthenticated}
+          unreadCount={unreadNotifications}
+          onToggleNotifications={() => setShowNotifications(!showNotifications)}
+          showNotifications={showNotifications}
+        />
 
-        {/* 3. CONTENIDO DINÁMICO (Scroll) */}
-        <div className="flex-1 overflow-y-auto p-8">
+        {/* Panel de notificaciones */}
+        {showNotifications && (
+          <div className="absolute right-8 top-24 w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+            <NotificationsSection 
+              isAuthenticated={isAuthenticated} 
+              onUpdateUnreadCount={setUnreadNotifications} 
+            />
+          </div>
+        )}
+
+        {/* CONTENIDO DINÁMICO (Scroll) */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto pb-12">
             {activeTab === 'dashboard' && renderDashboardMetrics()}
             {activeTab === 'labs' && <LaboratoriesSection isAuthenticated={isAuthenticated} />}
@@ -211,6 +184,6 @@ function App() {
       </main>
     </div>
   );
-}
+};
 
 export default App;
