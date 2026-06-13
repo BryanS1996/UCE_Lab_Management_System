@@ -123,7 +123,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toUpperCase()) {
+    switch ((status || '').toUpperCase()) {
       case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
       case 'CONFIRMED':
@@ -138,7 +138,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
   };
 
   const getStatusText = (status: string) => {
-    switch (status.toUpperCase()) {
+    switch ((status || '').toUpperCase()) {
       case 'PENDING':
         return 'Pendiente';
       case 'CONFIRMED':

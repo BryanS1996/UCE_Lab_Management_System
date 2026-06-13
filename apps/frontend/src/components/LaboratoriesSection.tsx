@@ -47,7 +47,7 @@ const LaboratoriesSection: React.FC<LaboratoriesSectionProps> = ({ isAuthenticat
   };
 
   const getLabIcon = (type: string) => {
-    switch (type.toUpperCase()) {
+    switch ((type || '').toUpperCase()) {
       case 'COMPUTER':
         return (
           <svg className="w-12 h-12 text-uce-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,7 +76,7 @@ const LaboratoriesSection: React.FC<LaboratoriesSectionProps> = ({ isAuthenticat
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toUpperCase()) {
+    switch ((status || '').toUpperCase()) {
       case 'AVAILABLE':
         return 'bg-green-100 text-green-800';
       case 'OCCUPIED':
@@ -89,7 +89,7 @@ const LaboratoriesSection: React.FC<LaboratoriesSectionProps> = ({ isAuthenticat
   };
 
   const getStatusText = (status: string) => {
-    switch (status.toUpperCase()) {
+    switch ((status || '').toUpperCase()) {
       case 'AVAILABLE':
         return 'Disponible';
       case 'OCCUPIED':
@@ -159,7 +159,7 @@ const LaboratoriesSection: React.FC<LaboratoriesSectionProps> = ({ isAuthenticat
               </div>
               <button
                 onClick={() => handleReserve(lab)}
-                disabled={lab.status.toUpperCase() !== 'AVAILABLE'}
+                disabled={(lab.status || '').toUpperCase() !== 'AVAILABLE'}
                 className="w-full py-2.5 px-4 bg-gradient-to-r from-uce-purple to-uce-blue text-white font-semibold rounded-lg hover:from-uce-blue hover:to-uce-purple transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
                 Reservar
