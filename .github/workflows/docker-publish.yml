@@ -46,14 +46,12 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Asignar Etiqueta (qa o prod)
-        run: echo "TAG=${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}" >> $GITHUB_ENV
       - name: Build & Push
         uses: docker/build-push-action@v5
         with:
           context: ./services/auth-service
           push: true
-          tags: bryanfabricio96/auth-service:${{ env.TAG }}
+          tags: bryanfabricio96/auth-service:${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}
 
   # ─────────────────────────────────────────────────────
   # 3. CONSTRUIR RESERVATION SERVICE (Solo si hubo cambios)
@@ -69,14 +67,12 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Asignar Etiqueta (qa o prod)
-        run: echo "TAG=${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}" >> $GITHUB_ENV
       - name: Build & Push
         uses: docker/build-push-action@v5
         with:
           context: ./services/reservation-service
           push: true
-          tags: bryanfabricio96/reservation-service:${{ env.TAG }}
+          tags: bryanfabricio96/reservation-service:${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}
 
   # ─────────────────────────────────────────────────────
   # 4. CONSTRUIR LABORATORY SERVICE (Solo si hubo cambios)
@@ -92,14 +88,12 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Asignar Etiqueta (qa o prod)
-        run: echo "TAG=${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}" >> $GITHUB_ENV
       - name: Build & Push
         uses: docker/build-push-action@v5
         with:
           context: ./services/laboratory-service
           push: true
-          tags: bryanfabricio96/laboratory-service:${{ env.TAG }}
+          tags: bryanfabricio96/laboratory-service:${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}
 
   # ─────────────────────────────────────────────────────
   # 5. CONSTRUIR NOTIFICATION SERVICE (Solo si hubo cambios)
@@ -115,11 +109,9 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Asignar Etiqueta (qa o prod)
-        run: echo "TAG=${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}" >> $GITHUB_ENV
       - name: Build & Push
         uses: docker/build-push-action@v5
         with:
           context: ./services/notification-service
           push: true
-          tags: bryanfabricio96/notification-service:${{ env.TAG }}
+          tags: bryanfabricio96/notification-service:${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}

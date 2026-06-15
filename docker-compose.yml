@@ -105,6 +105,7 @@ services:
       context: ./services/reservation-service
       dockerfile: Dockerfile
     container_name: reservation-service
+    env_file: .env
     environment:
       NODE_ENV: development
       PORT: 3001
@@ -161,6 +162,7 @@ services:
       context: ./services/laboratory-service
       dockerfile: Dockerfile
     container_name: laboratory-service
+    env_file: .env
     environment:
       NODE_ENV: production
       PORT: 3002
@@ -182,6 +184,7 @@ services:
         condition: service_healthy
     volumes:
       - ./services/laboratory-service/src:/app/src
+      - ./services/laboratory-service/node_modules:/app/node_modules
     networks:
       - uce-network
     restart: unless-stopped
@@ -216,6 +219,7 @@ services:
       context: ./services/notification-service
       dockerfile: Dockerfile
     container_name: notification-service
+    env_file: .env
     environment:
       NODE_ENV: production
       PORT: 3003
@@ -237,6 +241,7 @@ services:
         condition: service_healthy
     volumes:
       - ./services/notification-service/src:/app/src
+      - ./services/notification-service/node_modules:/app/node_modules
     networks:
       - uce-network
     restart: unless-stopped
