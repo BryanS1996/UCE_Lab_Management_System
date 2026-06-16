@@ -5,7 +5,7 @@
 services:
 
   auth-service:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-auth-service:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-auth-service:${IMAGE_TAG:-latest}
     container_name: auth-service
     pull_policy: always
     environment:
@@ -31,7 +31,7 @@ services:
       retries: 3
 
   reservation-service:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-reservation-service:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-reservation-service:${IMAGE_TAG:-latest}
     container_name: reservation-service
     pull_policy: always
     environment:
@@ -61,7 +61,7 @@ services:
       retries: 3
 
   laboratory-service:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-laboratory-service:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-laboratory-service:${IMAGE_TAG:-latest}
     container_name: laboratory-service
     pull_policy: always
     environment:
@@ -89,7 +89,7 @@ services:
       retries: 3
 
   notification-service:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-notification-service:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-notification-service:${IMAGE_TAG:-latest}
     container_name: notification-service
     pull_policy: always
     environment:
@@ -124,7 +124,7 @@ services:
 
   # ─── Production: API Gateway ─────────────────────────────
   api-gateway:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-api-gateway:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-api-gateway:${IMAGE_TAG:-latest}
     container_name: api-gateway
     pull_policy: always
     environment:
@@ -154,7 +154,7 @@ services:
 
   # ─── Production: Frontend ─────────────────────────────────
   frontend:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-frontend:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-frontend:${IMAGE_TAG:-latest}
     container_name: frontend
     pull_policy: always
     ports:
