@@ -11,7 +11,10 @@ export class ReservationService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.reservationServiceUrl = this.configService.get<string>('RESERVATION_SERVICE_URL', 'http://reservation-service-qa:3011');
+    this.reservationServiceUrl = this.configService.get<string>('RESERVATION_SERVICE_URL');
+    if (!this.reservationServiceUrl) {
+      throw new Error('RESERVATION_SERVICE_URL is not defined in environment variables');
+    }
   }
 
   async getMyReservations(authHeader: string) {

@@ -11,7 +11,10 @@ export class AuthService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.authServiceUrl = this.configService.get<string>('AUTH_SERVICE_URL', 'http://auth-service-qa:3010');
+    this.authServiceUrl = this.configService.get<string>('AUTH_SERVICE_URL');
+    if (!this.authServiceUrl) {
+      throw new Error('AUTH_SERVICE_URL is not defined in environment variables');
+    }
   }
 
   async register(registerDto: any) {
