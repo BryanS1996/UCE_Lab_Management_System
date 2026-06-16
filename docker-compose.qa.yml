@@ -219,6 +219,33 @@ services:
       - uce-qa-network
     restart: unless-stopped
 
+  # ─── QA: API Gateway (puerto 3000) ────────────────────
+  api-gateway-qa:
+    image: ${ECR_REGISTRY:-localhost}/uce-api-gateway:${IMAGE_TAG:-qa-latest}
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway-qa
+    environment:
+      NODE_ENV: qa
+      PORT: 3000
+      AUTH_SERVICE_URL: http://auth-service-qa:3010
+      LABORATORY_SERVICE_URL: http://laboratory-service-qa:3012
+      RESERVATION_SERVICE_URL: http://reservation-service-qa:3011
+      NOTIFICATION_SERVICE_URL: http://notification-service-qa:3013
+      JWT_SECRET: qa-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service-qa
+      - laboratory-service-qa
+      - reservation-service-qa
+      - notification-service-qa
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+
   # ─── QA: Frontend (puerto 80) ────────────────────────
   frontend-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-frontend:${IMAGE_TAG:-qa-latest}
@@ -231,10 +258,7 @@ services:
     networks:
       - uce-qa-network
     depends_on:
-      - auth-service-qa
-      - reservation-service-qa
-      - laboratory-service-qa
-      - notification-service-qa
+      - api-gateway-qa
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health.html"]
