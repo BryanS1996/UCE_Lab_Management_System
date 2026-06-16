@@ -19,7 +19,8 @@ RUN npm run build
 FROM nginx:alpine
 
 # Copiar configuración personalizada de Nginx
-COPY nginx.conf /etc/nginx/nginx.conf
+ARG ENV=qa
+COPY nginx.${ENV}.conf /etc/nginx/nginx.conf
 
 # Copiar archivos compilados del stage anterior a la carpeta de Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html

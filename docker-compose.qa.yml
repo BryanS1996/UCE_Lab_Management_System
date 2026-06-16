@@ -39,8 +39,6 @@ services:
       DB_SSL: "false"
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
-    ports:
-      - "3010:3010"
     depends_on:
       auth-db-qa:
         condition: service_healthy
@@ -107,8 +105,6 @@ services:
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
       RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
-    ports:
-      - "3011:3011"
     depends_on:
       reservation-db-qa:
         condition: service_healthy
@@ -158,8 +154,6 @@ services:
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
       RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
-    ports:
-      - "3012:3012"
     depends_on:
       laboratory-db-qa:
         condition: service_healthy
@@ -208,8 +202,6 @@ services:
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
       RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
-    ports:
-      - "3013:3013"
     depends_on:
       notification-db-qa:
         condition: service_healthy
@@ -219,32 +211,39 @@ services:
       - uce-qa-network
     restart: unless-stopped
 
-  # ─── QA: API Gateway (puerto 3000) ────────────────────
+  # ─── QA: API Gateway ─────────────────────────────────
   api-gateway-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-api-gateway:${IMAGE_TAG:-qa-latest}
     build:
       context: ./services/api-gateway
       dockerfile: Dockerfile
     container_name: api-gateway-qa
+    pull_policy: always
     environment:
       NODE_ENV: qa
       PORT: 3000
+      # URLs internas usando los nombres de los contenedores
       AUTH_SERVICE_URL: http://auth-service-qa:3010
-      LABORATORY_SERVICE_URL: http://laboratory-service-qa:3012
       RESERVATION_SERVICE_URL: http://reservation-service-qa:3011
+      LABORATORY_SERVICE_URL: http://laboratory-service-qa:3012
       NOTIFICATION_SERVICE_URL: http://notification-service-qa:3013
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
     ports:
       - "3000:3000"
-    depends_on:
-      - auth-service-qa
-      - laboratory-service-qa
-      - reservation-service-qa
-      - notification-service-qa
     networks:
       - uce-qa-network
+    depends_on:
+      - auth-service-qa
+      - reservation-service-qa
+      - laboratory-service-qa
+      - notification-service-qa
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
   # ─── QA: Frontend (puerto 80) ────────────────────────
   frontend-qa:
