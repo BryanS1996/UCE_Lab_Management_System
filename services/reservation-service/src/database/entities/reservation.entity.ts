@@ -24,12 +24,6 @@ export class Reservation {
   @Column('uuid', { name: 'user_id' })
   user_id!: string;
 
-  @Column('varchar', { name: 'user_email', length: 150, nullable: true })
-  user_email?: string;
-
-  @Column('varchar', { name: 'user_name', length: 150, nullable: true })
-  user_name?: string;
-
   @Column('int', { name: 'lab_id' })
   lab_id!: number;
 

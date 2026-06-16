@@ -2,26 +2,10 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { WinstonModule } from 'nest-winston';
-import * as winston from 'winston';
 import { AppModule } from './app.module';
 
-const logger = WinstonModule.createLogger({
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.errors({ stack: true }),
-        winston.format.json(),
-      ),
-    }),
-  ],
-});
-
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger,
-  });
+  const app = await NestFactory.create(AppModule);
 
   // Validación automática de DTOs
   app.useGlobalPipes(
@@ -43,7 +27,7 @@ async function bootstrap() {
     .setTitle('Auth Service — UCE Lab Management')
     .setDescription(
       `**Microservicio de Autenticación** del Sistema de Gestión de Laboratorios UCE.
-
+      
 Responsabilidades:
 - Registro y login de usuarios
 - Emisión de JWT (access token 15min + refresh token 7d)
@@ -59,7 +43,6 @@ Responsabilidades:
     )
     .addTag('auth', 'Registro, Login y gestión de sesión')
     .addTag('users', 'Gestión de usuarios')
-    .addTag('health', 'Estado del servicio')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -76,8 +59,8 @@ Responsabilidades:
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  logger.log(`Auth Service running on port ${port}`, 'Bootstrap');
-  logger.log(`Swagger docs: http://localhost:${port}/api/docs`, 'Bootstrap');
+  console.log(`Auth Service running on port ${port}`);
+  console.log(`Swagger docs: http://localhost:${port}/api/docs`);
 }
 
-void bootstrap();
+bootstrap();

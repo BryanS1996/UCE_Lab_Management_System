@@ -20,10 +20,3 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# Terraform secrets
-*.tfvars
-backend.hcl
-*.tfstate
-*.tfstate.backup
-.terraform/

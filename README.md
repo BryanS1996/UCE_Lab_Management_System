@@ -1,556 +1,267 @@
-# UCE Lab Management System
+# UCE Lab Management System — Microservicios
 
-![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge\&logo=react\&logoColor=white)
-![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=for-the-badge\&logo=nestjs\&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge\&logo=typescript\&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge\&logo=postgresql\&logoColor=white)
-![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.x-FF6600?style=for-the-badge\&logo=rabbitmq\&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge\&logo=docker\&logoColor=white)
-![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge\&logo=terraform\&logoColor=white)
-![AWS EC2](https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge\&logo=amazonaws\&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-2088FF?style=for-the-badge\&logo=githubactions\&logoColor=white)
-
-[![Repository](https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge\&logo=github)](https://github.com/BryanS1996/UCE_Lab_Management_System)
-
-![Auth CI](https://github.com/BryanS1996/UCE_Lab_Management_System/actions/workflows/auth-service-ci.yml/badge.svg)
-![Laboratory CI](https://github.com/BryanS1996/UCE_Lab_Management_System/actions/workflows/laboratory-service-ci.yml/badge.svg)
-![Reservation CI](https://github.com/BryanS1996/UCE_Lab_Management_System/actions/workflows/reservation-service-ci.yml/badge.svg)
-![Notification CI](https://github.com/BryanS1996/UCE_Lab_Management_System/actions/workflows/notification-service-ci.yml/badge.svg)
-![Gateway CI](https://github.com/BryanS1996/UCE_Lab_Management_System/actions/workflows/gateway-ci.yml/badge.svg)
-
-# Enterprise Microservices Platform for University Laboratory Management
-
-Cloud-native distributed system developed using Microservices Architecture, Event-Driven Architecture (EDA), Infrastructure as Code (IaC), CI/CD automation, and modern cloud-native practices.
+**Proyecto Final — Programación Distribuida**  
+**Estudiante:** Bryan Suárez  
+**Universidad:** Universidad Central del Ecuador (UCE)
 
 ---
 
-## Project Overview
+## Descripción General
 
-The UCE Lab Management System is a scalable platform designed to manage university laboratories, reservations, resources, notifications, and future analytical services.
-
-The project was built following:
-
-* Microservices Architecture
-* Domain-Driven Design (DDD)
-* Event-Driven Architecture (EDA)
-* Infrastructure as Code (Terraform)
-* Continuous Integration / Continuous Deployment (CI/CD)
-* Cloud-Native Design Principles
+Sistema distribuido de gestión de laboratorios universitarios basado en **microservicios con NestJS**, arquitectura **Event-Driven (EDA)** con RabbitMQ, persistencia políglota y despliegue en contenedores Docker.
 
 ---
 
-## Key Features
+## Microservicios Implementados
 
-### Authentication & Security
+### 1. Auth Service (`/services/auth-service`) — Puerto 3000 (Prod) / 3010 (QA)
 
-* JWT Authentication
-* Role-Based Access Control (RBAC)
-* Password Hashing (bcrypt)
-* Protected Endpoints
-* Shared Authentication Strategy
+**Responsabilidad:** Gestión completa de identidad y autenticación.
 
-### Laboratory Management
+| Aspecto | Detalle |
+|---------|---------|
+| Framework | NestJS 11 + TypeScript |
+| Base de datos | PostgreSQL 15 (TypeORM) |
+| Autenticación | JWT (access 15min + refresh 7d) |
+| Seguridad | bcrypt (hash de contraseñas) |
+| Documentación | Swagger UI → `/api/docs` |
 
-* Laboratory Registration
-* Resource Administration
-* Availability Tracking
+**Endpoints principales:**
 
-### Reservation Management
-
-* Reservation Creation
-* Reservation Confirmation
-* Reservation Cancellation
-* Reservation History
-
-### Notifications
-
-* RabbitMQ Event Consumers
-* Real-Time Notification Support
-* WebSocket Integration
-
-### Infrastructure
-
-* Docker Containers
-* Docker Compose Environments
-* Terraform Infrastructure
-* Kubernetes Deployment Structure
-
-### Observability
-
-* Prometheus Metrics
-* Grafana Dashboards
-* Loki Log Aggregation
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `POST` | `/auth/register` | Registrar usuario |
+| `POST` | `/auth/login` | Iniciar sesión → JWT |
+| `GET` | `/auth/me` | Usuario autenticado 🔒 |
+| `POST` | `/auth/change-password` | Cambiar contraseña 🔒 |
+| `GET` | `/users` | Listar usuarios 🔒 |
+| `GET` | `/users/:id` | Obtener usuario 🔒 |
 
 ---
 
-## System Architecture
+### 2. Reservation Service (`/services/reservation-service`) — Puerto 3001 (Prod) / 3011 (QA)
 
-```text
-Frontend (React + TypeScript + Tailwind CSS)
-        │
-        ▼
- ┌──────┼─────────────────────────────────────┐
- │      │       │        │                    │
- ▼      ▼       ▼        ▼                    ▼
+**Responsabilidad:** Gestión de laboratorios y reservas con comunicación asíncrona.
 
-Auth Laboratory Reservation Notification
-Service  Service    Service    Service
+| Aspecto | Detalle |
+|---------|---------|
+| Framework | NestJS 11 + TypeScript |
+| Base de datos | PostgreSQL 15 (TypeORM, BD independiente) |
+| Mensajería | RabbitMQ (topic exchange `reservation.events`) |
+| Auth | JWT compartido con Auth Service (RBAC) |
+| Documentación | Swagger UI → `/api/docs` |
 
-        │
-        ▼
+**Endpoints principales:**
 
-     RabbitMQ
-(Event Broker)
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/laboratories` | Crear laboratorio 🔒 |
+| `GET` | `/laboratories` | Listar laboratorios |
+| `GET` | `/laboratories/:id` | Obtener laboratorio |
+| `GET` | `/laboratories/:id/availability` | Verificar disponibilidad |
+| `PATCH` | `/laboratories/:id/toggle` | Activar/desactivar 🔒 |
+| `POST` | `/reservations` | Crear reserva 🔒 |
+| `GET` | `/reservations/my` | Mis reservas 🔒 |
+| `GET` | `/reservations` | Listar reservas 🔒 |
+| `GET` | `/reservations/:id` | Ver reserva 🔒 |
+| `PATCH` | `/reservations/:id/confirm` | Confirmar (ADMIN) 🔒 |
+| `DELETE` | `/reservations/:id` | Cancelar 🔒 |
 
-        │
-        ▼
+**Eventos RabbitMQ publicados:**
+- `reservation.created` → al crear reserva
+- `reservation.confirmed` → al confirmar reserva
+- `reservation.cancelled` → al cancelar reserva
 
-PostgreSQL Databases
-(Database per Service)
+---
+
+## Tecnologías Utilizadas
+
+| Categoría | Tecnología |
+|-----------|-----------|
+| Backend | NestJS 11, TypeScript 5.7 |
+| Base de datos | PostgreSQL 15 (TypeORM) |
+| Mensajería | RabbitMQ 3.12 + @golevelup/nestjs-rabbitmq |
+| Autenticación | JWT, Passport.js, bcrypt |
+| Documentación | Swagger / OpenAPI 3.0 |
+| Contenedores | Docker + Docker Compose |
+| Testing | Jest + ts-jest (25 tests) |
+| CI/CD | GitHub Actions |
+| Control de versiones | Git / GitHub |
+
+---
+
+## Arquitectura General
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CLIENTE (Postman / Browser)               │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ HTTP REST
+          ┌─────────────────┴──────────────────┐
+          │                                    │
+   ┌──────▼──────┐                    ┌────────▼────────┐
+   │ Auth Service│                    │Reservation      │
+   │  :3000      │  JWT compartido    │Service :3001    │
+   │             │◄──────────────────►│                 │
+   │ /auth/*     │                    │ /reservations/* │
+   │ /users/*    │                    │ /laboratories/* │
+   └──────┬──────┘                    └────────┬────────┘
+          │                                    │
+   ┌──────▼──────┐                    ┌────────▼────────┐
+   │ PostgreSQL  │                    │  PostgreSQL     │
+   │ auth_service│                    │reservation_svc  │
+   │  :5432      │                    │   :5433         │
+   └─────────────┘                    └────────┬────────┘
+                                               │ Publica eventos
+                                      ┌────────▼────────┐
+                                      │    RabbitMQ     │
+                                      │  :5672 / :15672 │
+                                      │ reservation.    │
+                                      │   events        │
+                                      └─────────────────┘
 ```
 
 ---
 
-## Technology Stack
+## Ambientes
 
-### Frontend
+### Desarrollo Local
+```bash
+docker compose up -d
+# Auth Service:        http://localhost:3000
+# Auth Swagger:        http://localhost:3000/api/docs
+# Reservation Service: http://localhost:3001
+# Reservation Swagger: http://localhost:3001/api/docs
+# RabbitMQ UI:         http://localhost:15672 (guest/guest)
+```
 
-* React 18
-* TypeScript
-* Tailwind CSS
-* Lucide React Icons
-* Vite
+### QA
+```bash
+docker compose -f docker-compose.qa.yml up -d
+# Auth Service QA:        http://localhost:3010
+# Auth Swagger QA:        http://localhost:3010/api/docs
+# Reservation Service QA: http://localhost:3011
+# Reservation Swagger QA: http://localhost:3011/api/docs
+# RabbitMQ QA UI:         http://localhost:15673 (guest/guest)
+```
 
-### Backend
-
-* NestJS 11
-* TypeScript
-* REST APIs
-* Swagger / OpenAPI
-
-### Data Layer
-
-* PostgreSQL 15
-* TypeORM
-
-### Messaging
-
-* RabbitMQ
-
-### DevOps
-
-* Docker
-* Docker Compose
-* GitHub Actions
-
-### Cloud & Infrastructure
-
-* Terraform
-* Kubernetes
-
-### Monitoring
-
-* Prometheus
-* Grafana
-* Loki
+| Diferenciación | DEV/PROD | QA |
+|----------------|----------|----|
+| Puertos | 3000, 3001 | 3010, 3011 |
+| Bases de datos | `auth_service`, `reservation_service` | `auth_service_qa`, `reservation_service_qa` |
+| NODE_ENV | `production` | `qa` |
+| JWT Secret | `your-secret-key-change-in-production` | `qa-secret-key-change-in-production` |
+| RabbitMQ | 5672 / 15672 | 5673 / 15673 |
 
 ---
 
-## Repository Structure
+## Variables de Entorno
 
-```text
+### Auth Service (`.env.example`)
+```env
+PORT=3000
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=authuser
+DB_PASSWORD=CHANGE_ME
+DB_NAME=auth_service
+JWT_SECRET=CHANGE_ME_MIN_32_CHARS
+CORS_ORIGIN=http://localhost:3000
+NODE_ENV=development
+```
+
+### Reservation Service (`.env.example`)
+```env
+PORT=3001
+DB_HOST=localhost
+DB_PORT=5433
+DB_USERNAME=reservationuser
+DB_PASSWORD=CHANGE_ME
+DB_NAME=reservation_service
+DB_SSL=false
+JWT_SECRET=CHANGE_ME_MIN_32_CHARS
+CORS_ORIGIN=http://localhost:3000
+RABBITMQ_URL=amqp://guest:guest@localhost:5672
+NODE_ENV=development
+```
+
+> ⚠️ **Nunca commites credenciales reales.** Los archivos `.env` están en `.gitignore`.
+
+---
+
+## Ejecutar Tests
+
+```bash
+# Reservation Service — 25 tests
+cd services/reservation-service
+npm run test
+
+# Auth Service
+cd services/auth-service
+npm run test
+```
+
+---
+
+## Estructura del Repositorio
+
+```
 UCE_Lab_Management_System/
-
-├── apps/
-│   └── frontend/
-│
 ├── services/
-│   ├── api-gateway/
-│   ├── auth-service/
-│   ├── laboratory-service/
-│   ├── reservation-service/
-│   ├── notification-service/
-│   ├── audit-service/
-│   ├── analytics-service/
-│   ├── incident-service/
-│   ├── payment-service/
-│   └── ai-service/
-│
-├── shared/
-│
-├── docs/
-│
-├── infra/
-│   ├── kubernetes/
-│   ├── terraform/
-│   └── monitoring/
-│
-├── scripts/
-│
-├── docker-compose.yml
-├── docker-compose.qa.yml
-├── docker-compose.prod.yml
+│   ├── auth-service/          # Microservicio 1: Autenticación
+│   │   ├── src/
+│   │   │   ├── auth/          # Login, registro, JWT
+│   │   │   ├── users/         # Gestión de usuarios
+│   │   │   └── database/      # Entidades TypeORM
+│   │   └── Dockerfile
+│   └── reservation-service/   # Microservicio 2: Reservas
+│       ├── src/
+│       │   ├── common/        # JWT Guard, decorators
+│       │   ├── laboratories/  # CRUD + disponibilidad
+│       │   ├── reservations/  # Gestión de reservas
+│       │   ├── rabbitmq/      # Event publisher (EDA)
+│       │   └── health/        # Health check
+│       └── Dockerfile
+├── docker-compose.yml         # Ambiente DESARROLLO / PRODUCCIÓN
+├── docker-compose.qa.yml      # Ambiente QA (puertos diferenciados)
+├── .github/
+│   └── workflows/
+│       └── reservation-service-ci.yml  # CI/CD pipeline
 └── README.md
 ```
 
 ---
 
-## Implemented Services
+## CI/CD
 
-### Auth Service
-
-Responsibilities:
-
-* User Registration
-* User Authentication
-* JWT Management
-* Password Management
-* Role Management
+El pipeline de GitHub Actions (`feature/reservation-service` y `main`) ejecuta automáticamente:
+1. `npm ci` — Instalación de dependencias
+2. `npm run build` — Compilación TypeScript
+3. `npm run test --coverage` — 25 tests unitarios
+4. Upload del reporte de coverage como artifact
 
 ---
 
-### Laboratory Service
+## Decisiones de Diseño
 
-Responsibilities:
-
-* Laboratory CRUD
-* Resource Management
-* Availability Management
-
----
-
-### Reservation Service
-
-Responsibilities:
-
-* Reservation Lifecycle
-* Validation Rules
-* Reservation Tracking
-
-Published Events:
-
-```text
-reservation.created
-reservation.confirmed
-reservation.cancelled
-```
+| Decisión | Justificación |
+|----------|---------------|
+| BD separadas por servicio | Independencia total, sin acoplamiento de datos |
+| JWT compartido (shared secret) | Simplicidad para academia; en producción real se usaría JWKS |
+| RabbitMQ topic exchange | Permite múltiples consumidores por routing key |
+| `select: false` en password | Nunca se expone el hash en respuestas normales |
+| Optimistic Locking (version) | Previene race conditions en actualizaciones concurrentes |
+| `user_id` del JWT (no del body) | Seguridad: el cliente no puede falsificar su identidad |
+| QueryBuilder + addSelect | Workaround para TypeORM `select: false` al recuperar password |
 
 ---
 
-### Notification Service
-
-Responsibilities:
-
-* Event Consumption
-* Notification Delivery
-* WebSocket Notifications
-
----
-
-## Services Under Development
-
-### API Gateway
-
-Planned Features:
-
-* Centralized Routing
-* Authentication Validation
-* Rate Limiting
-* Request Aggregation
-
-### Audit Service
-
-* Audit Logs
-* Security Events
-* Compliance Tracking
-
-### Analytics Service
-
-* KPI Generation
-* Usage Metrics
-* Reporting
-
-### Incident Service
-
-* Incident Tracking
-* Maintenance Requests
-
-### Payment Service
-
-* Payment Integrations
-* Billing Workflows
-
-### AI Service
-
-* Predictive Analytics
-* Intelligent Recommendations
-* Scheduling Optimization
-
----
-
-## Event-Driven Architecture
-
-RabbitMQ acts as the communication backbone.
-
-Current Event Flow:
-
-```text
-Reservation Service
-        │
-        ▼
-RabbitMQ
-        │
-        ▼
-Notification Service
-```
-
-Future Consumers:
-
-* Audit Service
-* Analytics Service
-* AI Service
-
----
-
-## Shared Library
-
-The shared package contains:
-
-### Enums
-
-* User Roles
-* Reservation Status
-* Notification Types
-
-### Events
-
-* ReservationCreatedEvent
-* ReservationConfirmedEvent
-* ReservationCancelledEvent
-* NotificationSentEvent
-* LaboratoryCreatedEvent
-
-### Interfaces
-
-* JWT Payload
-* Audit Log
-* Service Responses
-
----
-
-## Infrastructure as Code
-
-Terraform Structure:
-
-```text
-infra/terraform/
-
-├── bootstrap/
-├── environments/
-│   ├── qa/
-│   └── prod/
-└── modules/
-    ├── vpc/
-    ├── ec2/
-    ├── ecr/
-    ├── rds/
-    ├── iam/
-    └── monitoring/
-```
-
----
-
-## Monitoring & Observability
-
-### Prometheus
-
-Metrics collection and monitoring.
-
-### Grafana
-
-Dashboard visualization.
-
-### Loki
-
-Centralized logging.
-
----
-
-## CI/CD Pipelines
-
-GitHub Actions workflows:
-
-* auth-service-ci
-* laboratory-service-ci
-* reservation-service-ci
-* notification-service-ci
-* gateway-ci
-* pr-validation
-* deploy-qa
-* deploy-prod
-* terraform-plan
-* terraform-plan-qa
-* terraform-apply
-* terraform-apply-qa
-* terraform-bootstrap
-
-Automated tasks include:
-
-* Build Validation
-* Unit Testing
-* Pull Request Validation
-* Deployment Automation
-* Infrastructure Provisioning
-
----
-
-## Local Development
-
-Start development environment:
-
-```bash
-docker compose up -d
-```
-
-QA environment:
-
-```bash
-docker compose -f docker-compose.qa.yml up -d
-```
-
-Production simulation:
-
-```bash
-docker compose -f docker-compose.prod.yml up -d
-```
-
----
-
-## Deployment to AWS EC2
-
-The system supports deploying to AWS EC2 using Docker Compose with pre-built images from Docker Hub.
-
-### Quick Deploy
-
-**Production (with RDS)**:
-```bash
-./scripts/deploy-prod.sh docker /root/.env.prod
-```
-
-**QA (all services in Docker)**:
-```bash
-./scripts/deploy-qa.sh docker /root/.env.qa
-```
-
-### How It Works
-
-1. **GitHub Actions** publishes images to Docker Hub with tags:
-   - `bryanfabricio96/auth-service:prod` → PROD environment
-   - `bryanfabricio96/auth-service:qa` → QA environment
-   - (same for other services)
-
-2. **Terraform** provisions EC2 instances with Docker pre-installed
-
-3. **Deployment Script** (`deploy-docker-compose.sh`):
-   ```bash
-   ./scripts/deploy-docker-compose.sh prod /root/.env.prod
-   ```
-   - Loads environment variables from `.env` file
-   - Pulls images from Docker Hub (`docker-compose pull`)
-   - Starts services in background (`docker-compose up -d`)
-   - Verifies health checks
-
-4. **Services run** with these image sources:
-   - **PROD**: Images from Docker Hub (tag: `prod`), databases on AWS RDS
-   - **QA**: Images from Docker Hub (tag: `qa`), databases in Docker containers
-
-### Environment Configuration
-
-Create `.env.prod` for production:
-```bash
-NODE_ENV=production
-AUTH_DB_HOST=<rds-endpoint>
-AUTH_DB_USER=authuser
-AUTH_DB_PASS=<strong-password>
-# ... other database credentials
-JWT_SECRET=<random-secret>
-RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-```
-
-Create `.env.qa` for QA (minimal, uses Docker containers):
-```bash
-NODE_ENV=qa
-# Most settings use defaults for Docker networking
-```
-
-### Full Documentation
-
-See [docs/deployment/DOCKER_COMPOSE_EC2.md](docs/deployment/DOCKER_COMPOSE_EC2.md) for complete setup guide.
-
----
-
-## Security Practices
-
-Implemented:
-
-* JWT Authentication
-* RBAC Authorization
-* Password Hashing
-* Service Isolation
-* Database Isolation
-
-Future Improvements:
-
-* OAuth2
-* OpenID Connect
-* JWKS
-* Secrets Manager Integration
-
----
-
-## Roadmap
-
-* Complete Angular Frontend
-* Complete API Gateway
-* Complete Audit Service
-* Complete Analytics Service
-* Complete Incident Service
-* Complete AI Service
-* Kubernetes Production Deployment
-* OpenTelemetry Distributed Tracing
-* Grafana Dashboards
-* Prometheus Service Metrics
-
----
-
-## Screenshots
-
-Coming Soon
-
-```text
-docs/images/
-├── dashboard.png
-├── laboratories.png
-├── reservations.png
-└── analytics.png
-```
-
----
-
-## Author
-
-**Bryan Chileno**
-
-Universidad Central del Ecuador (UCE)
-
-Distributed Programming Project
-
-2026
-
-GitHub: https://github.com/BryanS1996
-https://deepwiki.com/badge-maker?url=https%3A%2F%2Fdeepwiki.com%2FBryanS1996%2FUCE_Lab_Management_System
----
-
-## License
-
-This project is intended for educational, research, and portfolio purposes.
+## Problemas Encontrados y Soluciones
+
+| Problema | Causa | Solución |
+|----------|-------|---------|
+| Login retornaba 401 siempre | TypeORM ignora `select: false` incluso con array `select` | Usar `QueryBuilder` + `.addSelect('user.password')` |
+| `@golevelup/nestjs-rabbitmq` v9 incompatible | `reflect-metadata@^0.2.2` requerido, proyecto usa `^0.1.x` | Usar versión 8.x con `--legacy-peer-deps` |
+| Tests fallaban con type annotations | Jest sin config ts-jest en reservation-service | Agregar sección `jest` con `ts-jest` transform en `package.json` |
+| `forRootAsync` con 2 argumentos | API v8.x usa 1 argumento, v9.x usa 2 | Ajustar a `RabbitMQModule.forRootAsync({...})` (1 arg) |

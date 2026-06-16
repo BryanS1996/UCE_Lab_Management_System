@@ -11,7 +11,6 @@ import { Repository } from 'typeorm';
 import { Reservation, ReservationStatus, Laboratory } from '../database/entities';
 import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
-import { KafkaProducerService } from '../kafka/kafka-producer.service';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 
 @Injectable()
@@ -24,15 +23,14 @@ export class ReservationsService {
     @InjectRepository(Laboratory)
     private readonly laboratoryRepository: Repository<Laboratory>,
     private readonly rabbitmqService: RabbitmqService,
-    private readonly kafkaProducer: KafkaProducerService,
   ) {}
 
   /**
-   * Create a new reservation
-   * - Verifies user's JWT
-   * - Verifies the laboratory exists and is active
-   * - Checks for scheduling conflicts in DB (efficient query)
-   * - Publishes ReservationCreated event to RabbitMQ
+   * Crear una nueva reserva
+   * - Verifica JWT del usuario
+   * - Verifica que el laboratorio exista y esté activo
+   * - Verifica conflictos de horario en BD (query eficiente)
+   * - Publica evento ReservationCreated en RabbitMQ
    */
   async create(
     createReservationDto: CreateReservationDto,
@@ -40,7 +38,7 @@ export class ReservationsService {
   ): Promise<Reservation> {
     const { lab_id, start_time, end_time, purpose, notes } = createReservationDto;
 
-    // 1. Validate time range
+    // 1. Validar rango de tiempo
     const startDate = new Date(start_time);
     const endDate = new Date(end_time);
 
@@ -56,7 +54,7 @@ export class ReservationsService {
       throw new BadRequestException('No se pueden crear reservas en el pasado');
     }
 
-    // 2. Verify that the laboratory exists and is active
+    // 2. Verificar que el laboratorio existe y está activo
     const laboratory = await this.laboratoryRepository.findOne({
       where: { lab_id },
     });
@@ -71,7 +69,7 @@ export class ReservationsService {
       );
     }
 
-    // 3. Check for scheduling conflicts using an efficient query
+    // 3. Verificar conflictos de horario usando query eficiente
     const conflictCount = await this.reservationRepository
       .createQueryBuilder('r')
       .where('r.lab_id = :lab_id', { lab_id })
@@ -88,12 +86,10 @@ export class ReservationsService {
       );
     }
 
-    // 4. Create the reservation
+    // 4. Crear la reserva
     const reservation = this.reservationRepository.create({
       lab_id,
-      user_id: currentUser.user_id, // Taken from the JWT, not the request body
-      user_email: currentUser.email,
-      user_name: currentUser.email.split('@')[0],
+      user_id: currentUser.user_id, // Tomado del JWT, no del body
       start_time: startDate,
       end_time: endDate,
       purpose,
@@ -103,7 +99,7 @@ export class ReservationsService {
 
     const saved = await this.reservationRepository.save(reservation);
 
-    // 5. Publish ReservationCreated event (fire-and-forget)
+    // 5. Publicar evento ReservationCreated (fire-and-forget)
     this.rabbitmqService
       .publishReservationCreated({
         reservation_id: saved.reservation_id,
@@ -117,21 +113,6 @@ export class ReservationsService {
         this.logger.error('Error publicando ReservationCreated', err),
       );
 
-    // 6. Publish Kafka event for email confirmation (fire-and-forget)
-    this.kafkaProducer
-      .sendEmailNotification({
-        email: currentUser.email,
-        userName: currentUser.email.split('@')[0],
-        labName: laboratory.name,
-        startTime: startDate.toISOString(),
-        endTime: endDate.toISOString(),
-        purpose: purpose || 'Sin motivo especificado',
-        status: 'PENDING',
-      })
-      .catch((err) =>
-        this.logger.error('Error publicando a Kafka para correo', err),
-      );
-
     this.logger.log(
       `✅ Reserva creada: ${saved.reservation_id} para lab ${lab_id} por usuario ${currentUser.user_id}`,
     );
@@ -140,9 +121,9 @@ export class ReservationsService {
   }
 
   /**
-   * Get all reservations with optional filters
-   * - Users can only see their own reservations
-   * - Admins can see all reservations
+   * Obtener todas las reservas con filtros opcionales
+   * - Los usuarios solo ven sus propias reservas
+   * - Los admins pueden ver todas
    */
   async findAll(
     filters: {
@@ -154,7 +135,7 @@ export class ReservationsService {
   ): Promise<Reservation[]> {
     const query = this.reservationRepository.createQueryBuilder('r');
 
-    // If not an admin, the user can only view their own reservations
+    // Si no es admin, solo puede ver sus propias reservas
     if (currentUser.role !== 'ADMIN') {
       query.andWhere('r.user_id = :user_id', { user_id: currentUser.user_id });
     } else if (filters?.user_id) {
@@ -173,7 +154,7 @@ export class ReservationsService {
   }
 
   /**
-   * Get reservations for the authenticated user
+   * Obtener reservas del usuario autenticado
    */
   async findMyReservations(
     currentUser: CurrentUserData,
@@ -191,8 +172,8 @@ export class ReservationsService {
   }
 
   /**
-   * Get a single reservation by ID
-   * Verifies that the user has permission to view it
+   * Obtener una reserva por ID
+   * Verifica que el usuario tenga permiso para verla
    */
   async findOne(id: string, currentUser: CurrentUserData): Promise<Reservation> {
     const reservation = await this.reservationRepository.findOne({
@@ -203,7 +184,7 @@ export class ReservationsService {
       throw new NotFoundException(`Reserva con ID ${id} no encontrada`);
     }
 
-    // Only the owner or an admin can view the reservation
+    // Solo el dueño o un admin pueden ver la reserva
     if (
       reservation.user_id !== currentUser.user_id &&
       currentUser.role !== 'ADMIN'
@@ -215,8 +196,8 @@ export class ReservationsService {
   }
 
   /**
-   * Update a reservation
-   * Only the owner or an admin can modify it
+   * Actualizar una reserva
+   * Solo el dueño o admin pueden modificarla
    */
   async update(
     id: string,
@@ -229,7 +210,7 @@ export class ReservationsService {
       throw new BadRequestException('No se puede modificar una reserva cancelada');
     }
 
-    // Validate schedule changes
+    // Validar cambios de horario
     if (updateReservationDto.start_time || updateReservationDto.end_time) {
       const startDate = new Date(
         updateReservationDto.start_time || reservation.start_time,
@@ -244,7 +225,7 @@ export class ReservationsService {
 
       const labId = updateReservationDto.lab_id ?? reservation.lab_id;
 
-      // Check for conflicts excluding the current reservation
+      // Verificar conflictos excluyendo la reserva actual
       const conflictCount = await this.reservationRepository
         .createQueryBuilder('r')
         .where('r.lab_id = :lab_id', { lab_id: labId })
@@ -268,8 +249,8 @@ export class ReservationsService {
   }
 
   /**
-   * Cancel a reservation (soft delete by changing status to CANCELLED)
-   * Publishes ReservationCancelled event
+   * Cancelar una reserva (soft delete cambiando estado a CANCELLED)
+   * Publica evento ReservationCancelled
    */
   async remove(id: string, currentUser: CurrentUserData): Promise<Reservation> {
     const reservation = await this.findOne(id, currentUser);
@@ -281,7 +262,7 @@ export class ReservationsService {
     reservation.status = ReservationStatus.CANCELLED;
     const cancelled = await this.reservationRepository.save(reservation);
 
-    // Publish ReservationCancelled event (fire-and-forget)
+    // Publicar evento ReservationCancelled (fire-and-forget)
     this.rabbitmqService
       .publishReservationCancelled({
         reservation_id: cancelled.reservation_id,
@@ -297,20 +278,13 @@ export class ReservationsService {
   }
 
   /**
-   * Confirm a reservation (change status PENDING → CONFIRMED)
-   * Only ADMIN can confirm
-   * Publishes ReservationConfirmed event
+   * Confirmar una reserva (cambiar estado PENDING → CONFIRMED)
+   * Solo ADMIN puede confirmar
+   * Publica evento ReservationConfirmed
    */
   async confirm(id: string, currentUser: CurrentUserData): Promise<Reservation> {
-    
-    // Security check: Only administrators can confirm reservations
-    if (currentUser.role !== 'ADMIN') {
-      throw new ForbiddenException('Solo los administradores pueden confirmar reservas');
-    }
-
     const reservation = await this.reservationRepository.findOne({
       where: { reservation_id: id },
-      relations: ['laboratory'],
     });
 
     if (!reservation) {
@@ -326,7 +300,7 @@ export class ReservationsService {
     reservation.status = ReservationStatus.CONFIRMED;
     const confirmed = await this.reservationRepository.save(reservation);
 
-    // Publish ReservationConfirmed event (fire-and-forget)
+    // Publicar evento ReservationConfirmed (fire-and-forget)
     this.rabbitmqService
       .publishReservationConfirmed({
         reservation_id: confirmed.reservation_id,
@@ -339,143 +313,7 @@ export class ReservationsService {
         this.logger.error('Error publicando ReservationConfirmed', err),
       );
 
-    // Publish Kafka event for email confirmation (fire-and-forget)
-    if (confirmed.user_email) {
-      this.kafkaProducer
-        .sendEmailNotification({
-          email: confirmed.user_email,
-          userName: confirmed.user_name || confirmed.user_email.split('@')[0],
-          labName: confirmed.laboratory?.name || `Laboratorio ID ${confirmed.lab_id}`,
-          startTime: confirmed.start_time.toISOString(),
-          endTime: confirmed.end_time.toISOString(),
-          purpose: confirmed.purpose || 'Sin motivo especificado',
-          status: 'CONFIRMED',
-        })
-        .catch((err) =>
-          this.logger.error('Error publicando a Kafka para correo de confirmación', err),
-        );
-    }
-
-    this.logger.log(`✅ Reserva confirmada: ${id} por el admin ${currentUser.user_id}`);
+    this.logger.log(`✅ Reserva confirmada: ${id}`);
     return confirmed;
-  }
-
-  /**
-   * Reject a reservation (change status PENDING → CANCELLED)
-   * Only ADMIN can reject
-   */
-  async reject(id: string, currentUser: CurrentUserData): Promise<Reservation> {
-    if (currentUser.role !== 'ADMIN') {
-      throw new ForbiddenException('Solo los administradores pueden rechazar reservas');
-    }
-
-    const reservation = await this.reservationRepository.findOne({
-      where: { reservation_id: id },
-    });
-
-    if (!reservation) {
-      throw new NotFoundException(`Reserva con ID ${id} no encontrada`);
-    }
-
-    if (reservation.status !== ReservationStatus.PENDING) {
-      throw new BadRequestException(
-        `No se puede rechazar una reserva con estado '${reservation.status}'`,
-      );
-    }
-
-    reservation.status = ReservationStatus.CANCELLED;
-    const rejected = await this.reservationRepository.save(reservation);
-
-    // Publish ReservationCancelled event to RabbitMQ
-    this.rabbitmqService
-      .publishReservationCancelled({
-        reservation_id: rejected.reservation_id,
-        user_id: rejected.user_id,
-        lab_id: rejected.lab_id,
-      })
-      .catch((err) =>
-        this.logger.error('Error publicando ReservationCancelled en rechazo', err),
-      );
-
-    this.logger.log(`🚫 Reserva rechazada: ${id} por el admin ${currentUser.user_id}`);
-    return rejected;
-  }
-
-  /**
-   * Get administrative stats for the dashboard charts
-   */
-  async getAdminStats(): Promise<any> {
-    const now = new Date();
-    
-    // Start of today (00:00:00 local)
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    // Start of this week (Monday)
-    const tempDate = new Date();
-    const day = tempDate.getDay();
-    const diff = tempDate.getDate() - day + (day === 0 ? -6 : 1);
-    const startOfWeek = new Date(tempDate.setDate(diff));
-    startOfWeek.setHours(0, 0, 0, 0);
-    
-    // Start of this month
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    // Count queries
-    const countToday = await this.reservationRepository
-      .createQueryBuilder('r')
-      .where('r.start_time >= :startOfToday', { startOfToday })
-      .andWhere('r.status != :status', { status: ReservationStatus.CANCELLED })
-      .getCount();
-
-    const countWeek = await this.reservationRepository
-      .createQueryBuilder('r')
-      .where('r.start_time >= :startOfWeek', { startOfWeek })
-      .andWhere('r.status != :status', { status: ReservationStatus.CANCELLED })
-      .getCount();
-
-    const countMonth = await this.reservationRepository
-      .createQueryBuilder('r')
-      .where('r.start_time >= :startOfMonth', { startOfMonth })
-      .andWhere('r.status != :status', { status: ReservationStatus.CANCELLED })
-      .getCount();
-
-    // Top 3 users (excluding cancelled)
-    const topUsers = await this.reservationRepository
-      .createQueryBuilder('r')
-      .select('r.user_email', 'email')
-      .addSelect('COUNT(r.reservation_id)', 'count')
-      .where('r.status != :status', { status: ReservationStatus.CANCELLED })
-      .groupBy('r.user_email')
-      .orderBy('count', 'DESC')
-      .limit(3)
-      .getRawMany();
-
-    // Top 5 laboratories (excluding cancelled)
-    const topLabs = await this.reservationRepository
-      .createQueryBuilder('r')
-      .leftJoin('r.laboratory', 'l')
-      .select('l.name', 'name')
-      .addSelect('COUNT(r.reservation_id)', 'count')
-      .where('r.status != :status', { status: ReservationStatus.CANCELLED })
-      .groupBy('l.name')
-      .orderBy('count', 'DESC')
-      .limit(5)
-      .getRawMany();
-
-    return {
-      totalByPeriod: {
-        day: countToday,
-        week: countWeek,
-        month: countMonth,
-      },
-      topUsers: topUsers.map(tu => ({
-        email: tu.email || 'usuario@uce.edu.ec',
-        count: parseInt(tu.count, 10),
-      })),
-      topLaboratories: topLabs.map(tl => ({
-        name: tl.name || 'Laboratorio',
-        count: parseInt(tl.count, 10),
-      })),
-    };
   }
 }

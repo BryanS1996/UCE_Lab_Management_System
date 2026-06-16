@@ -16,7 +16,7 @@ import { JwtAuthGuard, RolesGuard } from '../auth/guards';
 @ApiBearerAuth()
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(private usersService: UsersService) { }
 
   @UseGuards(JwtAuthGuard)
   @Get()

@@ -4,7 +4,7 @@ import {
   IsString,
   IsNotEmpty,
   IsOptional,
-  MaxLength,
+  Length,
   Min,
 } from 'class-validator';
 
@@ -24,11 +24,11 @@ export class CreateReservationDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(500, { message: 'El motivo de la reserva no puede superar los 500 caracteres' })
+  @Length(1, 500)
   purpose?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(1000, { message: 'Las notas no pueden superar los 1000 caracteres' })
+  @Length(1, 1000)
   notes?: string;
 }
