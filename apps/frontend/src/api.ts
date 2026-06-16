@@ -65,7 +65,7 @@ async function requestRefreshToken(): Promise<string | null> {
   const refresh = getRefreshToken();
   if (!refresh) return null;
 
-  const res = await fetch(`${apiUrls.auth}/auth/refresh`, {
+  const res = await fetch(`${apiUrls.auth}/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken: refresh }),
@@ -132,19 +132,19 @@ export async function apiFetch(
 export const endpoints = {
   authHealth: () => apiFetch(apiUrls.auth, '/health'),
   authLogin: (email: string, password: string) =>
-    apiFetch(apiUrls.auth, '/auth/login', {
+    apiFetch(apiUrls.auth, '/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
   authRegister: (body: Record<string, string>) =>
-    apiFetch(apiUrls.auth, '/auth/register', {
+    apiFetch(apiUrls.auth, '/register', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
   authRefresh: () => refreshAccessToken(),
-  authMe: () => apiFetch(apiUrls.auth, '/auth/me'),
+  authMe: () => apiFetch(apiUrls.auth, '/me'),
   reservationHealth: () => apiFetch(apiUrls.reservation, '/health'),
-  reservationMy: () => apiFetch(apiUrls.reservation, '/reservations/my'),
+  reservationMy: () => apiFetch(apiUrls.reservation, '/my'),
   reservationLabs: () => apiFetch(apiUrls.reservation, '/laboratories'),
   reservationCreate: (body: Record<string, unknown>) =>
     apiFetch(apiUrls.reservation, '/reservations', {
@@ -154,7 +154,7 @@ export const endpoints = {
   laboratoryHealth: () => apiFetch(apiUrls.laboratory, '/health'),
   laboratoryList: () => apiFetch(apiUrls.laboratory, '/laboratories'),
   notificationHealth: () => apiFetch(apiUrls.notification, '/health'),
-  notificationMy: () => apiFetch(apiUrls.notification, '/notifications/my'),
+  notificationMy: () => apiFetch(apiUrls.notification, '/my'),
   notificationUnread: () =>
-    apiFetch(apiUrls.notification, '/notifications/my/unread-count'),
+    apiFetch(apiUrls.notification, '/my/unread-count'),
 };
