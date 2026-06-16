@@ -23,6 +23,7 @@ services:
 
   # ─── QA: Auth Service (puerto 3010) ──────────────────
   auth-service-qa:
+    image: ${ECR_REGISTRY:-localhost}/uce-auth-service:${IMAGE_TAG:-qa-latest}
     build:
       context: ./services/auth-service
       dockerfile: Dockerfile
@@ -89,6 +90,7 @@ services:
 
   # ─── QA: Reservation Service (puerto 3011) ───────────
   reservation-service-qa:
+    image: ${ECR_REGISTRY:-localhost}/uce-reservation-service:${IMAGE_TAG:-qa-latest}
     build:
       context: ./services/reservation-service
       dockerfile: Dockerfile
@@ -139,6 +141,7 @@ services:
 
   # ─── QA: Laboratory Service (puerto 3012) ────────────
   laboratory-service-qa:
+    image: ${ECR_REGISTRY:-localhost}/uce-laboratory-service:${IMAGE_TAG:-qa-latest}
     build:
       context: ./services/laboratory-service
       dockerfile: Dockerfile
@@ -188,6 +191,7 @@ services:
 
   # ─── QA: Notification Service (puerto 3013) ──────────
   notification-service-qa:
+    image: ${ECR_REGISTRY:-localhost}/uce-notification-service:${IMAGE_TAG:-qa-latest}
     build:
       context: ./services/notification-service
       dockerfile: Dockerfile
@@ -217,6 +221,7 @@ services:
 
   # ─── QA: Frontend (puerto 80) ────────────────────────
   frontend-qa:
+    image: ${ECR_REGISTRY:-localhost}/uce-frontend:${IMAGE_TAG:-qa-latest}
     build:
       context: ./apps/frontend
       dockerfile: Dockerfile
