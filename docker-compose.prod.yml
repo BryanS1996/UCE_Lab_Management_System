@@ -260,7 +260,7 @@ services:
 
   # ─── Production: Zookeeper (Requerido por Kafka) ───────────
   zookeeper-prod:
-    image: ${ECR_REGISTRY:-confluentinc}/cp-zookeeper:7.4.0
+    image: confluentinc/cp-zookeeper:7.4.0
     container_name: zookeeper-prod
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -270,7 +270,7 @@ services:
 
   # ─── Production: Kafka Broker ──────────────────────────────
   kafka-prod:
-    image: ${ECR_REGISTRY:-confluentinc}/cp-kafka:7.4.0
+    image: confluentinc/cp-kafka:7.4.0
     container_name: kafka-prod
     ports:
       - "9094:9092"

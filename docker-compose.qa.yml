@@ -278,7 +278,7 @@ services:
 
   # ─── QA: Zookeeper (Requerido por Kafka) ──────────────
   zookeeper-qa:
-    image: ${ECR_REGISTRY:-confluentinc}/cp-zookeeper:7.4.0
+    image: confluentinc/cp-zookeeper:7.4.0
     container_name: zookeeper-qa
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -288,7 +288,7 @@ services:
 
   # ─── QA: Kafka Broker ─────────────────────────────────
   kafka-qa:
-    image: ${ECR_REGISTRY:-confluentinc}/cp-kafka:7.4.0
+    image: confluentinc/cp-kafka:7.4.0
     container_name: kafka-qa
     ports:
       - "9093:9092"
