@@ -11,7 +11,10 @@ export class LaboratoryService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.laboratoryServiceUrl = this.configService.get<string>('LABORATORY_SERVICE_URL', 'http://laboratory-service-qa:3012');
+    this.laboratoryServiceUrl = this.configService.get<string>('LABORATORY_SERVICE_URL');
+    if (!this.laboratoryServiceUrl) {
+      throw new Error('LABORATORY_SERVICE_URL is not defined in environment variables');
+    }
   }
 
   async getLaboratories(authHeader: string, query: any) {

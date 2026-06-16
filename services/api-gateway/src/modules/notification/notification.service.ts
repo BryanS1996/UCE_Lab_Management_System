@@ -11,7 +11,10 @@ export class NotificationService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.notificationServiceUrl = this.configService.get<string>('NOTIFICATION_SERVICE_URL', 'http://notification-service-qa:3013');
+    this.notificationServiceUrl = this.configService.get<string>('NOTIFICATION_SERVICE_URL');
+    if (!this.notificationServiceUrl) {
+      throw new Error('NOTIFICATION_SERVICE_URL is not defined in environment variables');
+    }
   }
 
   async getNotifications(authHeader: string) {
