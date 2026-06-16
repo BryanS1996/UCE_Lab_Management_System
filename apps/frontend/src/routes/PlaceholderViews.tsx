@@ -24,13 +24,18 @@ export const LoginView: React.FC = () => {
       setError('Por favor, ingresa tu correo y contraseña.');
       return;
     }
+
+    if (!email.toLowerCase().endsWith('@uce.edu.ec')) {
+      setError('El correo electrónico debe pertenecer al dominio institucional @uce.edu.ec.');
+      return;
+    }
     
     setLoading(true);
     setError('');
 
     try {
       // Llamada real de login al API Gateway
-      const data = await authApi.login(email, password);
+      const data = await authApi.login(email.trim().toLowerCase(), password);
       
       // Guardar tokens y cargar sesión
       login(data.accessToken, data.refreshToken, data.user);
@@ -137,6 +142,17 @@ export const LoginView: React.FC = () => {
       >
         SSO UCE (Single Sign-On)
       </Button>
+
+      {/* Registrarse */}
+      <p className="text-xs text-slate-500 mt-6 select-none">
+        ¿No tienes una cuenta?{' '}
+        <span
+          onClick={() => navigate('/register')}
+          className="text-blue-600 hover:underline font-bold cursor-pointer"
+        >
+          Regístrate aquí
+        </span>
+      </p>
     </div>
   );
 };
@@ -147,6 +163,168 @@ const ShieldCheckIcon = () => (
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
+
+// --- VISTA DE REGISTRO (Image 1 / Backend match) ---
+export const RegisterView: React.FC = () => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      setError('Por favor, completa todos los campos.');
+      return;
+    }
+
+    if (!email.toLowerCase().endsWith('@uce.edu.ec')) {
+      setError('El correo electrónico debe pertenecer al dominio institucional @uce.edu.ec.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
+
+    // Validación básica de contraseña (debe coincidir con la regex del backend)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+    if (password.length < 8 || !passwordRegex.test(password)) {
+      setError('La contraseña debe tener al menos 8 caracteres y contener al menos una mayúscula, una minúscula, un número y un carácter especial.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const data = await authApi.register({
+        email: email.trim().toLowerCase(),
+        firstName,
+        lastName,
+        password,
+      });
+
+      // El registro real en el backend retorna tokens directo
+      login(data.accessToken, data.refreshToken, data.user);
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.error('Error al registrarse:', err);
+      const message = err.response?.data?.message || err.data?.message || 'Error de conexión con el servidor.';
+      setError(Array.isArray(message) ? message[0] : message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full text-center">
+      <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Crea tu cuenta</h2>
+      <p className="text-sm text-slate-400 mt-1 select-none">Regístrate para acceder al sistema</p>
+
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-xs font-semibold flex items-center gap-2 text-left">
+          <ShieldAlert className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Formulario */}
+      <form onSubmit={handleRegisterSubmit} className="mt-6 space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            id="firstName"
+            type="text"
+            label="Nombre"
+            placeholder="Bryan"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+          />
+          <Input
+            id="lastName"
+            type="text"
+            label="Apellido"
+            placeholder="Chileno"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+          />
+        </div>
+
+        <Input
+          id="email"
+          type="email"
+          label="Correo electrónico"
+          placeholder="usuario@uce.edu.ec"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          leftIcon={<Mail className="w-4 h-4" />}
+          required
+        />
+
+        <Input
+          id="password"
+          type={showPassword ? 'text' : 'password'}
+          label="Contraseña"
+          placeholder="Min. 8 caracteres (Mayús, Min, Num, Esp)"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          leftIcon={<Lock className="w-4 h-4" />}
+          rightIcon={
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="hover:text-slate-700 transition-colors p-1 -mr-2 rounded-lg cursor-pointer"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          }
+          required
+        />
+
+        <Input
+          id="confirmPassword"
+          type="password"
+          label="Confirmar Contraseña"
+          placeholder="Repite tu contraseña"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          leftIcon={<Lock className="w-4 h-4" />}
+          required
+        />
+
+        {/* Registrarse */}
+        <Button
+          type="submit"
+          variant="primary"
+          isLoading={loading}
+          className="w-full py-3"
+        >
+          Registrarse
+        </Button>
+      </form>
+
+      {/* Volver a Login */}
+      <p className="text-xs text-slate-500 mt-6 select-none">
+        ¿Ya tienes una cuenta?{' '}
+        <span
+          onClick={() => navigate('/login')}
+          className="text-blue-600 hover:underline font-bold cursor-pointer"
+        >
+          Inicia sesión aquí
+        </span>
+      </p>
+    </div>
+  );
+};
 
 
 // --- VISTAS PLACEHOLDERS (Para no crear pantallas todavía, pero validar rutas) ---

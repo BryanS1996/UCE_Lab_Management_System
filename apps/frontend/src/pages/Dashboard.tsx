@@ -23,6 +23,14 @@ import {
   Calendar
 } from 'lucide-react';
 
+const TIME_SLOTS = [
+  { label: '07:00 - 09:00', start: '07:00', end: '09:00' },
+  { label: '09:00 - 11:00', start: '09:00', end: '11:00' },
+  { label: '11:00 - 13:00', start: '11:00', end: '13:00' },
+  { label: '14:00 - 16:00', start: '14:00', end: '16:00' },
+  { label: '16:00 - 18:00', start: '16:00', end: '18:00' },
+];
+
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
   
@@ -39,8 +47,7 @@ export const Dashboard: React.FC = () => {
   // Reservation Modal State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedLabForBooking, setSelectedLabForBooking] = useState<Laboratory | null>(null);
-  const [bookingStartTime, setBookingStartTime] = useState('');
-  const [bookingEndTime, setBookingEndTime] = useState('');
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
   const [bookingPurpose, setBookingPurpose] = useState('');
   const [bookingNotes, setBookingNotes] = useState('');
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -92,6 +99,7 @@ export const Dashboard: React.FC = () => {
 
   const handleOpenBooking = (lab: Laboratory) => {
     setSelectedLabForBooking(lab);
+    setSelectedSlotIndex(null);
     setIsBookingOpen(true);
     setBookingSuccess('');
     setError('');
@@ -100,6 +108,15 @@ export const Dashboard: React.FC = () => {
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLabForBooking) return;
+
+    if (selectedSlotIndex === null) {
+      setError('Por favor, selecciona un bloque de horario.');
+      return;
+    }
+
+    const slot = TIME_SLOTS[selectedSlotIndex];
+    const startTime = slot.start;
+    const endTime = slot.end;
     
     setBookingLoading(true);
     setBookingSuccess('');
@@ -108,22 +125,26 @@ export const Dashboard: React.FC = () => {
     try {
       // Unir la fecha seleccionada del calendario lateral con la hora ingresada
       const dateString = selectedDate.toISOString().split('T')[0];
-      const startDateTime = new Date(`${dateString}T${bookingStartTime}`).toISOString();
-      const endDateTime = new Date(`${dateString}T${bookingEndTime}`).toISOString();
+      const startDateTime = new Date(`${dateString}T${startTime}`).toISOString();
+      const endDateTime = new Date(`${dateString}T${endTime}`).toISOString();
 
-      await reservationApi.create({
+      const bookingPayload: any = {
         lab_id: selectedLabForBooking.lab_id,
         start_time: startDateTime,
         end_time: endDateTime,
-        purpose: bookingPurpose,
-        notes: bookingNotes,
-      });
+        purpose: bookingPurpose.trim(),
+      };
+
+      if (bookingNotes.trim()) {
+        bookingPayload.notes = bookingNotes.trim();
+      }
+
+      await reservationApi.create(bookingPayload);
 
       setBookingSuccess('¡Tu solicitud de reserva ha sido enviada exitosamente!');
       
       // Limpiar formulario
-      setBookingStartTime('');
-      setBookingEndTime('');
+      setSelectedSlotIndex(null);
       setBookingPurpose('');
       setBookingNotes('');
       
@@ -543,23 +564,32 @@ export const Dashboard: React.FC = () => {
               Fecha de Reserva: <span className="text-slate-700 font-semibold">{selectedDate.toLocaleDateString('es-EC')}</span>
             </p>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                id="start_time"
-                type="time"
-                label="Hora de Inicio"
-                value={bookingStartTime}
-                onChange={(e) => setBookingStartTime(e.target.value)}
-                required
-              />
-              <Input
-                id="end_time"
-                type="time"
-                label="Hora de Finalización"
-                value={bookingEndTime}
-                onChange={(e) => setBookingEndTime(e.target.value)}
-                required
-              />
+            <div className="space-y-2 text-left">
+              <label className="block text-xs font-semibold text-slate-700">
+                Horario Disponible (Bloques Fijos)
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {TIME_SLOTS.map((slot, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSlotIndex(index);
+                      setError('');
+                    }}
+                    className={`
+                      py-2.5 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center
+                      ${
+                        selectedSlotIndex === index
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
+                      }
+                    `}
+                  >
+                    {slot.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <Input

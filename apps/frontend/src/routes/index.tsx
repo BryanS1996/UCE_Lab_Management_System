@@ -7,6 +7,7 @@ import { Laboratories } from '../pages/Laboratories';
 import { MyReservations } from '../pages/MyReservations';
 import {
   LoginView,
+  RegisterView,
   ReservationsPlaceholder,
   CalendarPlaceholder,
   NotificationsPlaceholder,
@@ -18,7 +19,6 @@ import {
 export const router = createBrowserRouter([
   // RUTAS PÚBLICAS (Usa AuthLayout)
   {
-    path: '/',
     element: <AuthLayout />,
     children: [
       {
@@ -27,14 +27,13 @@ export const router = createBrowserRouter([
       },
       {
         path: 'register',
-        element: <div className="text-center py-4">Página de Registro (MVP Base)</div>,
+        element: <RegisterView />,
       },
     ],
   },
 
   // RUTAS PRIVADAS (Usa DashboardLayout y protegidas por ProtectedRoute)
   {
-    path: '/',
     element: (
       <ProtectedRoute>
         <DashboardLayout />
@@ -42,7 +41,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       {
-        path: '',
+        path: '/',
         element: <Navigate to="/dashboard" replace />,
       },
       {

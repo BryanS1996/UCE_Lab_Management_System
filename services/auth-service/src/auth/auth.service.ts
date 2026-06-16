@@ -25,7 +25,8 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const existingUser = await this.usersService.findByEmail(registerDto.email);
+    const emailNormalized = registerDto.email.trim().toLowerCase();
+    const existingUser = await this.usersService.findByEmail(emailNormalized);
     if (existingUser) {
       throw new BadRequestException('User already exists');
     }
@@ -34,6 +35,7 @@ export class AuthService {
 
     const user = await this.usersService.create({
       ...registerDto,
+      email: emailNormalized,
       password: hashedPassword,
     });
 
@@ -41,8 +43,9 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
+    const emailNormalized = loginDto.email.trim().toLowerCase();
     const user = await this.usersService.findByEmailWithPassword(
-      loginDto.email,
+      emailNormalized,
     );
 
     if (!user) {
