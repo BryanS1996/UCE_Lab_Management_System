@@ -4,6 +4,7 @@ locals {
     "uce-reservation-service",
     "uce-laboratory-service",
     "uce-notification-service",
+    "uce-api-gateway",
     "uce-frontend",
   ]
   # ¡Aquí está el cambio! Agregamos el puerto 80 para permitir el tráfico del Balanceador y el Health Check

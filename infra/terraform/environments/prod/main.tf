@@ -4,6 +4,7 @@ locals {
     "uce-reservation-service",
     "uce-laboratory-service",
     "uce-notification-service",
+    "uce-api-gateway",
     "uce-frontend",
   ]
   service_ports    = [3000, 3001, 3002, 3003]
