@@ -6,5 +6,12 @@ export default defineConfig({
   server: {
     port: 4200,
     open: true,
+    proxy: {
+      // En desarrollo local, redirige /api/* al API Gateway corriendo en localhost:3000
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
   },
 });
