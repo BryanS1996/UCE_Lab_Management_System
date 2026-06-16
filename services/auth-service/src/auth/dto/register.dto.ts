@@ -8,6 +8,9 @@ import {
 
 export class RegisterDto {
   @IsEmail()
+  @Matches(/^[a-zA-Z0-9._%+-]+@uce\.edu\.ec$/i, {
+    message: 'El correo electrónico debe pertenecer al dominio institucional @uce.edu.ec',
+  })
   email: string;
 
   @IsString()
@@ -18,13 +21,10 @@ export class RegisterDto {
 
   @IsString()
   @MinLength(8)
-  @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-    {
-      message:
-        'Password must contain uppercase, lowercase, numbers and special characters',
-    },
-  )
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+    message:
+      'Password must contain uppercase, lowercase, numbers and special characters',
+  })
   password: string;
 
   @IsOptional()

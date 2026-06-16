@@ -2,10 +2,26 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { WinstonModule } from 'nest-winston';
+import * as winston from 'winston';
 import { AppModule } from './app.module';
 
+const logger = WinstonModule.createLogger({
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.errors({ stack: true }),
+        winston.format.json(),
+      ),
+    }),
+  ],
+});
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger,
+  });
 
   // Validación automática de DTOs
   app.useGlobalPipes(
@@ -66,8 +82,8 @@ Responsabilidades:
   const port = process.env.PORT || 3001;
   await app.listen(port);
 
-  console.log(`Reservation Service running on port ${port}`);
-  console.log(`Swagger docs: http://localhost:${port}/api/docs`);
+  logger.log(`Reservation Service running on port ${port}`, 'Bootstrap');
+  logger.log(`Swagger docs: http://localhost:${port}/api/docs`, 'Bootstrap');
 }
 
-bootstrap();
+void bootstrap();

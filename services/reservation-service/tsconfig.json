@@ -15,10 +15,6 @@
     "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": "./",
-    "paths": {
-      "@/*": ["src/*"]
-    },
     "typeRoots": ["./node_modules/@types"]
   },
   "include": ["src/**/*"],

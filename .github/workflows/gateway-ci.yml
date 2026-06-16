@@ -1,0 +1,21 @@
+name: API Gateway — CI
+
+# Deshabilitado hasta que api-gateway tenga código implementado
+on:
+  workflow_dispatch:
+
+jobs:
+  lint-and-test:
+    name: Lint & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install
+        working-directory: services/api-gateway
+        run: npm ci --legacy-peer-deps
+      - name: Build
+        working-directory: services/api-gateway
+        run: npm run build

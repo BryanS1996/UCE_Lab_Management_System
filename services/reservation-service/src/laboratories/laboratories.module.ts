@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LaboratoriesService } from './laboratories.service';
 import { LaboratoriesController } from './laboratories.controller';
+import { LaboratoriesConsumer } from './laboratories.consumer';
 import { Laboratory, Reservation } from '../database/entities';
 import { CommonModule } from '../common/common.module';
 
@@ -11,7 +12,7 @@ import { CommonModule } from '../common/common.module';
     CommonModule,
   ],
   controllers: [LaboratoriesController],
-  providers: [LaboratoriesService],
+  providers: [LaboratoriesService, LaboratoriesConsumer],
   exports: [LaboratoriesService],
 })
 export class LaboratoriesModule {}

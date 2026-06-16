@@ -1,12 +1,10 @@
+version: '3.8'
 
 services:
-  # ─────────────────────────────────────────────────────
-  # DATABASE: Auth Service
-  # ─────────────────────────────────────────────────────
+  # ─── LOCAL: Auth Database ───────────────────────────────
   auth-db:
     image: postgres:15-alpine
     container_name: auth-db
-    env_file: .env
     environment:
       POSTGRES_USER: authuser
       POSTGRES_PASSWORD: authpassword
@@ -16,46 +14,43 @@ services:
     volumes:
       - auth-db-data:/var/lib/postgresql/data
     networks:
-      - uce-network
+      - uce-local-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U authuser"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ─────────────────────────────────────────────────────
-  # MICROSERVICE: Auth Service
-  # ─────────────────────────────────────────────────────
+  # ─── LOCAL: Auth Service (puerto 3010) ──────────────────
   auth-service:
     build:
       context: ./services/auth-service
       dockerfile: Dockerfile
     container_name: auth-service
-    env_file: .env
     environment:
-      NODE_ENV: production
-      PORT: 3000
+      NODE_ENV: development
+      PORT: 3010
       DB_HOST: auth-db
       DB_PORT: 5432
       DB_USERNAME: authuser
       DB_PASSWORD: authpassword
       DB_NAME: auth_service
-      JWT_SECRET: your-secret-key-change-in-production
-      CORS_ORIGIN: http://localhost:3000
-    ports:
-      - "3000:3000"
+      DB_SSL: "false"
+      JWT_SECRET: local-secret-key-change-in-production
+      CORS_ORIGIN: "*"
     depends_on:
       auth-db:
         condition: service_healthy
-    volumes:
-      - ./services/auth-service/src:/app/src
-      - ./services/auth-service/node_modules:/app/node_modules
     networks:
-      - uce-network
+      - uce-local-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # ─────────────────────────────────────────────────────
-  # DATABASE: Reservation Service
-  # ─────────────────────────────────────────────────────
+  # ─── LOCAL: Reservation Database ───────────────────────
   reservation-db:
     image: postgres:15-alpine
     container_name: reservation-db
@@ -68,16 +63,14 @@ services:
     volumes:
       - reservation-db-data:/var/lib/postgresql/data
     networks:
-      - uce-network
+      - uce-local-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U reservationuser"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ─────────────────────────────────────────────────────
-  # ASYNCHRONOUS MESSAGING: RabbitMQ
-  # ─────────────────────────────────────────────────────
+  # ─── LOCAL: RabbitMQ (puerto 5672 / 15672) ─────────────
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
     container_name: rabbitmq
@@ -90,16 +83,14 @@ services:
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
-      - uce-network
+      - uce-local-network
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 15s
       timeout: 10s
       retries: 5
 
-  # ─────────────────────────────────────────────────────
-  # MICROSERVICE: Reservation Service
-  # ─────────────────────────────────────────────────────
+  # ─── LOCAL: Reservation Service (puerto 3011) ───────────
   reservation-service:
     build:
       context: ./services/reservation-service
@@ -107,35 +98,233 @@ services:
     container_name: reservation-service
     environment:
       NODE_ENV: development
-      PORT: 3001
+      PORT: 3011
       DB_HOST: reservation-db
       DB_PORT: 5432
       DB_USERNAME: reservationuser
       DB_PASSWORD: reservationpassword
       DB_NAME: reservation_service
       DB_SSL: "false"
-      JWT_SECRET: your-secret-key-change-in-production
-      CORS_ORIGIN: http://localhost:3000
+      JWT_SECRET: local-secret-key-change-in-production
+      CORS_ORIGIN: "*"
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
-    ports:
-      - "3001:3001"
+      KAFKA_BROKERS: kafka:29092
     depends_on:
       reservation-db:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    volumes:
-      - ./services/reservation-service/src:/app/src
-      - ./services/reservation-service/node_modules:/app/node_modules
+      kafka:
+        condition: service_started
     networks:
-      - uce-network
+      - uce-local-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── LOCAL: Laboratory Database ─────────────────────────
+  laboratory-db:
+    image: postgres:15-alpine
+    container_name: laboratory-db
+    environment:
+      POSTGRES_USER: labuser
+      POSTGRES_PASSWORD: labpassword
+      POSTGRES_DB: laboratory_service
+    ports:
+      - "5434:5432"
+    volumes:
+      - laboratory-db-data:/var/lib/postgresql/data
+      - ./db-init/init-laboratories.sql:/docker-entrypoint-initdb.d/init-laboratories.sql
+    networks:
+      - uce-local-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── LOCAL: Laboratory Service (puerto 3012) ────────────
+  laboratory-service:
+    build:
+      context: ./services/laboratory-service
+      dockerfile: Dockerfile
+    container_name: laboratory-service
+    environment:
+      NODE_ENV: development
+      PORT: 3012
+      DB_HOST: laboratory-db
+      DB_PORT: 5432
+      DB_USERNAME: labuser
+      DB_PASSWORD: labpassword
+      DB_NAME: laboratory_service
+      DB_SSL: "false"
+      JWT_SECRET: local-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      laboratory-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - uce-local-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── LOCAL: Notification Database ───────────────────────
+  notification-db:
+    image: postgres:15-alpine
+    container_name: notification-db
+    environment:
+      POSTGRES_USER: notifuser
+      POSTGRES_PASSWORD: notifpassword
+      POSTGRES_DB: notification_service
+    ports:
+      - "5435:5432"
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+    networks:
+      - uce-local-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notifuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── LOCAL: Notification Service (puerto 3013) ──────────
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    environment:
+      NODE_ENV: development
+      PORT: 3013
+      DB_HOST: notification-db
+      DB_PORT: 5432
+      DB_USERNAME: notifuser
+      DB_PASSWORD: notifpassword
+      DB_NAME: notification_service
+      DB_SSL: "false"
+      JWT_SECRET: local-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      KAFKA_BROKERS: kafka:29092
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+    depends_on:
+      notification-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - uce-local-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3013/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── LOCAL: API Gateway (puerto 3000) ────────────────────
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway-qa
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      AUTH_SERVICE_URL: http://auth-service:3010
+      RESERVATION_SERVICE_URL: http://reservation-service:3011
+      LABORATORY_SERVICE_URL: http://laboratory-service:3012
+      NOTIFICATION_SERVICE_URL: http://notification-service:3013
+      JWT_SECRET: local-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - reservation-service
+      - laboratory-service
+      - notification-service
+    networks:
+      - uce-local-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ─── LOCAL: Frontend (puerto 80) ────────────────────────
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+      args:
+        ENV: qa
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - uce-local-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health.html"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # ─── LOCAL: Zookeeper (Requerido por Kafka) ───────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - uce-local-network
+
+  # ─── LOCAL: Kafka Broker ──────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - uce-local-network
 
 volumes:
   auth-db-data:
   reservation-db-data:
+  laboratory-db-data:
+  notification-db-data:
   rabbitmq-data:
 
 networks:
-  uce-network:
+  uce-local-network:
     driver: bridge

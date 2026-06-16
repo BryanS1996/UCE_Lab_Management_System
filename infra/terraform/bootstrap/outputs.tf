@@ -1,0 +1,23 @@
+output "state_bucket" {
+  description = "Configurar como variable TF_STATE_BUCKET en GitHub Environment"
+  value       = aws_s3_bucket.tfstate.bucket
+}
+
+# output "lock_table" eliminado: se usa S3 native locking (use_lockfile = true), no DynamoDB
+
+output "backend_config" {
+  description = "Valores para backend.hcl o GitHub Actions"
+  value = {
+    bucket         = aws_s3_bucket.tfstate.bucket
+    region         = var.aws_region
+    encrypt        = true
+  }
+}
+
+output "github_variables" {
+  description = "Copiar a Settings → Environments → Variables"
+  value = {
+    TF_STATE_BUCKET = aws_s3_bucket.tfstate.bucket
+    TF_AWS_REGION   = var.aws_region
+  }
+}
