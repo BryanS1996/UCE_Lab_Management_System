@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { ReservationsService } from './reservations.service';
 import { Reservation, ReservationStatus, Laboratory } from '../database/entities';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
+import { KafkaProducerService } from '../kafka/kafka-producer.service';
 import { BadRequestException, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 
@@ -33,6 +34,10 @@ const mockRabbitmqService = {
   publishReservationCreated: jest.fn().mockResolvedValue(undefined),
   publishReservationConfirmed: jest.fn().mockResolvedValue(undefined),
   publishReservationCancelled: jest.fn().mockResolvedValue(undefined),
+};
+
+const mockKafkaProducerService = {
+  sendEmailNotification: jest.fn().mockResolvedValue(undefined),
 };
 
 // Mock for a regular student user
@@ -101,6 +106,10 @@ describe('ReservationsService', () => {
         {
           provide: RabbitmqService,
           useValue: mockRabbitmqService,
+        },
+        {
+          provide: KafkaProducerService,
+          useValue: mockKafkaProducerService,
         },
       ],
     }).compile();
