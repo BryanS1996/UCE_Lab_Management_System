@@ -52,17 +52,59 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       # ── Build & Push ────────────────────────────────────────────────────────
-      - name: Build & Push all services
-        run: |
-          for service in auth-service reservation-service laboratory-service notification-service; do
-            echo "Building $service..."
-            docker build \
-              -t ${{ steps.login-ecr.outputs.registry }}/uce-$service:latest \
-              -t ${{ steps.login-ecr.outputs.registry }}/uce-$service:${{ github.sha }} \
-              services/$service
-            docker push ${{ steps.login-ecr.outputs.registry }}/uce-$service:latest
-            docker push ${{ steps.login-ecr.outputs.registry }}/uce-$service:${{ github.sha }}
-          done
+      - name: Build & Push — Auth Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/auth-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-auth-service:latest
+            ${{ steps.login-ecr.outputs.registry }}/uce-auth-service:${{ github.sha }}
+
+      - name: Build & Push — Reservation Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/reservation-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-reservation-service:latest
+            ${{ steps.login-ecr.outputs.registry }}/uce-reservation-service:${{ github.sha }}
+
+      - name: Build & Push — Laboratory Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/laboratory-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-laboratory-service:latest
+            ${{ steps.login-ecr.outputs.registry }}/uce-laboratory-service:${{ github.sha }}
+
+      - name: Build & Push — Notification Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/notification-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:latest
+            ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:${{ github.sha }}
+
+      - name: Build & Push — API Gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: services/api-gateway
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-api-gateway:latest
+            ${{ steps.login-ecr.outputs.registry }}/uce-api-gateway:${{ github.sha }}
+
+      - name: Build & Push — Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/frontend
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-frontend:latest
+            ${{ steps.login-ecr.outputs.registry }}/uce-frontend:${{ github.sha }}
 
       # ── Dynamic IP Discovery ────────────────────────────────────────────────
       # Queries AWS for all RUNNING instances in the Production ASG by Name tag.
@@ -137,10 +179,8 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
             sleep 25
-            curl -sf http://localhost:3000/health && echo "✅ Auth PROD OK"
-            curl -sf http://localhost:3001/health && echo "✅ Reservation PROD OK"
-            curl -sf http://localhost:3002/health && echo "✅ Laboratory PROD OK"
-            curl -sf http://localhost:3003/health && echo "✅ Notification PROD OK"
+            curl -sf http://localhost:3000/health && echo "✅ API Gateway PROD OK"
+            curl -sf http://localhost/health.html && echo "✅ Frontend PROD OK"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}

@@ -1,8 +1,278 @@
 # Auth Service
 
-Authentication and user management microservice.
+Authentication and user management microservice for the UCE Lab Management System.
 
-## 🏗️ Structure
+## Overview
+
+The Auth Service is responsible for user authentication, authorization, and user management. It provides JWT-based authentication and role-based access control (RBAC) for the entire system.
+
+## Technology Stack
+
+- **Framework**: NestJS 11
+- **Language**: TypeScript
+- **Database**: PostgreSQL 15
+- **ORM**: TypeORM
+- **Authentication**: JWT (JSON Web Tokens)
+- **Password Hashing**: bcrypt
+
+## Architecture
+
+### Directory Structure
+
+```
+src/
+├── auth/              # Authentication module
+│   ├── dto/          # Request/Response DTOs
+│   ├── guards/       # JWT Auth Guard, Roles Guard
+│   ├── strategies/   # JWT Strategy
+│   └── auth.service.ts
+├── users/            # User CRUD operations
+├── database/         # Database entities (User, Role)
+├── common/           # Shared utilities
+└── main.ts          # Application entry point
+```
+
+## Database Schema
+
+### Users Table
+- `id`: UUID (Primary Key)
+- `email`: string (Unique)
+- `firstName`: string
+- `lastName`: string
+- `password`: string (bcrypt hash)
+- `isActive`: boolean
+- `lastLogin`: timestamp
+- `refreshToken`: string
+- `createdAt`: timestamp
+- `updatedAt`: timestamp
+
+### Roles Table
+- `id`: UUID (Primary Key)
+- `name`: enum (admin, professor, student, lab_manager)
+- `description`: string
+
+### User_Roles Table (Many-to-Many)
+- Links users to roles for RBAC
+
+## API Endpoints
+
+### Authentication
+
+#### POST /auth/register
+Register a new user.
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "password": "SecurePass123!"
+}
+```
+
+**Response:**
+```json
+{
+  "accessToken": "eyJhbGc...",
+  "refreshToken": "eyJhbGc...",
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "roles": []
+  }
+}
+```
+
+#### POST /auth/login
+Authenticate user and receive tokens.
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePass123!"
+}
+```
+
+**Response:**
+```json
+{
+  "accessToken": "eyJhbGc...",
+  "refreshToken": "eyJhbGc...",
+  "user": { ... }
+}
+```
+
+#### POST /auth/refresh
+Refresh access token using refresh token.
+
+**Request Body:**
+```json
+{
+  "refreshToken": "eyJhbGc..."
+}
+```
+
+#### GET /auth/me
+Get current user information (requires JWT).
+
+**Headers:**
+```
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+### Users
+
+#### GET /users
+List all users (requires JWT + admin role).
+
+#### GET /users/:id
+Get user by ID (requires JWT).
+
+#### PATCH /users/:id
+Update user information (requires JWT).
+
+#### DELETE /users/:id
+Delete user (requires JWT + admin role).
+
+## JWT Authentication Flow
+
+1. User registers or logs in
+2. Service validates credentials
+3. Service generates two tokens:
+   - **Access Token**: Valid for 15 minutes
+   - **Refresh Token**: Valid for 7 days
+4. Client includes Access Token in `Authorization: Bearer <token>` header
+5. When Access Token expires, client uses Refresh Token to get new tokens
+
+## Security Features
+
+- **Password Requirements**: 8+ characters, uppercase, lowercase, numbers, special characters
+- **Password Hashing**: bcrypt with salt rounds
+- **JWT Secret**: Environment variable for token signing
+- **Role-Based Access Control**: Guards protect routes based on user roles
+- **CORS**: Configurable CORS origins
+
+## Environment Variables
+
+Required environment variables:
+
+```env
+PORT=3000
+NODE_ENV=development
+DB_HOST=auth-db-qa
+DB_PORT=5432
+DB_USERNAME=authuser
+DB_PASSWORD=authpassword
+DB_NAME=auth_service_qa
+DB_SSL=false
+JWT_SECRET=your-secret-key
+CORS_ORIGIN=*
+```
+
+## Development
+
+### Prerequisites
+- Node.js 18+
+- Docker & Docker Compose
+- PostgreSQL 15
+
+### Installation
+
+```bash
+cd services/auth-service
+npm install
+```
+
+### Running Locally
+
+```bash
+# Development mode with hot-reload
+npm run start:dev
+
+# Build for production
+npm run build
+
+# Production mode
+npm run start:prod
+```
+
+### Testing
+
+```bash
+# Unit tests
+npm test
+
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+```
+
+## Docker Deployment
+
+The service runs automatically with Docker Compose from the project root:
+
+```bash
+docker-compose -f docker-compose.qa.yml up -d auth-service-qa
+```
+
+## Communication with Other Services
+
+The Auth Service communicates with other services through:
+
+1. **JWT Tokens**: Other services validate JWT tokens issued by Auth Service
+2. **Shared JWT Secret**: All services use the same JWT_SECRET for token validation
+3. **User Information**: Other services call `/auth/me` to get user details
+
+## Dependencies
+
+- **@nestjs/common**: Core NestJS modules
+- **@nestjs/jwt**: JWT authentication
+- **@nestjs/passport**: Passport integration
+- **passport**: Authentication middleware
+- **passport-jwt**: JWT strategy for Passport
+- **typeorm**: ORM for database operations
+- **pg**: PostgreSQL client
+- **bcrypt**: Password hashing
+- **class-validator**: DTO validation
+- **class-transformer**: Object transformation
+
+## Troubleshooting
+
+### Database Connection Issues
+- Verify PostgreSQL is running
+- Check DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD
+- Ensure database exists
+
+### JWT Validation Errors
+- Ensure JWT_SECRET matches across all services
+- Check token expiration (15 minutes for access tokens)
+- Verify token format in Authorization header
+
+### Password Issues
+- Ensure password meets requirements (8+ chars, uppercase, lowercase, numbers, special chars)
+- Check bcrypt hash comparison
+
+## CI/CD
+
+The service is included in the GitHub Actions CI/CD pipeline:
+- **Build**: Docker image built and pushed to ECR
+- **Test**: Unit tests run on every PR
+- **Deploy**: Deployed to QA/Production environments
+
+## Future Enhancements
+
+- OAuth2 integration
+- OpenID Connect support
+- Password reset functionality
+- Email verification
+- Two-factor authentication (2FA)
+- Session management
 
 ```
 src/
