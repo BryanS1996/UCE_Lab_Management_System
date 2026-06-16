@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { FlaskConical, Calendar, Users, BarChart3, ShieldCheck } from 'lucide-react';
 import loginBg from '../assets/login_laboratory_bg.png';
+import uceLogo from '../assets/uce_logo.png';
 
 export const AuthLayout: React.FC = () => {
   return (
@@ -12,8 +13,8 @@ export const AuthLayout: React.FC = () => {
         <div className="flex-1 flex flex-col justify-center items-center max-w-md w-full mx-auto">
           {/* Logo del Sistema */}
           <div className="flex flex-col items-center mb-8 select-none">
-            <div className="p-4 bg-blue-50 text-blue-600 rounded-3xl mb-4 shadow-sm border border-blue-100/50">
-              <FlaskConical className="w-10 h-10 animate-pulse-slow" />
+            <div className="mb-4">
+              <img src={uceLogo} alt="UCE Logo" className="w-20 h-20 object-contain" />
             </div>
             <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight leading-none">
               UCE Lab

@@ -71,6 +71,9 @@ export class LaboratoriesService implements OnModuleInit {
       lab_id: saved.lab_id,
       name: saved.name,
       status: saved.status,
+      max_capacity: saved.max_capacity,
+      location: saved.location,
+      description: saved.description,
       created_by: saved.created_by,
       created_at: saved.created_at,
     });
@@ -133,6 +136,9 @@ export class LaboratoriesService implements OnModuleInit {
       lab_id: updated.lab_id,
       name: updated.name,
       status: updated.status,
+      max_capacity: updated.max_capacity,
+      location: updated.location,
+      description: updated.description,
       updated_by: updated.updated_by,
       updated_at: updated.updated_at,
     });
@@ -165,6 +171,9 @@ export class LaboratoriesService implements OnModuleInit {
       lab_id: updated.lab_id,
       name: updated.name,
       status: updated.status,
+      max_capacity: updated.max_capacity,
+      location: updated.location,
+      description: updated.description,
       updated_by: updated.updated_by,
       updated_at: updated.updated_at,
     });

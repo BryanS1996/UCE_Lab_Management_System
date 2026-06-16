@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
+import uceLogo from '../../assets/uce_logo.png';
 import {
   LayoutDashboard,
   Building2,
@@ -122,8 +123,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       {/* Header / Logo */}
       <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800 shrink-0">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="p-2 bg-blue-600/10 text-blue-500 rounded-xl shrink-0">
-            <FlaskConical className="w-5 h-5" />
+          <div className="shrink-0 w-8 h-8 flex items-center justify-center">
+            <img src={uceLogo} alt="UCE Logo" className="w-7 h-7 object-contain" />
           </div>
           {isOpen && (
             <div className="flex flex-col text-left">

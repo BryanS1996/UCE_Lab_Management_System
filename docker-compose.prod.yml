@@ -46,9 +46,11 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       RABBITMQ_URL: ${RABBITMQ_URL}
+      KAFKA_BROKERS: kafka-prod:29092
     depends_on:
       - reservation-db
       - rabbitmq
+      - kafka-prod
     networks:
       - uce-prod-network
     restart: unless-stopped
@@ -102,9 +104,15 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       RABBITMQ_URL: ${RABBITMQ_URL}
+      KAFKA_BROKERS: kafka-prod:29092
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
     depends_on:
       - notification-db
       - rabbitmq
+      - kafka-prod
     networks:
       - uce-prod-network
     restart: unless-stopped
@@ -249,6 +257,34 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
+
+  # ─── Production: Zookeeper (Requerido por Kafka) ───────────
+  zookeeper-prod:
+    image: ${ECR_REGISTRY:-confluentinc}/cp-zookeeper:7.4.0
+    container_name: zookeeper-prod
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - uce-prod-network
+
+  # ─── Production: Kafka Broker ──────────────────────────────
+  kafka-prod:
+    image: ${ECR_REGISTRY:-confluentinc}/cp-kafka:7.4.0
+    container_name: kafka-prod
+    ports:
+      - "9094:9092"
+    depends_on:
+      - zookeeper-prod
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-prod:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-prod:29092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - uce-prod-network
 
 volumes:
   auth-db-data:

@@ -20,7 +20,11 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  Calendar
+  Calendar,
+  Trophy,
+  TrendingUp,
+  Award,
+  ArrowUpRight
 } from 'lucide-react';
 
 const TIME_SLOTS = [
@@ -56,6 +60,14 @@ export const Dashboard: React.FC = () => {
   // Carousel slider state
   const [carouselIndex, setCarouselIndex] = useState(0);
 
+  // Admin Dashboard States
+  const [adminStats, setAdminStats] = useState<{
+    totalByPeriod: { day: number; week: number; month: number };
+    topUsers: Array<{ email: string; count: number }>;
+    topLaboratories: Array<{ name: string; count: number }>;
+  } | null>(null);
+  const [adminPeriod, setAdminPeriod] = useState<'day' | 'week' | 'month'>('week');
+
   const fetchData = async () => {
     setLoading(true);
     setError('');
@@ -84,6 +96,15 @@ export const Dashboard: React.FC = () => {
         const maintenance = labsData.filter(l => l.status === 'MAINTENANCE').length;
         const inactive = labsData.filter(l => l.status === 'INACTIVE').length;
         setStats({ total, active, maintenance, inactive });
+      }
+
+      if (user?.role === 'ADMIN') {
+        try {
+          const statsDataAdmin = await reservationApi.getAdminStats();
+          setAdminStats(statsDataAdmin);
+        } catch (e) {
+          console.error('Error fetching admin statistics:', e);
+        }
       }
     } catch (err: any) {
       console.error('Error fetching dashboard data:', err);
@@ -254,6 +275,298 @@ export const Dashboard: React.FC = () => {
     setSelectedDate(newDate);
   };
 
+  if (user?.role === 'ADMIN') {
+    const periodLabels = {
+      day: 'Hoy',
+      week: 'Esta Semana',
+      month: 'Este Mes'
+    };
+
+    const maxLabCount = adminStats && adminStats.topLaboratories.length > 0
+      ? Math.max(...adminStats.topLaboratories.map(l => l.count))
+      : 1;
+
+    const maxPeriodCount = adminStats
+      ? Math.max(adminStats.totalByPeriod.day, adminStats.totalByPeriod.week, adminStats.totalByPeriod.month, 1)
+      : 1;
+
+    return (
+      <div className="space-y-6">
+        {/* Header con Bienvenida */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 p-6 rounded-3xl text-white shadow-xl shadow-slate-100 relative overflow-hidden">
+          <div className="relative z-10 text-left">
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight">Panel Administrativo</h1>
+            <p className="text-indigo-200 text-sm mt-1">Bienvenido, {user.firstName} {user.lastName}. Gestión global de laboratorios y reservas.</p>
+          </div>
+          <div className="flex items-center gap-3 relative z-10">
+            <Button
+              variant="outline"
+              className="border-indigo-500/30 text-white hover:bg-white/10 bg-white/5 rounded-2xl"
+              onClick={fetchData}
+            >
+              Recargar Datos
+            </Button>
+          </div>
+          <div className="absolute right-0 bottom-0 opacity-10 translate-x-1/4 translate-y-1/4 pointer-events-none select-none">
+            <Building2 className="w-80 h-80 text-white" />
+          </div>
+        </div>
+
+        {/* Métrica Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="p-6 flex items-center gap-5 border border-slate-100 hover:shadow-md transition-shadow">
+            <div className="p-3.5 bg-blue-50 text-blue-600 rounded-2xl"><Building2 className="w-6 h-6" /></div>
+            <div className="text-left">
+              <span className="text-2xl font-extrabold text-slate-900 leading-none">{labs.length}</span>
+              <p className="text-xs font-semibold text-slate-400 mt-1 select-none">Total laboratorios</p>
+            </div>
+          </Card>
+          
+          <Card className="p-6 flex items-center gap-5 border border-slate-100 hover:shadow-md transition-shadow">
+            <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-2xl"><Activity className="w-6 h-6" /></div>
+            <div className="text-left">
+              <span className="text-2xl font-extrabold text-slate-900 leading-none">
+                {labs.filter(l => l.status === 'ACTIVE').length}
+              </span>
+              <p className="text-xs font-semibold text-slate-400 mt-1 select-none">Laboratorios activos</p>
+            </div>
+          </Card>
+
+          <Card className="p-6 flex items-center gap-5 border border-slate-100 hover:shadow-md transition-shadow">
+            <div className="p-3.5 bg-indigo-50 text-indigo-600 rounded-2xl"><CalendarCheck className="w-6 h-6" /></div>
+            <div className="text-left">
+              <span className="text-2xl font-extrabold text-slate-900 leading-none">
+                {adminStats?.totalByPeriod[adminPeriod] ?? 0}
+              </span>
+              <div className="flex items-center gap-1.5 mt-1">
+                <p className="text-xs font-semibold text-slate-400 select-none">Reservas ({periodLabels[adminPeriod]})</p>
+                <select
+                  value={adminPeriod}
+                  onChange={(e) => setAdminPeriod(e.target.value as any)}
+                  className="text-[10px] bg-slate-100 text-slate-600 border-none rounded p-0.5 font-bold cursor-pointer outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                  <option value="day">Hoy</option>
+                  <option value="week">Semana</option>
+                  <option value="month">Mes</option>
+                </select>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 flex items-center gap-5 border border-slate-100 hover:shadow-md transition-shadow">
+            <div className="p-3.5 bg-amber-50 text-amber-600 rounded-2xl"><AlertCircle className="w-6 h-6" /></div>
+            <div className="text-left">
+              <span className="text-2xl font-extrabold text-slate-900 leading-none">
+                {labs.filter(l => l.status === 'MAINTENANCE').length}
+              </span>
+              <p className="text-xs font-semibold text-slate-400 mt-1 select-none">En mantenimiento</p>
+            </div>
+          </Card>
+        </div>
+
+        {/* Grid Principal */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Columna Izquierda: Gráficos de reservas y top labs (span 2) */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Gráfico 1: Reservas por Período */}
+            <Card className="p-6 border border-slate-100">
+              <div className="flex justify-between items-center mb-6 text-left">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-indigo-600" />
+                    Reservas Totales por Período
+                  </h2>
+                  <p className="text-xs text-slate-400">Comparativa de solicitudes registradas en el sistema.</p>
+                </div>
+              </div>
+
+              {adminStats ? (
+                <div className="space-y-4">
+                  {/* Fila Hoy */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="font-semibold text-slate-700">Reservas de Hoy</span>
+                      <span className="font-bold text-indigo-600">{adminStats.totalByPeriod.day}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${(adminStats.totalByPeriod.day / maxPeriodCount) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Fila Semana */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="font-semibold text-slate-700">Reservas de esta Semana</span>
+                      <span className="font-bold text-indigo-600">{adminStats.totalByPeriod.week}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${(adminStats.totalByPeriod.week / maxPeriodCount) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Fila Mes */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="font-semibold text-slate-700">Reservas de este Mes</span>
+                      <span className="font-bold text-indigo-600">{adminStats.totalByPeriod.month}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-purple-500 to-pink-600 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${(adminStats.totalByPeriod.month / maxPeriodCount) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-40 flex items-center justify-center text-slate-400 text-sm">Cargando gráfico...</div>
+              )}
+            </Card>
+
+            {/* Gráfico 2: Top 5 Labs */}
+            <Card className="p-6 border border-slate-100">
+              <div className="text-left mb-6">
+                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Award className="w-5 h-5 text-emerald-600" />
+                  Laboratorios Más Solicitados (Top 5)
+                </h2>
+                <p className="text-xs text-slate-400">Laboratorios con mayor volumen de reservas aprobadas y pendientes.</p>
+              </div>
+
+              {adminStats && adminStats.topLaboratories.length > 0 ? (
+                <div className="space-y-4">
+                  {adminStats.topLaboratories.map((lab, index) => {
+                    const colors = [
+                      'from-blue-500 to-indigo-600',
+                      'from-emerald-500 to-teal-600',
+                      'from-purple-500 to-indigo-600',
+                      'from-orange-500 to-amber-600',
+                      'from-pink-500 to-rose-600'
+                    ];
+                    const percentage = (lab.count / maxLabCount) * 100;
+                    return (
+                      <div key={index}>
+                        <div className="flex justify-between text-sm mb-1.5">
+                          <span className="font-semibold text-slate-700 flex items-center gap-2">
+                            <span className="w-5 h-5 flex items-center justify-center bg-slate-100 rounded-full text-[10px] font-black text-slate-500">
+                              {index + 1}
+                            </span>
+                            {lab.name}
+                          </span>
+                          <span className="font-bold text-slate-900">{lab.count} {lab.count === 1 ? 'reserva' : 'reservas'}</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                          <div
+                            className={`bg-gradient-to-r ${colors[index % colors.length]} h-full rounded-full transition-all duration-500`}
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="h-40 flex items-center justify-center text-slate-400 text-sm">No hay datos de laboratorios reservados aún.</div>
+              )}
+            </Card>
+
+          </div>
+
+          {/* Columna Derecha: Top Users y Accesos (span 1) */}
+          <div className="space-y-6">
+            
+            {/* Top 3 Users */}
+            <Card className="p-6 border border-slate-100">
+              <div className="text-left mb-6">
+                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-amber-500" />
+                  Usuarios Frecuentes (Top 3)
+                </h2>
+                <p className="text-xs text-slate-400">Estudiantes y docentes con más reservas registradas.</p>
+              </div>
+
+              {adminStats && adminStats.topUsers.length > 0 ? (
+                <div className="divide-y divide-slate-100">
+                  {adminStats.topUsers.map((userStats, index) => {
+                    const medals = ['🥇', '🥈', '🥉'];
+                    const bgBadge = ['bg-amber-50 text-amber-700', 'bg-slate-50 text-slate-600', 'bg-orange-50 text-orange-700'];
+                    return (
+                      <div key={index} className="py-3.5 flex items-center justify-between first:pt-0 last:pb-0">
+                        <div className="flex items-center gap-3 text-left">
+                          <span className="text-2xl">{medals[index]}</span>
+                          <div>
+                            <p className="text-sm font-bold text-slate-800 break-all">{userStats.email}</p>
+                            <p className="text-[10px] text-slate-400 font-semibold uppercase">Estudiante / Docente</p>
+                          </div>
+                        </div>
+                        <span className={`text-xs font-black px-2.5 py-1 rounded-full ${bgBadge[index]}`}>
+                          {userStats.count}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="h-40 flex items-center justify-center text-slate-400 text-sm">No hay registros de reservas aún.</div>
+              )}
+            </Card>
+
+            {/* Accesos Rápidos */}
+            <Card className="p-6 border border-slate-100">
+              <div className="text-left mb-4">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider select-none">Accesos Rápidos</h3>
+              </div>
+              <div className="space-y-3">
+                <button
+                  onClick={() => window.location.href = '/reservas'}
+                  className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-indigo-50 border border-slate-100 hover:border-indigo-200 rounded-2xl group transition-all"
+                >
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                      <ClipboardList className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-bold text-slate-800">Aprobación de Reservas</span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Aprobar o rechazar solicitudes</p>
+                    </div>
+                  </div>
+                  <ArrowUpRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                </button>
+
+                <button
+                  onClick={() => window.location.href = '/laboratorios'}
+                  className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-200 rounded-2xl group transition-all"
+                >
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-bold text-slate-800">Ver Laboratorios</span>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Monitorear estado de laboratorios</p>
+                    </div>
+                  </div>
+                  <ArrowUpRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                </button>
+              </div>
+            </Card>
+
+          </div>
+
+        </div>
+
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       
@@ -270,7 +583,7 @@ export const Dashboard: React.FC = () => {
         <Card className="p-6 flex items-center gap-5">
           <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-2xl"><CalendarCheck className="w-6 h-6" /></div>
           <div className="text-left">
-            <span className="text-2xl font-extrabold text-slate-900 leading-none">{stats.active}</span>
+            <span className="text-2xl font-extrabold text-slate-900 leading-none">{myReservations.length}</span>
             <p className="text-xs font-semibold text-slate-400 mt-1 select-none">Reservas programadas</p>
           </div>
         </Card>
@@ -278,7 +591,7 @@ export const Dashboard: React.FC = () => {
         <Card className="p-6 flex items-center gap-5">
           <div className="p-3.5 bg-purple-50 text-purple-600 rounded-2xl"><Activity className="w-6 h-6" /></div>
           <div className="text-left">
-            <span className="text-2xl font-extrabold text-slate-900 leading-none">{stats.maintenance}</span>
+            <span className="text-2xl font-extrabold text-slate-900 leading-none">{stats.active}</span>
             <p className="text-xs font-semibold text-slate-400 mt-1 select-none">Laboratorios disponibles</p>
           </div>
         </Card>

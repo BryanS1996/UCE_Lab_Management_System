@@ -20,8 +20,18 @@ export interface Reservation {
 }
 
 export const reservationApi = {
+  getAllReservations: async (params?: Record<string, any>): Promise<Reservation[]> => {
+    const response = await axiosInstance.get<Reservation[]>('/api/reservations', { params });
+    return response.data;
+  },
+
   getMyReservations: async (): Promise<Reservation[]> => {
     const response = await axiosInstance.get<Reservation[]>('/api/reservations/my');
+    return response.data;
+  },
+
+  getAdminStats: async (): Promise<any> => {
+    const response = await axiosInstance.get<any>('/api/reservations/admin/stats');
     return response.data;
   },
 
@@ -43,6 +53,16 @@ export const reservationApi = {
 
   update: async (id: string, data: Record<string, any>): Promise<Reservation> => {
     const response = await axiosInstance.patch<Reservation>(`/api/reservations/${id}`, data);
+    return response.data;
+  },
+
+  confirm: async (id: string): Promise<Reservation> => {
+    const response = await axiosInstance.patch<Reservation>(`/api/reservations/${id}/confirm`);
+    return response.data;
+  },
+
+  reject: async (id: string): Promise<Reservation> => {
+    const response = await axiosInstance.patch<Reservation>(`/api/reservations/${id}/reject`);
     return response.data;
   },
 

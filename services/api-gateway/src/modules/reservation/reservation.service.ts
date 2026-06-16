@@ -17,9 +17,28 @@ export class ReservationService {
     }
   }
 
+  async getAllReservations(authHeader: string, query?: any) {
+    const response = await firstValueFrom(
+      this.httpService.get(`${this.reservationServiceUrl}/reservations`, {
+        headers: { Authorization: authHeader },
+        params: query,
+      }),
+    );
+    return response.data;
+  }
+
   async getMyReservations(authHeader: string) {
     const response = await firstValueFrom(
       this.httpService.get(`${this.reservationServiceUrl}/reservations/my`, {
+        headers: { Authorization: authHeader },
+      }),
+    );
+    return response.data;
+  }
+
+  async getAdminStats(authHeader: string) {
+    const response = await firstValueFrom(
+      this.httpService.get(`${this.reservationServiceUrl}/reservations/admin/stats`, {
         headers: { Authorization: authHeader },
       }),
     );
@@ -38,6 +57,24 @@ export class ReservationService {
   async createReservation(authHeader: string, createDto: any) {
     const response = await firstValueFrom(
       this.httpService.post(`${this.reservationServiceUrl}/reservations`, createDto, {
+        headers: { Authorization: authHeader },
+      }),
+    );
+    return response.data;
+  }
+
+  async confirmReservation(authHeader: string, id: string) {
+    const response = await firstValueFrom(
+      this.httpService.patch(`${this.reservationServiceUrl}/reservations/${id}/confirm`, {}, {
+        headers: { Authorization: authHeader },
+      }),
+    );
+    return response.data;
+  }
+
+  async rejectReservation(authHeader: string, id: string) {
+    const response = await firstValueFrom(
+      this.httpService.patch(`${this.reservationServiceUrl}/reservations/${id}/reject`, {}, {
         headers: { Authorization: authHeader },
       }),
     );

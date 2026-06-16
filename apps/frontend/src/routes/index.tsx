@@ -5,6 +5,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { Dashboard } from '../pages/Dashboard';
 import { Laboratories } from '../pages/Laboratories';
 import { MyReservations } from '../pages/MyReservations';
+import { GlobalReservations } from '../pages/GlobalReservations';
 import {
   LoginView,
   RegisterView,
@@ -56,7 +57,7 @@ export const router = createBrowserRouter([
         path: 'reservas',
         element: (
           <ProtectedRoute allowedRoles={['ADMIN', 'DOCENTE', 'LAB_MANAGER']}>
-            <ReservationsPlaceholder />
+            <GlobalReservations />
           </ProtectedRoute>
         ),
       },
