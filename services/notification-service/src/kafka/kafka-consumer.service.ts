@@ -3,6 +3,17 @@ import { Kafka, Consumer } from 'kafkajs';
 import { ConfigService } from '@nestjs/config';
 import { MailService } from '../mail/mail.service';
 
+interface ReservationEmailPayload {
+  email: string;
+  userName: string;
+  labName: string;
+  startTime: string;
+  endTime: string;
+  purpose: string;
+  status?: string;
+}
+
+
 @Injectable()
 export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(KafkaConsumerService.name);
@@ -35,7 +46,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
           this.logger.log(`📥 Mensaje recibido en topic '${topic}' partition [${partition}]`);
           if (value) {
             try {
-              const payload = JSON.parse(value);
+              const payload = JSON.parse(value) as ReservationEmailPayload;
               this.logger.log(`Procesando confirmación de correo para: ${payload.email}`);
               await this.mailService.sendConfirmationEmail(payload);
             } catch (parseError) {
