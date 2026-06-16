@@ -188,9 +188,37 @@ jobs:
             docker compose -f docker-compose.qa.yml pull \
               api-gateway-qa auth-service-qa reservation-service-qa laboratory-service-qa notification-service-qa frontend-qa
             docker compose -f docker-compose.qa.yml up -d
-            sleep 20
-            curl -sf http://localhost:3000/health && echo "✅ API Gateway QA OK"
-            curl -sf http://localhost/health.html && echo "✅ Frontend QA OK"
+
+            # Esperar a que los servicios estén listos (hasta 3 minutos)
+            echo "⏳ Waiting for API Gateway to be ready..."
+            for i in $(seq 1 18); do
+              if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+                echo "✅ API Gateway QA OK (attempt $i)"
+                break
+              fi
+              if [ "$i" -eq 18 ]; then
+                echo "❌ API Gateway did not respond after 3 minutes"
+                docker compose -f docker-compose.qa.yml logs --tail=50 api-gateway-qa
+                exit 1
+              fi
+              echo "   attempt $i/18 — retrying in 10s..."
+              sleep 10
+            done
+
+            echo "⏳ Waiting for Frontend to be ready..."
+            for i in $(seq 1 12); do
+              if curl -sf http://localhost/health.html > /dev/null 2>&1; then
+                echo "✅ Frontend QA OK (attempt $i)"
+                break
+              fi
+              if [ "$i" -eq 12 ]; then
+                echo "❌ Frontend did not respond after 2 minutes"
+                docker compose -f docker-compose.qa.yml logs --tail=50 frontend-qa
+                exit 1
+              fi
+              echo "   attempt $i/12 — retrying in 10s..."
+              sleep 10
+            done
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.QA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.QA_AWS_SECRET_ACCESS_KEY }}

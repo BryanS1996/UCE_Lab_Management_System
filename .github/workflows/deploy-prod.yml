@@ -188,9 +188,37 @@ jobs:
             docker compose -f docker-compose.prod.yml pull \
               api-gateway auth-service reservation-service laboratory-service notification-service frontend
             docker compose -f docker-compose.prod.yml up -d
-            sleep 25
-            curl -sf http://localhost:3000/health && echo "✅ API Gateway PROD OK"
-            curl -sf http://localhost/health.html && echo "✅ Frontend PROD OK"
+
+            # Esperar a que los servicios estén listos (hasta 3 minutos)
+            echo "⏳ Waiting for API Gateway to be ready..."
+            for i in $(seq 1 18); do
+              if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+                echo "✅ API Gateway PROD OK (attempt $i)"
+                break
+              fi
+              if [ "$i" -eq 18 ]; then
+                echo "❌ API Gateway did not respond after 3 minutes"
+                docker compose -f docker-compose.prod.yml logs --tail=50 api-gateway
+                exit 1
+              fi
+              echo "   attempt $i/18 — retrying in 10s..."
+              sleep 10
+            done
+
+            echo "⏳ Waiting for Frontend to be ready..."
+            for i in $(seq 1 12); do
+              if curl -sf http://localhost/health.html > /dev/null 2>&1; then
+                echo "✅ Frontend PROD OK (attempt $i)"
+                break
+              fi
+              if [ "$i" -eq 12 ]; then
+                echo "❌ Frontend did not respond after 2 minutes"
+                docker compose -f docker-compose.prod.yml logs --tail=50 frontend
+                exit 1
+              fi
+              echo "   attempt $i/12 — retrying in 10s..."
+              sleep 10
+            done
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
