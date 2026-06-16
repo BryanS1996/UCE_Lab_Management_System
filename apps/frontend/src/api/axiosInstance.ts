@@ -4,10 +4,7 @@ import { mapRole } from '../utils/jwt';
 const TOKEN_KEY = 'uce_access_token';
 const REFRESH_KEY = 'uce_refresh_token';
 
-// En producción/QA: VITE_API_GATEWAY_URL debe estar vacío para usar rutas relativas (/api/...)
-// que nginx redirige internamente al contenedor api-gateway.
-// Solo se usa una URL absoluta en desarrollo local.
-const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || '';
+const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3000';
 
 export const axiosInstance = axios.create({
   baseURL: API_GATEWAY_URL,
