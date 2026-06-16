@@ -105,11 +105,14 @@ services:
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
       RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
+      KAFKA_BROKERS: kafka-qa:29092
     depends_on:
       reservation-db-qa:
         condition: service_healthy
       rabbitmq-qa:
         condition: service_healthy
+      kafka-qa:
+        condition: service_started
     networks:
       - uce-qa-network
     restart: unless-stopped
@@ -202,11 +205,18 @@ services:
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
       RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
+      KAFKA_BROKERS: kafka-qa:29092
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
     depends_on:
       notification-db-qa:
         condition: service_healthy
       rabbitmq-qa:
         condition: service_healthy
+      kafka-qa:
+        condition: service_started
     networks:
       - uce-qa-network
     restart: unless-stopped
@@ -265,6 +275,34 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+
+  # ─── QA: Zookeeper (Requerido por Kafka) ──────────────
+  zookeeper-qa:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper-qa
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - uce-qa-network
+
+  # ─── QA: Kafka Broker ─────────────────────────────────
+  kafka-qa:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka-qa
+    ports:
+      - "9093:9092"
+    depends_on:
+      - zookeeper-qa
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-qa:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-qa:29092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - uce-qa-network
 
 volumes:
   auth-db-qa-data:

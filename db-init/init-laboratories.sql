@@ -1,8 +1,5 @@
 -- db-init/init-laboratories.sql
 
--- Conectarse explícitamente a la base de datos del microservicio
-\c laboratory_service_qa;
-
 -- 1. CREAR LA TABLA PRIMERO (Para que el INSERT no falle)
 CREATE TABLE IF NOT EXISTS laboratories (
     lab_id SERIAL PRIMARY KEY,

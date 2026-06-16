@@ -10,6 +10,10 @@ import {
 } from 'class-validator';
 
 export class CreateLaboratoryDto {
+  @IsOptional()
+  @IsInt()
+  lab_id?: number;
+
   @IsNotEmpty({ message: 'El nombre del laboratorio es requerido' })
   @IsString()
   @Length(2, 255)

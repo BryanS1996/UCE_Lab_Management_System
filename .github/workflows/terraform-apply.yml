@@ -53,7 +53,7 @@ jobs:
           terraform apply -auto-approve \
             -var="enable_rds=${{ github.ref == 'refs/heads/main' && 'true' || 'false' }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            ${{ github.ref == 'refs/heads/main' && '-var="jwt_secret=${{ secrets.JWT_SECRET }}"' || '' }} \
+            ${{ github.ref == 'refs/heads/main' && format('-var="jwt_secret={0}"', secrets.JWT_SECRET) || '' }} \
             -var="image_tag=${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}"
 
       - name: Mostrar outputs

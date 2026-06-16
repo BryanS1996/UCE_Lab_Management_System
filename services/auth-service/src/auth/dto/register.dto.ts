@@ -8,6 +8,9 @@ import {
 
 export class RegisterDto {
   @IsEmail()
+  @Matches(/^[a-zA-Z0-9._%+-]+@uce\.edu\.ec$/i, {
+    message: 'El correo electrónico debe pertenecer al dominio institucional @uce.edu.ec',
+  })
   email: string;
 
   @IsString()

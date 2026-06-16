@@ -2,12 +2,14 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Laboratory, LaboratoryStatus } from './entities/laboratory.entity';
 import { CreateLaboratoryDto, UpdateLaboratoryDto } from './dto';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
+import { INITIAL_LABORATORIES } from './laboratories.seed';
 
 export interface LaboratoryFilters {
   status?: LaboratoryStatus;
@@ -21,12 +23,28 @@ export interface CurrentUser {
 }
 
 @Injectable()
-export class LaboratoriesService {
+export class LaboratoriesService implements OnModuleInit {
   constructor(
     @InjectRepository(Laboratory)
     private readonly labRepository: Repository<Laboratory>,
     private readonly rabbitmqService: RabbitmqService,
   ) {}
+
+  async onModuleInit() {
+    const count = await this.labRepository.count();
+    if (count === 0) {
+      console.log('🌱 No laboratories found in database. Seeding 50 initial laboratories...');
+      for (const labData of INITIAL_LABORATORIES) {
+        const lab = this.labRepository.create({
+          ...labData,
+          created_by: 'system',
+          updated_by: 'system',
+        });
+        await this.labRepository.save(lab);
+      }
+      console.log('✅ 50 laboratories successfully seeded!');
+    }
+  }
 
   async create(
     dto: CreateLaboratoryDto,
@@ -53,6 +71,9 @@ export class LaboratoriesService {
       lab_id: saved.lab_id,
       name: saved.name,
       status: saved.status,
+      max_capacity: saved.max_capacity,
+      location: saved.location,
+      description: saved.description,
       created_by: saved.created_by,
       created_at: saved.created_at,
     });
@@ -115,6 +136,9 @@ export class LaboratoriesService {
       lab_id: updated.lab_id,
       name: updated.name,
       status: updated.status,
+      max_capacity: updated.max_capacity,
+      location: updated.location,
+      description: updated.description,
       updated_by: updated.updated_by,
       updated_at: updated.updated_at,
     });
@@ -147,6 +171,9 @@ export class LaboratoriesService {
       lab_id: updated.lab_id,
       name: updated.name,
       status: updated.status,
+      max_capacity: updated.max_capacity,
+      location: updated.location,
+      description: updated.description,
       updated_by: updated.updated_by,
       updated_at: updated.updated_at,
     });
