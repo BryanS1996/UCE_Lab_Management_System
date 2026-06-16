@@ -128,6 +128,7 @@ services:
       - "5436:5432"
     volumes:
       - laboratory-db-qa-data:/var/lib/postgresql/data
+      - ./db-init/init-laboratories.sql:/docker-entrypoint-initdb.d/init-laboratories.sql
     networks:
       - uce-qa-network
     healthcheck:

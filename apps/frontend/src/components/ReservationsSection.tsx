@@ -13,12 +13,11 @@ interface Reservation {
 }
 
 interface Laboratory {
-  id: string;
+  lab_id: string;
   name: string;
   description: string;
   location: string;
-  capacity: number;
-  type: string;
+  max_capacity: number;
   status: string;
 }
 
@@ -274,7 +273,7 @@ const ReservationsSection: React.FC<ReservationsSectionProps> = ({
                 {laboratories
                   .filter((lab) => (lab.status || '').toUpperCase() === 'ACTIVE' || (lab.status || '').toUpperCase() === 'AVAILABLE')
                   .map((lab) => (
-                    <option key={lab.id} value={lab.id}>
+                    <option key={lab.lab_id} value={lab.lab_id}>
                       {lab.name} - {lab.location}
                     </option>
                   ))}

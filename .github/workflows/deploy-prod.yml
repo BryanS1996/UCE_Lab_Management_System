@@ -97,9 +97,9 @@ jobs:
           # Write to GITHUB_OUTPUT so subsequent steps can reference it.
           echo "app_ips=${PRIVATE_IPS}" >> "$GITHUB_OUTPUT"
 
-      # ── SCP: copy compose file to ALL app instances ─────────────────────────
+      # ── SCP: copy compose file and DB scripts to ALL app instances ─────────────────────────
       # appleboy/scp-action also supports comma-separated hosts.
-      - name: Copy compose file to Production EC2 instances
+      - name: Copy compose file and DB scripts to Production EC2 instances
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ steps.discover-ips.outputs.app_ips }}
@@ -108,7 +108,7 @@ jobs:
           proxy_host: ${{ secrets.PROD_BASTION_PUBLIC_IP }}
           proxy_username: ec2-user
           proxy_key: ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}
-          source: docker-compose.prod.yml
+          source: "docker-compose.prod.yml,db-init/"
           target: /home/ec2-user/app/
 
       # ── SSH Deploy ──────────────────────────────────────────────────────────
