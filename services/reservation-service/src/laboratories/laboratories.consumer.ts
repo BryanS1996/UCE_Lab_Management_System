@@ -51,7 +51,7 @@ export class LaboratoriesConsumer {
         is_active: payload.status !== 'INACTIVE',
         location: payload.location,
         description: payload.description,
-      } as any);
+      });
       this.logger.log(`✅ Laboratorio creado en DB local: ${payload.name} (ID: ${payload.lab_id})`);
     } catch (error) {
       this.logger.error(`❌ Error guardando laboratorio creado: ${(error as Error).message}`);
@@ -87,7 +87,7 @@ export class LaboratoriesConsumer {
             is_active: payload.status !== 'INACTIVE',
             location: payload.location,
             description: payload.description,
-          } as any);
+          });
         } catch (createError) {
           this.logger.error(`❌ Error creando laboratorio tras fallo de actualización: ${(createError as Error).message}`);
         }

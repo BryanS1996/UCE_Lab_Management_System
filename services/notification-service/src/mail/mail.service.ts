@@ -13,7 +13,9 @@ export class MailService {
     const user = this.configService.get<string>('SMTP_USER', '');
     const pass = this.configService.get<string>('SMTP_PASS', '');
 
-    this.logger.log(`Configurando Nodemailer con SMTP_USER: ${user} y HOST: ${host}`);
+    this.logger.log(
+      `Configurando Nodemailer con SMTP_USER: ${user} y HOST: ${host}`,
+    );
     this.transporter = nodemailer.createTransport({
       host,
       port,
@@ -35,12 +37,15 @@ export class MailService {
     status?: string;
   }) {
     const isConfirmed = payload.status === 'CONFIRMED';
-    const dateFormatted = new Date(payload.startTime).toLocaleDateString('es-EC', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'UTC',
-    });
+    const dateFormatted = new Date(payload.startTime).toLocaleDateString(
+      'es-EC',
+      {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC',
+      },
+    );
     const startHour = new Date(payload.startTime).toLocaleTimeString('es-EC', {
       hour: '2-digit',
       minute: '2-digit',
@@ -137,9 +142,13 @@ export class MailService {
       };
 
       await this.transporter.sendMail(mailOptions);
-      this.logger.log(`✉️ Correo de confirmación enviado exitosamente a ${payload.email} con estado ${payload.status || 'PENDING'}`);
+      this.logger.log(
+        `✉️ Correo de confirmación enviado exitosamente a ${payload.email} con estado ${payload.status || 'PENDING'}`,
+      );
     } catch (error) {
-      this.logger.error(`❌ Falló el envío de correo a ${payload.email}: ${(error as Error).message}`);
+      this.logger.error(
+        `❌ Falló el envío de correo a ${payload.email}: ${(error as Error).message}`,
+      );
     }
   }
 }

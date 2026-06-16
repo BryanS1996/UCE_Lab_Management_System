@@ -89,7 +89,7 @@ export class ReservationsController {
   })
   @ApiResponse({ status: 200, description: 'Estadísticas obtenidas.' })
   @ApiResponse({ status: 403, description: 'Acceso prohibido.' })
-  getAdminStats(@CurrentUser() currentUser: CurrentUserData) {
+  getAdminStats() {
     return this.reservationsService.getAdminStats();
   }
 

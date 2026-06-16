@@ -14,6 +14,12 @@ import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 import { KafkaProducerService } from '../kafka/kafka-producer.service';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 
+interface StatsResult {
+  email?: string;
+  name?: string;
+  count: string | number;
+}
+
 @Injectable()
 export class ReservationsService {
   private readonly logger = new Logger(ReservationsService.name);
@@ -404,7 +410,7 @@ export class ReservationsService {
   /**
    * Get administrative stats for the dashboard charts
    */
-  async getAdminStats(): Promise<any> {
+  async getAdminStats(): Promise<unknown> {
     const now = new Date();
     
     // Start of today (00:00:00 local)
@@ -439,8 +445,7 @@ export class ReservationsService {
       .andWhere('r.status != :status', { status: ReservationStatus.CANCELLED })
       .getCount();
 
-    // Top 3 users (excluding cancelled)
-    const topUsers = await this.reservationRepository
+    const topUsers = (await this.reservationRepository
       .createQueryBuilder('r')
       .select('r.user_email', 'email')
       .addSelect('COUNT(r.reservation_id)', 'count')
@@ -448,10 +453,10 @@ export class ReservationsService {
       .groupBy('r.user_email')
       .orderBy('count', 'DESC')
       .limit(3)
-      .getRawMany();
+      .getRawMany()) as StatsResult[];
 
     // Top 5 laboratories (excluding cancelled)
-    const topLabs = await this.reservationRepository
+    const topLabs = (await this.reservationRepository
       .createQueryBuilder('r')
       .leftJoin('r.laboratory', 'l')
       .select('l.name', 'name')
@@ -460,7 +465,7 @@ export class ReservationsService {
       .groupBy('l.name')
       .orderBy('count', 'DESC')
       .limit(5)
-      .getRawMany();
+      .getRawMany()) as StatsResult[];
 
     return {
       totalByPeriod: {
@@ -470,11 +475,11 @@ export class ReservationsService {
       },
       topUsers: topUsers.map(tu => ({
         email: tu.email || 'usuario@uce.edu.ec',
-        count: parseInt(tu.count, 10),
+        count: Number(tu.count),
       })),
       topLaboratories: topLabs.map(tl => ({
         name: tl.name || 'Laboratorio',
-        count: parseInt(tl.count, 10),
+        count: Number(tl.count),
       })),
     };
   }
