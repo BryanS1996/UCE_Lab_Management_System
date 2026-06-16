@@ -23,9 +23,10 @@ services:
 
   # ─── QA: Auth Service (puerto 3010) ──────────────────
   auth-service-qa:
-    image: ${ECR_REGISTRY}/uce-auth-service:${IMAGE_TAG:-qa-latest}
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
     container_name: auth-service-qa
-    pull_policy: always
     environment:
       NODE_ENV: qa
       PORT: 3010
@@ -88,9 +89,10 @@ services:
 
   # ─── QA: Reservation Service (puerto 3011) ───────────
   reservation-service-qa:
-    image: ${ECR_REGISTRY}/uce-reservation-service:${IMAGE_TAG:-qa-latest}
+    build:
+      context: ./services/reservation-service
+      dockerfile: Dockerfile
     container_name: reservation-service-qa
-    pull_policy: always
     environment:
       NODE_ENV: qa
       PORT: 3011
@@ -126,6 +128,7 @@ services:
       - "5436:5432"
     volumes:
       - laboratory-db-qa-data:/var/lib/postgresql/data
+      - ./db-init/init-laboratories.sql:/docker-entrypoint-initdb.d/init-laboratories.sql
     networks:
       - uce-qa-network
     healthcheck:
@@ -136,9 +139,10 @@ services:
 
   # ─── QA: Laboratory Service (puerto 3012) ────────────
   laboratory-service-qa:
-    image: ${ECR_REGISTRY}/uce-laboratory-service:${IMAGE_TAG:-qa-latest}
+    build:
+      context: ./services/laboratory-service
+      dockerfile: Dockerfile
     container_name: laboratory-service-qa
-    pull_policy: always
     environment:
       NODE_ENV: qa
       PORT: 3012
@@ -150,10 +154,13 @@ services:
       DB_SSL: "false"
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
     ports:
       - "3012:3012"
     depends_on:
       laboratory-db-qa:
+        condition: service_healthy
+      rabbitmq-qa:
         condition: service_healthy
     networks:
       - uce-qa-network
@@ -181,9 +188,10 @@ services:
 
   # ─── QA: Notification Service (puerto 3013) ──────────
   notification-service-qa:
-    image: ${ECR_REGISTRY}/uce-notification-service:${IMAGE_TAG:-qa-latest}
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
     container_name: notification-service-qa
-    pull_policy: always
     environment:
       NODE_ENV: qa
       PORT: 3013
@@ -209,9 +217,10 @@ services:
 
   # ─── QA: Frontend (puerto 80) ────────────────────────
   frontend-qa:
-    image: ${ECR_REGISTRY}/uce-frontend:${IMAGE_TAG:-qa-latest}
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
     container_name: frontend-qa
-    pull_policy: always
     ports:
       - "80:80"
     networks:

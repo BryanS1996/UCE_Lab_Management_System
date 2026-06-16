@@ -3,7 +3,7 @@
 const ALB_URL = "http://uce-lab-alb-qa-856993220.us-east-1.elb.amazonaws.com/api/laboratories/laboratories";
 
 // Pega aquí el Access JWT que te da tu panel de pruebas (sin la palabra Bearer)
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2MjA2NDc4Yy0zMzgwLTQ2ODEtOTZiMi1iZjk3OWE2YzcxNDYiLCJlbWFpbCI6ImJyeWFuZmFicmljaW9AdWNlLmVkdS5lYyIsInJvbGUiOiJTVFVERU5UIiwiaWF0IjoxNzgxMzE4MjEwLCJleHAiOjE3ODEzMTkxMTAsImlzcyI6ImF1dGgtc2VydmljZSJ9.TUwIXUCj8LoqqX18qwJFvCNmCn4hUH2oUCuMIGEjnvI"; 
+const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzZTRhMGM4Yy0zMjM2LTQwYWUtYTZkMi03ODFlYTkyZTI2MGIiLCJlbWFpbCI6ImJyeWFuZmFicmljaW9AdWNlLmVkdS5lYyIsInJvbGUiOiJTVFVERU5UIiwiaWF0IjoxNzgxNTQzNDc5LCJleHAiOjE3ODE1NDQzNzksImlzcyI6ImF1dGgtc2VydmljZSJ9.9OUxW4VpkMMDbtQKo2Bni-W7wx1kvhS9a8EMO4dVHc0"; 
 // seed.js
 
 const laboratorios = [

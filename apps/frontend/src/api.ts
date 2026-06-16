@@ -5,15 +5,12 @@ const REFRESH_KEY = 'uce_refresh_token';
 
 let refreshInFlight: Promise<string | null> | null = null;
 
-// Use relative /api paths for production/QA to work with Nginx reverse proxy
-// Fallback to services config for local development
-const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
+// Forzar siempre rutas relativas para Docker/Nginx
 const apiUrls = {
-  auth: isLocalDev ? services.auth : '/api/auth',
-  reservation: isLocalDev ? services.reservation : '/api/reservations',
-  laboratory: isLocalDev ? services.laboratory : '/api/laboratories',
-  notification: isLocalDev ? services.notification : '/api/notifications',
+  auth: '/api/auth',
+  reservation: '/api/reservations',
+  laboratory: '/api/laboratories',
+  notification: '/api/notifications',
 };
 
 export function getToken(): string | null {

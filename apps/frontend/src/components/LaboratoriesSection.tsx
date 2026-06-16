@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Monitor, Microscope, MapPin, Users, RefreshCw } from 'lucide-react';
+import { Monitor, MapPin, Users, RefreshCw } from 'lucide-react';
 import { endpoints } from '../api';
 
 interface Laboratory {
-  id: string;
+  lab_id: string;
   name: string;
   description: string;
   location: string;
-  capacity: number;
-  type: string;
+  max_capacity: number;
   status: string;
 }
 
@@ -43,20 +42,7 @@ const LaboratoriesSection: React.FC<LaboratoriesSectionProps> = ({ isAuthenticat
 
   const handleReserve = (lab: Laboratory) => {
     if (onReserveLab) {
-      onReserveLab(lab.id, lab.name);
-    }
-  };
-
-  const getLabIcon = (type: string) => {
-    switch ((type || '').toUpperCase()) {
-      case 'COMPUTER':
-        return <Monitor className="w-6 h-6 text-blue-600" />;
-      case 'PHYSICS':
-        return <Microscope className="w-6 h-6 text-purple-600" />;
-      case 'CHEMISTRY':
-        return <Microscope className="w-6 h-6 text-blue-600" />;
-      default:
-        return <Monitor className="w-6 h-6 text-gray-600" />;
+      onReserveLab(lab.lab_id, lab.name);
     }
   };
 
@@ -131,12 +117,12 @@ const LaboratoriesSection: React.FC<LaboratoriesSectionProps> = ({ isAuthenticat
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {laboratories.map((lab) => (
             <div
-              key={lab.id}
+              key={lab.lab_id}
               className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="p-3 bg-gray-50 rounded-xl">
-                  {getLabIcon(lab.type)}
+                  <Monitor className="w-6 h-6 text-blue-600" />
                 </div>
                 {getStatusBadge(lab.status)}
               </div>
@@ -149,7 +135,7 @@ const LaboratoriesSection: React.FC<LaboratoriesSectionProps> = ({ isAuthenticat
                 </div>
                 <div className="flex items-center">
                   <Users className="w-4 h-4 mr-2 text-gray-400" />
-                  <span>Capacidad: {lab.capacity} personas</span>
+                  <span>Capacidad: {lab.max_capacity} personas</span>
                 </div>
               </div>
               <button
