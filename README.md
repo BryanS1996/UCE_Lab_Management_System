@@ -1,15 +1,13 @@
 # UCE Lab Management System
 
-![Angular](https://img.shields.io/badge/Angular-20-DD0031?style=for-the-badge\&logo=angular\&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge\&logo=react\&logoColor=white)
 ![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=for-the-badge\&logo=nestjs\&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge\&logo=typescript\&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge\&logo=postgresql\&logoColor=white)
 ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.x-FF6600?style=for-the-badge\&logo=rabbitmq\&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge\&logo=docker\&logoColor=white)
 ![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge\&logo=terraform\&logoColor=white)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge\&logo=kubernetes\&logoColor=white)
-![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge\&logo=prometheus\&logoColor=white)
-![Grafana](https://img.shields.io/badge/Grafana-F46800?style=for-the-badge\&logo=grafana\&logoColor=white)
+![AWS EC2](https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge\&logo=amazonaws\&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-2088FF?style=for-the-badge\&logo=githubactions\&logoColor=white)
 
 [![Repository](https://img.shields.io/badge/GitHub-Repository-black?style=for-the-badge\&logo=github)](https://github.com/BryanS1996/UCE_Lab_Management_System)
@@ -88,17 +86,15 @@ The project was built following:
 ## System Architecture
 
 ```text
-Frontend (Angular)
+Frontend (React + TypeScript + Tailwind CSS)
         │
         ▼
-API Gateway
-        │
  ┌──────┼─────────────────────────────────────┐
  │      │       │        │                    │
  ▼      ▼       ▼        ▼                    ▼
 
-Auth Laboratory Reservation Notification Future Services
-Svc   Service    Service    Service
+Auth Laboratory Reservation Notification
+Service  Service    Service    Service
 
         │
         ▼
@@ -119,9 +115,10 @@ PostgreSQL Databases
 
 ### Frontend
 
-* Angular
+* React 18
 * TypeScript
-* RxJS
+* Tailwind CSS
+* Lucide React Icons
 * Vite
 
 ### Backend

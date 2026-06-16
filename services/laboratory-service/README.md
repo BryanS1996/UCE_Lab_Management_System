@@ -1,98 +1,291 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Laboratory Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Laboratory management microservice for the UCE Lab Management System.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Overview
 
-## Description
+The Laboratory Service manages laboratory information, including registration, availability tracking, and resource management. It provides CRUD operations for laboratories and serves as the central source of truth for laboratory data across the system.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Technology Stack
 
-## Project setup
+- **Framework**: NestJS 11
+- **Language**: TypeScript
+- **Database**: PostgreSQL 15
+- **ORM**: TypeORM
+- **Validation**: class-validator
 
-```bash
-$ npm install
+## Architecture
+
+### Directory Structure
+
+```
+src/
+├── app.controller.ts          # Health check endpoint
+├── app.module.ts              # Main module with TypeORM
+├── app.service.ts             # Global services
+├── main.ts                    # Application entry point
+├── database/
+│   └── entities/
+│       ├── laboratory.entity.ts    # Laboratory entity
+│       └── index.ts
+├── laboratories/
+│   ├── dto/
+│   │   ├── create-laboratory.dto.ts
+│   │   ├── update-laboratory.dto.ts
+│   │   └── index.ts
+│   ├── laboratories.controller.ts   # REST endpoints
+│   ├── laboratories.service.ts      # Business logic
+│   └── laboratories.module.ts       # Laboratories module
 ```
 
-## Compile and run the project
+## Database Schema
 
-```bash
-# development
-$ npm run start
+### Laboratories Table
+- `lab_id`: string (Primary Key) - Unique identifier for the laboratory
+- `name`: string (255 characters) - Laboratory name
+- `description`: text - Detailed description
+- `location`: string (255 characters) - Physical location
+- `max_capacity`: integer - Maximum number of people
+- `status`: enum (ACTIVE, INACTIVE, MAINTENANCE) - Current status
+- `is_active`: boolean - Active flag
+- `created_by`: string - User who created the record
+- `updated_by`: string - User who last updated the record
+- `created_at`: timestamp - Creation timestamp
+- `updated_at`: timestamp - Last update timestamp
+- `version`: integer - Optimistic locking version
 
-# watch mode
-$ npm run start:dev
+## API Endpoints
 
-# production mode
-$ npm run start:prod
+### GET /laboratories
+Get all laboratories with optional filtering.
+
+**Query Parameters:**
+- `status`: Filter by status (ACTIVE, INACTIVE, MAINTENANCE)
+- `is_active`: Filter by active status (true/false)
+
+**Response:** 200 OK
+```json
+[
+  {
+    "lab_id": "lab-001",
+    "name": "Laboratory Computación 12",
+    "description": "Standard laboratory for computer science practices",
+    "location": "Torre de Ciencias Piso 3 - Sala 111",
+    "max_capacity": 34,
+    "status": "ACTIVE",
+    "is_active": true,
+    "created_at": "2026-06-01T00:00:00.000Z",
+    "updated_at": "2026-06-01T00:00:00.000Z",
+    "version": 1
+  }
+]
 ```
 
-## Run tests
+### GET /laboratories/:lab_id
+Get a specific laboratory by ID.
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+**Response:** 200 OK
+```json
+{
+  "lab_id": "lab-001",
+  "name": "Laboratory Computación 12",
+  "description": "Standard laboratory for computer science practices",
+  "location": "Torre de Ciencias Piso 3 - Sala 111",
+  "max_capacity": 34,
+  "status": "ACTIVE",
+  "is_active": true,
+  "created_at": "2026-06-01T00:00:00.000Z",
+  "updated_at": "2026-06-01T00:00:00.000Z",
+  "version": 1
+}
 ```
 
-## Deployment
+### POST /laboratories
+Create a new laboratory (admin only).
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+**Request Body:**
+```json
+{
+  "lab_id": "lab-002",
+  "name": "Laboratory de Física",
+  "description": "Physics laboratory with experimental equipment",
+  "location": "Torre de Ciencias Piso 2 - Sala 201",
+  "max_capacity": 25,
+  "status": "ACTIVE"
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+**Response:** 201 Created
 
-## Resources
+### PATCH /laboratories/:lab_id
+Update laboratory details (admin only).
 
-Check out a few resources that may come in handy when working with NestJS:
+**Request Body:**
+```json
+{
+  "name": "Laboratory de Física Avanzada",
+  "max_capacity": 30,
+  "status": "MAINTENANCE"
+}
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+**Response:** 200 OK
 
-## Support
+### DELETE /laboratories/:lab_id
+Delete a laboratory (admin only).
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+**Response:** 200 OK
 
-## Stay in touch
+## Environment Variables
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Required environment variables:
 
-## License
+```env
+PORT=3012
+NODE_ENV=qa
+DB_HOST=laboratory-db-qa
+DB_PORT=5432
+DB_USERNAME=labuser
+DB_PASSWORD=labpassword
+DB_NAME=laboratory_service_qa
+DB_SSL=false
+JWT_SECRET=your-secret-key
+CORS_ORIGIN=*
+RABBITMQ_URL=amqp://guest:guest@rabbitmq-qa:5672
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Development
+
+### Prerequisites
+- Node.js 18+
+- Docker & Docker Compose
+- PostgreSQL 15
+
+### Installation
+
+```bash
+cd services/laboratory-service
+npm install
+```
+
+### Running Locally
+
+```bash
+# Development mode with hot-reload
+npm run start:dev
+
+# Build for production
+npm run build
+
+# Production mode
+npm run start:prod
+```
+
+### Testing
+
+```bash
+# Unit tests
+npm test
+
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+```
+
+## Docker Deployment
+
+The service runs automatically with Docker Compose from the project root:
+
+```bash
+docker-compose -f docker-compose.qa.yml up -d laboratory-service-qa
+```
+
+## Database Initialization
+
+Laboratories are automatically initialized on first database startup using the SQL script in `db-init/init-laboratories.sql`. This script:
+
+- Connects to the `laboratory_service_qa` database
+- Inserts 50+ pre-configured laboratories across different departments
+- Uses `ON CONFLICT DO NOTHING` to prevent duplicate inserts on restart
+
+**Initialization Flow:**
+1. PostgreSQL container starts
+2. Script in `/docker-entrypoint-initdb.d/` executes automatically
+3. Laboratories are inserted with proper schema
+4. Service can immediately query available laboratories
+
+## Communication with Other Services
+
+The Laboratory Service communicates with other services through:
+
+1. **REST API**: Other services query laboratory information
+   - Reservation Service validates lab availability
+   - Frontend displays laboratory list
+   - Notification Service includes lab details in messages
+
+2. **RabbitMQ**: Publishes laboratory lifecycle events (future)
+   - `laboratory.created` → Analytics Service
+   - `laboratory.updated` → Cache invalidation
+   - `laboratory.deleted` → Reservation cleanup
+
+3. **JWT Validation**: Validates admin tokens for write operations
+
+## Business Logic
+
+### Laboratory Status Management
+- **ACTIVE**: Available for reservations
+- **MAINTENANCE**: Temporarily unavailable
+- **INACTIVE**: Permanently closed
+
+### Capacity Validation
+- Ensures `max_capacity` is a positive integer
+- Validates against reservation counts (future integration)
+
+### Location Tracking
+- Standardized location format
+- Supports multi-campus locations
+
+## Dependencies
+
+- **@nestjs/common**: Core NestJS modules
+- **@nestjs/typeorm**: TypeORM integration
+- **typeorm**: ORM for database operations
+- **pg**: PostgreSQL client
+- **class-validator**: DTO validation
+- **class-transformer**: Object transformation
+
+## Troubleshooting
+
+### Database Connection Issues
+- Verify PostgreSQL is running
+- Check DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD
+- Ensure database exists
+
+### Laboratory Not Found
+- Verify `lab_id` format (string, not integer)
+- Check if laboratory was deleted
+- Verify database initialization script ran
+
+### Initialization Script Not Running
+- Check volume mount in docker-compose.qa.yml
+- Verify script exists in `db-init/` directory
+- Ensure database is being created for the first time
+
+## CI/CD
+
+The service is included in the GitHub Actions CI/CD pipeline:
+- **Build**: Docker image built and pushed to ECR
+- **Test**: Unit tests run on every PR
+- **Deploy**: Deployed to QA/Production environments
+
+## Future Enhancements
+
+- Real-time availability tracking
+- Equipment inventory management
+- Laboratory scheduling integration
+- Image uploads for laboratory photos
+- Advanced filtering and search
+- Geographic location support
+- Maintenance scheduling
