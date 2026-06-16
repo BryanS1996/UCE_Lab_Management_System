@@ -5,7 +5,7 @@
 services:
 
   auth-service:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-auth-service:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-auth-service:${IMAGE_TAG:-latest}
     container_name: auth-service
     pull_policy: always
     environment:
@@ -31,7 +31,7 @@ services:
       retries: 3
 
   reservation-service:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-reservation-service:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-reservation-service:${IMAGE_TAG:-latest}
     container_name: reservation-service
     pull_policy: always
     environment:
@@ -46,9 +46,11 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       RABBITMQ_URL: ${RABBITMQ_URL}
+      KAFKA_BROKERS: kafka-prod:29092
     depends_on:
       - reservation-db
       - rabbitmq
+      - kafka-prod
     networks:
       - uce-prod-network
     restart: unless-stopped
@@ -59,7 +61,7 @@ services:
       retries: 3
 
   laboratory-service:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-laboratory-service:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-laboratory-service:${IMAGE_TAG:-latest}
     container_name: laboratory-service
     pull_policy: always
     environment:
@@ -87,7 +89,7 @@ services:
       retries: 3
 
   notification-service:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-notification-service:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-notification-service:${IMAGE_TAG:-latest}
     container_name: notification-service
     pull_policy: always
     environment:
@@ -102,9 +104,15 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       RABBITMQ_URL: ${RABBITMQ_URL}
+      KAFKA_BROKERS: kafka-prod:29092
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
     depends_on:
       - notification-db
       - rabbitmq
+      - kafka-prod
     networks:
       - uce-prod-network
     restart: unless-stopped
@@ -116,7 +124,7 @@ services:
 
   # ─── Production: API Gateway ─────────────────────────────
   api-gateway:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-api-gateway:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-api-gateway:${IMAGE_TAG:-latest}
     container_name: api-gateway
     pull_policy: always
     environment:
@@ -146,7 +154,7 @@ services:
 
   # ─── Production: Frontend ─────────────────────────────────
   frontend:
-    image: ${ECR_REGISTRY:-bryanfabricio96}/uce-frontend:latest
+    image: ${ECR_REGISTRY:-localhost}/uce-frontend:${IMAGE_TAG:-latest}
     container_name: frontend
     pull_policy: always
     ports:
@@ -249,6 +257,34 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
+
+  # ─── Production: Zookeeper (Requerido por Kafka) ───────────
+  zookeeper-prod:
+    image: ${ECR_REGISTRY:-confluentinc}/cp-zookeeper:7.4.0
+    container_name: zookeeper-prod
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - uce-prod-network
+
+  # ─── Production: Kafka Broker ──────────────────────────────
+  kafka-prod:
+    image: ${ECR_REGISTRY:-confluentinc}/cp-kafka:7.4.0
+    container_name: kafka-prod
+    ports:
+      - "9094:9092"
+    depends_on:
+      - zookeeper-prod
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-prod:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-prod:29092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - uce-prod-network
 
 volumes:
   auth-db-data:

@@ -7,6 +7,7 @@ import { ReservationsModule } from './reservations/reservations.module';
 import { LaboratoriesModule } from './laboratories/laboratories.module';
 import { CommonModule } from './common/common.module';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
+import { KafkaModule } from './kafka/kafka.module';
 import { HealthModule } from './health/health.module';
 import { Reservation, Laboratory } from './database/entities';
 
@@ -41,6 +42,7 @@ import { Reservation, Laboratory } from './database/entities';
     // Módulos de dominio
     CommonModule,
     RabbitmqModule,
+    KafkaModule,
     ReservationsModule,
     LaboratoriesModule,
     HealthModule,

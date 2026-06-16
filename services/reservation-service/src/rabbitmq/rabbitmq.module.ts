@@ -15,6 +15,11 @@ import { RabbitmqService } from './rabbitmq.service';
             type: 'topic',
             options: { durable: true },
           },
+          {
+            name: 'laboratory.events',
+            type: 'topic',
+            options: { durable: true },
+          },
         ],
         uri:
           configService.get<string>('RABBITMQ_URL') ||

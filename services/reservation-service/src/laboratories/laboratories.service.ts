@@ -2,21 +2,43 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Laboratory } from '../database/entities';
 import { Reservation, ReservationStatus } from '../database/entities';
 import { CreateLaboratoryDto, UpdateLaboratoryDto } from './dto';
+import { INITIAL_LABORATORIES } from './laboratories.seed';
 
 @Injectable()
-export class LaboratoriesService {
+export class LaboratoriesService implements OnModuleInit {
   constructor(
     @InjectRepository(Laboratory)
     private readonly laboratoryRepository: Repository<Laboratory>,
     @InjectRepository(Reservation)
     private readonly reservationRepository: Repository<Reservation>,
   ) {}
+
+  async onModuleInit() {
+    const count = await this.laboratoryRepository.count();
+    if (count === 0) {
+      console.log('🌱 No laboratories found in reservation-service database. Seeding 50 initial laboratories...');
+      let index = 1;
+      for (const labData of INITIAL_LABORATORIES) {
+        const lab = this.laboratoryRepository.create({
+          lab_id: index++,
+          name: labData.name,
+          max_capacity: labData.max_capacity,
+          is_active: labData.status !== 'INACTIVE',
+          location: labData.location,
+          description: labData.description,
+        });
+        await this.laboratoryRepository.save(lab);
+      }
+      console.log('✅ 50 laboratories successfully seeded in reservation-service!');
+    }
+  }
 
   /**
    * Crear un nuevo laboratorio

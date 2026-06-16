@@ -82,6 +82,17 @@ export class ReservationsController {
     );
   }
 
+  @Get('admin/stats')
+  @ApiOperation({
+    summary: 'Obtener estadísticas administrativas',
+    description: 'ADMIN: Retorna estadísticas de reservas por período (día/semana/mes), top 3 usuarios y top 5 laboratorios.',
+  })
+  @ApiResponse({ status: 200, description: 'Estadísticas obtenidas.' })
+  @ApiResponse({ status: 403, description: 'Acceso prohibido.' })
+  getAdminStats() {
+    return this.reservationsService.getAdminStats();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obtener reserva por ID' })
   @ApiParam({ name: 'id', type: String, description: 'UUID de la reserva' })
@@ -129,5 +140,17 @@ export class ReservationsController {
     @CurrentUser() currentUser: CurrentUserData,
   ) {
     return this.reservationsService.confirm(id, currentUser);
+  }
+
+  @Patch(':id/reject')
+  @ApiOperation({ summary: 'Rechazar reserva', description: 'Cambia estado de PENDING → CANCELLED (Rechazada). Solo ADMIN. Publica evento ReservationCancelled en RabbitMQ.' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Reserva rechazada.' })
+  @ApiResponse({ status: 400, description: 'La reserva no está en estado PENDING.' })
+  reject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: CurrentUserData,
+  ) {
+    return this.reservationsService.reject(id, currentUser);
   }
 }

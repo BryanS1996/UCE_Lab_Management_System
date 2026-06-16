@@ -8,6 +8,8 @@ import { WebsocketModule } from './websocket/websocket.module';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 import { HealthModule } from './health/health.module';
 import { CommonModule } from './common/common.module';
+import { KafkaModule } from './kafka/kafka.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { CommonModule } from './common/common.module';
     CommonModule,
     RabbitmqModule,
     WebsocketModule,
+    KafkaModule,
+    MailModule,
 
     // Módulos de dominio
     NotificationsModule,

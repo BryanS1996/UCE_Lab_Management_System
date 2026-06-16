@@ -11,7 +11,14 @@ import { Repository } from 'typeorm';
 import { Reservation, ReservationStatus, Laboratory } from '../database/entities';
 import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
+import { KafkaProducerService } from '../kafka/kafka-producer.service';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
+
+interface StatsResult {
+  email?: string;
+  name?: string;
+  count: string | number;
+}
 
 @Injectable()
 export class ReservationsService {
@@ -23,6 +30,7 @@ export class ReservationsService {
     @InjectRepository(Laboratory)
     private readonly laboratoryRepository: Repository<Laboratory>,
     private readonly rabbitmqService: RabbitmqService,
+    private readonly kafkaProducer: KafkaProducerService,
   ) {}
 
   /**
@@ -90,6 +98,8 @@ export class ReservationsService {
     const reservation = this.reservationRepository.create({
       lab_id,
       user_id: currentUser.user_id, // Taken from the JWT, not the request body
+      user_email: currentUser.email,
+      user_name: currentUser.email.split('@')[0],
       start_time: startDate,
       end_time: endDate,
       purpose,
@@ -111,6 +121,21 @@ export class ReservationsService {
       })
       .catch((err) =>
         this.logger.error('Error publicando ReservationCreated', err),
+      );
+
+    // 6. Publish Kafka event for email confirmation (fire-and-forget)
+    this.kafkaProducer
+      .sendEmailNotification({
+        email: currentUser.email,
+        userName: currentUser.email.split('@')[0],
+        labName: laboratory.name,
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString(),
+        purpose: purpose || 'Sin motivo especificado',
+        status: 'PENDING',
+      })
+      .catch((err) =>
+        this.logger.error('Error publicando a Kafka para correo', err),
       );
 
     this.logger.log(
@@ -291,6 +316,7 @@ export class ReservationsService {
 
     const reservation = await this.reservationRepository.findOne({
       where: { reservation_id: id },
+      relations: ['laboratory'],
     });
 
     if (!reservation) {
@@ -319,7 +345,142 @@ export class ReservationsService {
         this.logger.error('Error publicando ReservationConfirmed', err),
       );
 
+    // Publish Kafka event for email confirmation (fire-and-forget)
+    if (confirmed.user_email) {
+      this.kafkaProducer
+        .sendEmailNotification({
+          email: confirmed.user_email,
+          userName: confirmed.user_name || confirmed.user_email.split('@')[0],
+          labName: confirmed.laboratory?.name || `Laboratorio ID ${confirmed.lab_id}`,
+          startTime: confirmed.start_time.toISOString(),
+          endTime: confirmed.end_time.toISOString(),
+          purpose: confirmed.purpose || 'Sin motivo especificado',
+          status: 'CONFIRMED',
+        })
+        .catch((err) =>
+          this.logger.error('Error publicando a Kafka para correo de confirmación', err),
+        );
+    }
+
     this.logger.log(`✅ Reserva confirmada: ${id} por el admin ${currentUser.user_id}`);
     return confirmed;
+  }
+
+  /**
+   * Reject a reservation (change status PENDING → CANCELLED)
+   * Only ADMIN can reject
+   */
+  async reject(id: string, currentUser: CurrentUserData): Promise<Reservation> {
+    if (currentUser.role !== 'ADMIN') {
+      throw new ForbiddenException('Solo los administradores pueden rechazar reservas');
+    }
+
+    const reservation = await this.reservationRepository.findOne({
+      where: { reservation_id: id },
+    });
+
+    if (!reservation) {
+      throw new NotFoundException(`Reserva con ID ${id} no encontrada`);
+    }
+
+    if (reservation.status !== ReservationStatus.PENDING) {
+      throw new BadRequestException(
+        `No se puede rechazar una reserva con estado '${reservation.status}'`,
+      );
+    }
+
+    reservation.status = ReservationStatus.CANCELLED;
+    const rejected = await this.reservationRepository.save(reservation);
+
+    // Publish ReservationCancelled event to RabbitMQ
+    this.rabbitmqService
+      .publishReservationCancelled({
+        reservation_id: rejected.reservation_id,
+        user_id: rejected.user_id,
+        lab_id: rejected.lab_id,
+      })
+      .catch((err) =>
+        this.logger.error('Error publicando ReservationCancelled en rechazo', err),
+      );
+
+    this.logger.log(`🚫 Reserva rechazada: ${id} por el admin ${currentUser.user_id}`);
+    return rejected;
+  }
+
+  /**
+   * Get administrative stats for the dashboard charts
+   */
+  async getAdminStats(): Promise<unknown> {
+    const now = new Date();
+    
+    // Start of today (00:00:00 local)
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Start of this week (Monday)
+    const tempDate = new Date();
+    const day = tempDate.getDay();
+    const diff = tempDate.getDate() - day + (day === 0 ? -6 : 1);
+    const startOfWeek = new Date(tempDate.setDate(diff));
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    // Start of this month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Count queries
+    const countToday = await this.reservationRepository
+      .createQueryBuilder('r')
+      .where('r.start_time >= :startOfToday', { startOfToday })
+      .andWhere('r.status != :status', { status: ReservationStatus.CANCELLED })
+      .getCount();
+
+    const countWeek = await this.reservationRepository
+      .createQueryBuilder('r')
+      .where('r.start_time >= :startOfWeek', { startOfWeek })
+      .andWhere('r.status != :status', { status: ReservationStatus.CANCELLED })
+      .getCount();
+
+    const countMonth = await this.reservationRepository
+      .createQueryBuilder('r')
+      .where('r.start_time >= :startOfMonth', { startOfMonth })
+      .andWhere('r.status != :status', { status: ReservationStatus.CANCELLED })
+      .getCount();
+
+    const topUsers = (await this.reservationRepository
+      .createQueryBuilder('r')
+      .select('r.user_email', 'email')
+      .addSelect('COUNT(r.reservation_id)', 'count')
+      .where('r.status != :status', { status: ReservationStatus.CANCELLED })
+      .groupBy('r.user_email')
+      .orderBy('count', 'DESC')
+      .limit(3)
+      .getRawMany()) as StatsResult[];
+
+    // Top 5 laboratories (excluding cancelled)
+    const topLabs = (await this.reservationRepository
+      .createQueryBuilder('r')
+      .leftJoin('r.laboratory', 'l')
+      .select('l.name', 'name')
+      .addSelect('COUNT(r.reservation_id)', 'count')
+      .where('r.status != :status', { status: ReservationStatus.CANCELLED })
+      .groupBy('l.name')
+      .orderBy('count', 'DESC')
+      .limit(5)
+      .getRawMany()) as StatsResult[];
+
+    return {
+      totalByPeriod: {
+        day: countToday,
+        week: countWeek,
+        month: countMonth,
+      },
+      topUsers: topUsers.map(tu => ({
+        email: tu.email || 'usuario@uce.edu.ec',
+        count: Number(tu.count),
+      })),
+      topLaboratories: topLabs.map(tl => ({
+        name: tl.name || 'Laboratorio',
+        count: Number(tl.count),
+      })),
+    };
   }
 }
