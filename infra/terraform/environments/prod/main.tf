@@ -7,8 +7,10 @@ locals {
     "uce-api-gateway",
     "uce-frontend",
   ]
-  service_ports    = [3000, 3001, 3002, 3003]
-  api_gateway_port = 3000
+  # Puerto 80 (frontend nginx) es el punto de entrada del ALB — igual que QA.
+  # Los puertos 3000-3003 son internos entre microservicios (no expuestos al ALB).
+  service_ports    = [80, 3000, 3001, 3002, 3003]
+  api_gateway_port = 80
 }
 
 module "vpc" {
@@ -47,7 +49,9 @@ module "alb" {
   # Both public subnets for multi-AZ ALB support
   public_subnet_ids = module.vpc.public_subnet_ids
   target_port       = local.api_gateway_port
-  health_check_path = "/health"
+  # /health.html es servida por nginx con una respuesta 200 estática.
+  # Debe coincidir con el health endpoint del frontend (igual que QA).
+  health_check_path = "/health.html"
 }
 
 module "app" {

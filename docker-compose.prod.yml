@@ -1,6 +1,6 @@
-# Production Deployment — Docker Hub Images
-# Deploy en AWS EC2 con docker-compose pull + docker-compose up
-# Variables requeridas: .env (DATABASE_HOSTS, SECRETS, RABBITMQ_URL)
+# Production Deployment — ECR Images
+# Variables requeridas: /home/ec2-user/app/.env (escrito por deploy-prod.yml desde PROD_ENV_FILE secret)
+# Ejecutar: docker compose -f docker-compose.prod.yml up -d
 
 services:
 
@@ -16,11 +16,12 @@ services:
       DB_USERNAME: ${AUTH_DB_USER}
       DB_PASSWORD: ${AUTH_DB_PASS}
       DB_NAME: auth_service
-      DB_SSL: "true"
+      DB_SSL: "false"
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
     depends_on:
-      - auth-db
+      auth-db:
+        condition: service_healthy
     networks:
       - uce-prod-network
     restart: unless-stopped
@@ -29,6 +30,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
   reservation-service:
     image: ${ECR_REGISTRY:-localhost}/uce-reservation-service:${IMAGE_TAG:-latest}
@@ -42,15 +44,18 @@ services:
       DB_USERNAME: ${RESERVATION_DB_USER}
       DB_PASSWORD: ${RESERVATION_DB_PASS}
       DB_NAME: reservation_service
-      DB_SSL: "true"
+      DB_SSL: "false"
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       RABBITMQ_URL: ${RABBITMQ_URL}
       KAFKA_BROKERS: kafka-prod:29092
     depends_on:
-      - reservation-db
-      - rabbitmq
-      - kafka-prod
+      reservation-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      kafka-prod:
+        condition: service_started
     networks:
       - uce-prod-network
     restart: unless-stopped
@@ -59,6 +64,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
   laboratory-service:
     image: ${ECR_REGISTRY:-localhost}/uce-laboratory-service:${IMAGE_TAG:-latest}
@@ -72,13 +78,15 @@ services:
       DB_USERNAME: ${LAB_DB_USER}
       DB_PASSWORD: ${LAB_DB_PASS}
       DB_NAME: laboratory_service
-      DB_SSL: "true"
+      DB_SSL: "false"
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       RABBITMQ_URL: ${RABBITMQ_URL}
     depends_on:
-      - laboratory-db
-      - rabbitmq
+      laboratory-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - uce-prod-network
     restart: unless-stopped
@@ -87,6 +95,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
   notification-service:
     image: ${ECR_REGISTRY:-localhost}/uce-notification-service:${IMAGE_TAG:-latest}
@@ -100,7 +109,7 @@ services:
       DB_USERNAME: ${NOTIF_DB_USER}
       DB_PASSWORD: ${NOTIF_DB_PASS}
       DB_NAME: notification_service
-      DB_SSL: "true"
+      DB_SSL: "false"
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       RABBITMQ_URL: ${RABBITMQ_URL}
@@ -110,9 +119,12 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
     depends_on:
-      - notification-db
-      - rabbitmq
-      - kafka-prod
+      notification-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      kafka-prod:
+        condition: service_started
     networks:
       - uce-prod-network
     restart: unless-stopped
@@ -121,8 +133,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
-  # ─── Production: API Gateway ─────────────────────────────
+  # ─── Production: API Gateway ──────────────────────────────────────────────
   api-gateway:
     image: ${ECR_REGISTRY:-localhost}/uce-api-gateway:${IMAGE_TAG:-latest}
     container_name: api-gateway
@@ -139,10 +152,14 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - auth-service
-      - reservation-service
-      - laboratory-service
-      - notification-service
+      auth-service:
+        condition: service_healthy
+      reservation-service:
+        condition: service_healthy
+      laboratory-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
     networks:
       - uce-prod-network
     restart: unless-stopped
@@ -151,8 +168,9 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+      start_period: 30s
 
-  # ─── Production: Frontend ─────────────────────────────────
+  # ─── Production: Frontend ─────────────────────────────────────────────────
   frontend:
     image: ${ECR_REGISTRY:-localhost}/uce-frontend:${IMAGE_TAG:-latest}
     container_name: frontend
@@ -160,7 +178,8 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_healthy
     networks:
       - uce-prod-network
     restart: unless-stopped
@@ -171,7 +190,7 @@ services:
       retries: 3
       start_period: 5s
 
-  # ─── Production: Databases ─────────────────────────────────
+  # ─── Production: Databases ────────────────────────────────────────────────
   auth-db:
     image: postgres:15-alpine
     container_name: auth-db
@@ -183,6 +202,7 @@ services:
       - auth-db-data:/var/lib/postgresql/data
     networks:
       - uce-prod-network
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER}"]
       interval: 10s
@@ -200,6 +220,7 @@ services:
       - reservation-db-data:/var/lib/postgresql/data
     networks:
       - uce-prod-network
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${RESERVATION_DB_USER}"]
       interval: 10s
@@ -218,6 +239,7 @@ services:
       - ./db-init/init-laboratories.sql:/docker-entrypoint-initdb.d/init-laboratories.sql
     networks:
       - uce-prod-network
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${LAB_DB_USER}"]
       interval: 10s
@@ -235,30 +257,32 @@ services:
       - notification-db-data:/var/lib/postgresql/data
     networks:
       - uce-prod-network
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${NOTIF_DB_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ─── Production: RabbitMQ ─────────────────────────────────
+  # ─── Production: RabbitMQ ─────────────────────────────────────────────────
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
     container_name: rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
       - uce-prod-network
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 15s
       timeout: 10s
       retries: 5
 
-  # ─── Production: Zookeeper (Requerido por Kafka) ───────────
+  # ─── Production: Zookeeper ────────────────────────────────────────────────
   zookeeper-prod:
     image: confluentinc/cp-zookeeper:7.4.0
     container_name: zookeeper-prod
@@ -267,8 +291,9 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     networks:
       - uce-prod-network
+    restart: unless-stopped
 
-  # ─── Production: Kafka Broker ──────────────────────────────
+  # ─── Production: Kafka Broker ─────────────────────────────────────────────
   kafka-prod:
     image: confluentinc/cp-kafka:7.4.0
     container_name: kafka-prod
@@ -285,6 +310,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     networks:
       - uce-prod-network
+    restart: unless-stopped
 
 volumes:
   auth-db-data:

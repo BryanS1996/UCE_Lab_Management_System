@@ -51,8 +51,8 @@ jobs:
         working-directory: infra/terraform/environments/${{ github.base_ref == 'main' && 'prod' || 'qa' }}
         run: |
           terraform plan \
-            -var="enable_rds=${{ github.base_ref == 'main' && 'true' || 'false' }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="enable_rds=false" \
+            ${{ github.base_ref == 'main' && format('-var="db_password={0}"', secrets.DB_PASSWORD) || '' }} \
             ${{ github.base_ref == 'main' && format('-var="jwt_secret={0}"', secrets.JWT_SECRET) || '' }} \
             -var="image_tag=${{ github.base_ref == 'main' && 'prod' || 'qa' }}" \
             -out=tfplan
