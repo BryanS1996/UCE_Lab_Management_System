@@ -26,7 +26,7 @@ variable "vpc_cidr" {
 
 variable "ec2_instance_type" {
   type    = string
-  default = "t2.micro"
+  default = "t3.medium"
 }
 
 variable "key_pair_name" {

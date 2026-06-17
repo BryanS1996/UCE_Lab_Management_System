@@ -115,17 +115,26 @@ jobs:
         run: |
           ASG_NAME="uce-lab-asg-prod"
 
-          # Fetch private IPs of all running instances tagged with the ASG name.
+          # 1. Fetch Instance IDs of instances that are fully 'InService' in the ASG
+          INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names ${ASG_NAME} \
+            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
+            --output text \
+            --region ${{ env.AWS_REGION }})
+
+          if [ -z "$INSTANCE_IDS" ] || [ "$INSTANCE_IDS" == "None" ]; then
+            echo "::error::No InService instances found in ASG '${ASG_NAME}'."
+            exit 1
+          fi
+
+          # 2. Fetch the Private IPs for those specific Instance IDs
           PRIVATE_IPS=$(aws ec2 describe-instances \
-            --filters \
-              "Name=tag:aws:autoscaling:groupName,Values=${ASG_NAME}" \
-              "Name=instance-state-name,Values=running" \
+            --instance-ids $INSTANCE_IDS \
             --query "Reservations[*].Instances[*].PrivateIpAddress" \
             --output text \
             --region ${{ env.AWS_REGION }} \
           | tr '\t\n' ',' | sed 's/,$//')
 
-          # Validate that we found at least one IP before proceeding.
           if [ -z "$PRIVATE_IPS" ]; then
             echo "::error::No running instances found in ASG '${ASG_NAME}'. " \
                  "Ensure the Production environment was applied and instances are healthy."
