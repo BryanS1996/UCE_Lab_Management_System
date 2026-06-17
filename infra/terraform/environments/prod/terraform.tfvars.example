@@ -1,11 +1,15 @@
 # Copiar a terraform.tfvars (en .gitignore)
 aws_region        = "us-east-1"
 aws_profile       = "prod"
-key_pair_name     = "uce-lab-prod-key"
+key_pair_name     = "vockey"
 ec2_instance_type = "t2.micro"
-enable_rds        = true
-allocate_eip      = true
+
+# PostgreSQL en Docker (consistente con QA).
+# Cambiar a true solo si se decide migrar a RDS en el futuro.
+enable_rds        = false
+
 ssh_cidr_blocks   = ["0.0.0.0/0"]
 
-db_password = "cambiar-password-seguro"
-jwt_secret  = "cambiar-jwt-secret"
+# Solo requerido si enable_rds = true:
+# db_password = "cambiar-password-seguro"
+# jwt_secret  = "cambiar-jwt-secret"
