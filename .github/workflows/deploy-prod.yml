@@ -234,3 +234,17 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+
+      # ── GitHub Release ──────────────────────────────────────────────────────
+      # Generates a GitHub Release automatically after a successful PROD deploy.
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: "prod-deploy-${{ github.run_number }}"
+          name: "🚀 Producción: Deploy #${{ github.run_number }}"
+          body: |
+            ✅ **Despliegue a Producción exitoso.**
+            - **Autor:** ${{ github.actor }}
+            - **Commit:** ${{ github.sha }}
+            - **Imágenes de Docker:** Actualizadas a `${{ github.sha }}`
+          token: ${{ secrets.GITHUB_TOKEN }}
