@@ -115,14 +115,21 @@ jobs:
         run: |
           ASG_NAME="uce-lab-asg-qa"
 
-          # Fetch private IPs of all running instances tagged with the ASG name.
-          # The ASG automatically tags instances with: Name=<asg-name> and
-          # aws:autoscaling:groupName=<asg-name>. We filter on the latter to be
-          # precise, falling back to the Name tag which the launch template sets.
+          # 1. Fetch Instance IDs of instances that are fully 'InService' in the ASG
+          INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names ${ASG_NAME} \
+            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
+            --output text \
+            --region ${{ env.AWS_REGION }})
+
+          if [ -z "$INSTANCE_IDS" ] || [ "$INSTANCE_IDS" == "None" ]; then
+            echo "::error::No InService instances found in ASG '${ASG_NAME}'."
+            exit 1
+          fi
+
+          # 2. Fetch the Private IPs for those specific Instance IDs
           PRIVATE_IPS=$(aws ec2 describe-instances \
-            --filters \
-              "Name=tag:aws:autoscaling:groupName,Values=${ASG_NAME}" \
-              "Name=instance-state-name,Values=running" \
+            --instance-ids $INSTANCE_IDS \
             --query "Reservations[*].Instances[*].PrivateIpAddress" \
             --output text \
             --region ${{ env.AWS_REGION }} \
@@ -188,9 +195,37 @@ jobs:
             docker compose -f docker-compose.qa.yml pull \
               api-gateway-qa auth-service-qa reservation-service-qa laboratory-service-qa notification-service-qa frontend-qa
             docker compose -f docker-compose.qa.yml up -d
-            sleep 20
-            curl -sf http://localhost:3000/health && echo "✅ API Gateway QA OK"
-            curl -sf http://localhost/health.html && echo "✅ Frontend QA OK"
+
+            # Esperar a que los servicios estén listos (hasta 3 minutos)
+            echo "⏳ Waiting for API Gateway to be ready..."
+            for i in $(seq 1 18); do
+              if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+                echo "✅ API Gateway QA OK (attempt $i)"
+                break
+              fi
+              if [ "$i" -eq 18 ]; then
+                echo "❌ API Gateway did not respond after 3 minutes"
+                docker compose -f docker-compose.qa.yml logs --tail=50 api-gateway-qa
+                exit 1
+              fi
+              echo "   attempt $i/18 — retrying in 10s..."
+              sleep 10
+            done
+
+            echo "⏳ Waiting for Frontend to be ready..."
+            for i in $(seq 1 12); do
+              if curl -sf http://localhost/health.html > /dev/null 2>&1; then
+                echo "✅ Frontend QA OK (attempt $i)"
+                break
+              fi
+              if [ "$i" -eq 12 ]; then
+                echo "❌ Frontend did not respond after 2 minutes"
+                docker compose -f docker-compose.qa.yml logs --tail=50 frontend-qa
+                exit 1
+              fi
+              echo "   attempt $i/12 — retrying in 10s..."
+              sleep 10
+            done
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.QA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.QA_AWS_SECRET_ACCESS_KEY }}

@@ -26,7 +26,7 @@ variable "vpc_cidr" {
 
 variable "ec2_instance_type" {
   type    = string
-  default = "t2.micro"
+  default = "t3.medium"
 }
 
 variable "key_pair_name" {
@@ -49,8 +49,8 @@ variable "ssh_cidr_blocks" {
 
 variable "enable_rds" {
   type        = bool
-  description = "true = RDS PostgreSQL para docker-compose.prod.yml"
-  default     = true
+  description = "false = PostgreSQL en Docker (consistente con QA). true = RDS AWS (costo adicional)."
+  default     = false
 }
 
 variable "monitoring_sns_topic_arn" {

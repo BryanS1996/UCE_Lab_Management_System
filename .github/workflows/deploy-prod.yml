@@ -115,20 +115,26 @@ jobs:
         run: |
           ASG_NAME="uce-lab-asg-prod"
 
-          # Fetch private IPs of all running instances tagged with the ASG name.
-          # The ASG automatically tags instances with: Name=<asg-name> and
-          # aws:autoscaling:groupName=<asg-name>. We filter on the latter to be
-          # precise, falling back to the Name tag which the launch template sets.
+          # 1. Fetch Instance IDs of instances that are fully 'InService' in the ASG
+          INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names ${ASG_NAME} \
+            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
+            --output text \
+            --region ${{ env.AWS_REGION }})
+
+          if [ -z "$INSTANCE_IDS" ] || [ "$INSTANCE_IDS" == "None" ]; then
+            echo "::error::No InService instances found in ASG '${ASG_NAME}'."
+            exit 1
+          fi
+
+          # 2. Fetch the Private IPs for those specific Instance IDs
           PRIVATE_IPS=$(aws ec2 describe-instances \
-            --filters \
-              "Name=tag:aws:autoscaling:groupName,Values=${ASG_NAME}" \
-              "Name=instance-state-name,Values=running" \
+            --instance-ids $INSTANCE_IDS \
             --query "Reservations[*].Instances[*].PrivateIpAddress" \
             --output text \
             --region ${{ env.AWS_REGION }} \
           | tr '\t\n' ',' | sed 's/,$//')
 
-          # Validate that we found at least one IP before proceeding.
           if [ -z "$PRIVATE_IPS" ]; then
             echo "::error::No running instances found in ASG '${ASG_NAME}'. " \
                  "Ensure the Production environment was applied and instances are healthy."
@@ -136,10 +142,9 @@ jobs:
           fi
 
           echo "Discovered Production instance IPs: ${PRIVATE_IPS}"
-          # Write to GITHUB_OUTPUT so subsequent steps can reference it.
           echo "app_ips=${PRIVATE_IPS}" >> "$GITHUB_OUTPUT"
 
-      # ── SCP: copy compose file and DB scripts to ALL app instances ─────────────────────────
+      # ── SCP: copy compose file and DB scripts to ALL app instances ──────────
       # appleboy/scp-action also supports comma-separated hosts.
       - name: Copy compose file and DB scripts to Production EC2 instances
         uses: appleboy/scp-action@v0.1.7
@@ -166,8 +171,9 @@ jobs:
           proxy_username: ec2-user
           proxy_key: ${{ secrets.PROD_EC2_SSH_PRIVATE_KEY }}
           # 'envs' securely injects variables into the remote shell.
+          # PROD_ENV_FILE contains the full .env content (single GitHub Secret).
           # They are NOT interpolated as plaintext into the script string.
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,IMAGE_TAG,ECR_REGISTRY
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,IMAGE_TAG,ECR_REGISTRY,PROD_ENV_FILE
           # sync: true ensures the script runs sequentially on each host,
           # providing a controlled rolling-style deploy across the ASG fleet.
           sync: true
@@ -182,15 +188,53 @@ jobs:
             done
 
             cd /home/ec2-user/app
+
             # Re-authenticate with ECR using the session credentials passed via envs.
             aws ecr get-login-password --region "$AWS_REGION" \
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+            # Escribir el archivo .env desde el GitHub Secret PROD_ENV_FILE.
+            # set +x evita que el contenido del secret se imprima en los logs.
+            set +x
+            printf '%s\n' "$PROD_ENV_FILE" > /home/ec2-user/app/.env
+            chmod 600 /home/ec2-user/app/.env
+            set -x
+            echo "✅ .env escrito correctamente"
+
             docker compose -f docker-compose.prod.yml pull \
               api-gateway auth-service reservation-service laboratory-service notification-service frontend
             docker compose -f docker-compose.prod.yml up -d
-            sleep 25
-            curl -sf http://localhost:3000/health && echo "✅ API Gateway PROD OK"
-            curl -sf http://localhost/health.html && echo "✅ Frontend PROD OK"
+
+            # Esperar a que los servicios estén listos (hasta 3 minutos)
+            echo "⏳ Waiting for API Gateway to be ready..."
+            for i in $(seq 1 18); do
+              if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+                echo "✅ API Gateway PROD OK (attempt $i)"
+                break
+              fi
+              if [ "$i" -eq 18 ]; then
+                echo "❌ API Gateway did not respond after 3 minutes"
+                docker compose -f docker-compose.prod.yml logs --tail=50 api-gateway
+                exit 1
+              fi
+              echo "   attempt $i/18 — retrying in 10s..."
+              sleep 10
+            done
+
+            echo "⏳ Waiting for Frontend to be ready..."
+            for i in $(seq 1 12); do
+              if curl -sf http://localhost/health.html > /dev/null 2>&1; then
+                echo "✅ Frontend PROD OK (attempt $i)"
+                break
+              fi
+              if [ "$i" -eq 12 ]; then
+                echo "❌ Frontend did not respond after 2 minutes"
+                docker compose -f docker-compose.prod.yml logs --tail=50 frontend
+                exit 1
+              fi
+              echo "   attempt $i/12 — retrying in 10s..."
+              sleep 10
+            done
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
@@ -198,3 +242,18 @@ jobs:
           AWS_REGION: ${{ env.AWS_REGION }}
           IMAGE_TAG: ${{ github.sha }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+
+      # ── GitHub Release ──────────────────────────────────────────────────────
+      # Generates a GitHub Release automatically after a successful PROD deploy.
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: "prod-deploy-${{ github.run_number }}"
+          name: "🚀 Producción: Deploy #${{ github.run_number }}"
+          body: |
+            ✅ **Despliegue a Producción exitoso.**
+            - **Autor:** ${{ github.actor }}
+            - **Commit:** ${{ github.sha }}
+            - **Imágenes de Docker:** Actualizadas a `${{ github.sha }}`
+          token: ${{ secrets.GITHUB_TOKEN }}

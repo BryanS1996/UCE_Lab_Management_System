@@ -30,20 +30,6 @@ output "ecr_registry_id" {
   value = module.ecr.registry_id
 }
 
-output "rds_endpoint" {
-  description = "RDS endpoint (only if enable_rds = true)"
-  value       = var.enable_rds ? module.rds[0].endpoint : null
-}
-
-output "rds_address" {
-  description = "RDS address (only if enable_rds = true)"
-  value       = var.enable_rds ? module.rds[0].address : null
-}
-
-output "rds_port" {
-  description = "RDS port (only if enable_rds = true)"
-  value       = var.enable_rds ? module.rds[0].port : null
-}
 
 output "github_secrets_hint" {
   description = "Values to configure in GitHub after apply"
