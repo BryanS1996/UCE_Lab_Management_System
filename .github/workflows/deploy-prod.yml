@@ -14,7 +14,12 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        service: [auth-service, reservation-service, laboratory-service, notification-service]
+        service:
+          - auth-service
+          - reservation-service
+          - laboratory-service
+          - notification-service
+          - catalog-service
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,6 +41,9 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Trae todo el historial para que la release note tenga los commits reales
+          fetch-depth: 0
 
       # ── AWS Auth ────────────────────────────────────────────────────────────
       # Explicitly passes AWS_SESSION_TOKEN for AWS Academy temporary credentials.
@@ -87,6 +95,15 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:latest
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:${{ github.sha }}
+
+      - name: Build & Push — Catalog Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/catalog-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:latest
+            ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:${{ github.sha }}
 
       - name: Build & Push — API Gateway
         uses: docker/build-push-action@v5
@@ -202,7 +219,9 @@ jobs:
             echo "✅ .env escrito correctamente"
 
             docker compose -f docker-compose.prod.yml pull \
-              api-gateway auth-service reservation-service laboratory-service notification-service frontend
+              api-gateway auth-service reservation-service laboratory-service \
+              notification-service catalog-service frontend
+
             docker compose -f docker-compose.prod.yml up -d
 
             # Esperar a que los servicios estén listos (hasta 3 minutos)
@@ -244,16 +263,42 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
 
-      # ── GitHub Release ──────────────────────────────────────────────────────
-      # Generates a GitHub Release automatically after a successful PROD deploy.
+      # ── GitHub Release con historial automático ─────────────────────────────
+      # Se ejecuta SOLO si el deploy SSH fue exitoso (paso anterior no falló).
+      # Genera un tag semántico basado en el número de run y el SHA corto,
+      # e incluye automáticamente los commits/PRs desde el último release.
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          tag: "prod-deploy-${{ github.run_number }}"
-          name: "🚀 Producción: Deploy #${{ github.run_number }}"
+          # Tag único y ordenable: v1.0.<run_number> — aparece en orden en la UI de GitHub
+          tag: "v1.0.${{ github.run_number }}"
+          name: "🚀 Release v1.0.${{ github.run_number }}"
           body: |
-            ✅ **Despliegue a Producción exitoso.**
-            - **Autor:** ${{ github.actor }}
-            - **Commit:** ${{ github.sha }}
-            - **Imágenes de Docker:** Actualizadas a `${{ github.sha }}`
+            ## 🚀 Despliegue a Producción exitoso
+
+            | Campo        | Valor |
+            |---|---|
+            | **Run #**    | ${{ github.run_number }} |
+            | **Autor**    | @${{ github.actor }} |
+            | **Commit**   | [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) |
+            | **Rama**     | `${{ github.ref_name }}` |
+            | **Fecha**    | ${{ github.event.head_commit.timestamp }} |
+
+            ## 📦 Imágenes publicadas en ECR
+
+            Todas las imágenes fueron publicadas con los tags `:latest` y `:${{ github.sha }}`
+
+            - `uce-auth-service`
+            - `uce-reservation-service`
+            - `uce-laboratory-service`
+            - `uce-notification-service`
+            - `uce-catalog-service`
+            - `uce-api-gateway`
+            - `uce-frontend`
+
+            ## 📝 Cambios incluidos en este release
+          # generateReleaseNotes añade automáticamente la lista de commits y PRs
+          # desde el último tag hasta este commit — este es el historial real
+          generateReleaseNotes: true
+          makeLatest: true
           token: ${{ secrets.GITHUB_TOKEN }}

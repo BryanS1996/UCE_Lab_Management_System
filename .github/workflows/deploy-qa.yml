@@ -14,7 +14,12 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        service: [auth-service, reservation-service, laboratory-service, notification-service]
+        service:
+          - auth-service
+          - reservation-service
+          - laboratory-service
+          - notification-service
+          - catalog-service
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -87,6 +92,15 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-latest
+
+      - name: Build & Push — Catalog Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/catalog-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-latest
 
       - name: Build & Push — API Gateway
         uses: docker/build-push-action@v5
@@ -193,7 +207,8 @@ jobs:
             aws ecr get-login-password --region "$AWS_REGION" \
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
             docker compose -f docker-compose.qa.yml pull \
-              api-gateway-qa auth-service-qa reservation-service-qa laboratory-service-qa notification-service-qa frontend-qa
+              api-gateway-qa auth-service-qa reservation-service-qa laboratory-service-qa \
+              notification-service-qa catalog-service-qa frontend-qa
             docker compose -f docker-compose.qa.yml up -d
 
             # Esperar a que los servicios estén listos (hasta 3 minutos)
