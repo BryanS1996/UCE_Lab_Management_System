@@ -211,12 +211,64 @@ services:
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
+      MQTT_URL: mqtt://mosquitto-qa:1883
     depends_on:
       notification-db-qa:
         condition: service_healthy
       rabbitmq-qa:
         condition: service_healthy
       kafka-qa:
+        condition: service_started
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+
+  # ─── QA: Catalog Database ────────────────────────────
+  catalog-db-qa:
+    image: postgres:15-alpine
+    container_name: catalog-db-qa
+    environment:
+      POSTGRES_USER: cataloguser
+      POSTGRES_PASSWORD: catalogpassword
+      POSTGRES_DB: catalog_service_qa
+    ports:
+      - "5438:5432"
+    volumes:
+      - catalog-db-qa-data:/var/lib/postgresql/data
+    networks:
+      - uce-qa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cataloguser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── QA: Catalog Service (puerto 3014) ───────────────
+  catalog-service-qa:
+    image: ${ECR_REGISTRY:-localhost}/uce-catalog-service:${IMAGE_TAG:-qa-latest}
+    build:
+      context: ./services/catalog-service
+      dockerfile: Dockerfile
+    container_name: catalog-service-qa
+    environment:
+      NODE_ENV: qa
+      PORT: 3014
+      DB_HOST: catalog-db-qa
+      DB_PORT: 5432
+      DB_USERNAME: cataloguser
+      DB_PASSWORD: catalogpassword
+      DB_NAME: catalog_service_qa
+      DB_SSL: "false"
+      JWT_SECRET: qa-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
+      MQTT_URL: mqtt://mosquitto-qa:1883
+    depends_on:
+      catalog-db-qa:
+        condition: service_healthy
+      rabbitmq-qa:
+        condition: service_healthy
+      mosquitto-qa:
         condition: service_started
     networks:
       - uce-qa-network
@@ -238,6 +290,7 @@ services:
       RESERVATION_SERVICE_URL: http://reservation-service-qa:3011
       LABORATORY_SERVICE_URL: http://laboratory-service-qa:3012
       NOTIFICATION_SERVICE_URL: http://notification-service-qa:3013
+      CATALOG_SERVICE_URL: http://catalog-service-qa:3014
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
     ports:
@@ -249,6 +302,7 @@ services:
       - reservation-service-qa
       - laboratory-service-qa
       - notification-service-qa
+      - catalog-service-qa
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -327,6 +381,7 @@ volumes:
   reservation-db-qa-data:
   laboratory-db-qa-data:
   notification-db-qa-data:
+  catalog-db-qa-data:
   rabbitmq-qa-data:
 
 networks:

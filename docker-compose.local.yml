@@ -221,6 +221,7 @@ services:
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
+      MQTT_URL: mqtt://mosquitto:1883
     depends_on:
       notification-db:
         condition: service_healthy
@@ -233,6 +234,61 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3013/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── LOCAL: Catalog Database ───────────────────────────
+  catalog-db:
+    image: postgres:15-alpine
+    container_name: catalog-db
+    environment:
+      POSTGRES_USER: cataloguser
+      POSTGRES_PASSWORD: catalogpassword
+      POSTGRES_DB: catalog_service
+    ports:
+      - "5436:5432"
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+    networks:
+      - uce-local-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cataloguser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── LOCAL: Catalog Service (puerto 3014) ──────────────
+  catalog-service:
+    build:
+      context: ./services/catalog-service
+      dockerfile: Dockerfile
+    container_name: catalog-service
+    environment:
+      NODE_ENV: development
+      PORT: 3014
+      DB_HOST: catalog-db
+      DB_PORT: 5432
+      DB_USERNAME: cataloguser
+      DB_PASSWORD: catalogpassword
+      DB_NAME: catalog_service
+      DB_SSL: "false"
+      JWT_SECRET: local-secret-key-change-in-production
+      CORS_ORIGIN: "*"
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      MQTT_URL: mqtt://mosquitto:1883
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    networks:
+      - uce-local-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3014/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -250,6 +306,7 @@ services:
       RESERVATION_SERVICE_URL: http://reservation-service:3011
       LABORATORY_SERVICE_URL: http://laboratory-service:3012
       NOTIFICATION_SERVICE_URL: http://notification-service:3013
+      CATALOG_SERVICE_URL: http://catalog-service:3014
       JWT_SECRET: local-secret-key-change-in-production
       CORS_ORIGIN: "*"
     ports:
@@ -259,6 +316,7 @@ services:
       - reservation-service
       - laboratory-service
       - notification-service
+      - catalog-service
     networks:
       - uce-local-network
     restart: unless-stopped
@@ -289,6 +347,23 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+
+  # ─── LOCAL: MQTT Broker (Eclipse Mosquitto) ──────────
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    networks:
+      - uce-local-network
+    command: >
+      sh -c "echo 'listener 1883' > /mosquitto/config/mosquitto.conf &&
+      echo 'protocol mqtt' >> /mosquitto/config/mosquitto.conf &&
+      echo 'listener 9001' >> /mosquitto/config/mosquitto.conf &&
+      echo 'protocol websockets' >> /mosquitto/config/mosquitto.conf &&
+      echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf &&
+      /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"
 
   # ─── LOCAL: Zookeeper (Requerido por Kafka) ───────────
   zookeeper:
@@ -323,6 +398,7 @@ volumes:
   reservation-db-data:
   laboratory-db-data:
   notification-db-data:
+  catalog-db-data:
   rabbitmq-data:
 
 networks:
