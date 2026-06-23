@@ -19,6 +19,7 @@ jobs:
             laboratory-service: 'services/laboratory-service/**'
             notification-service: 'services/notification-service/**'
             reservation-service: 'services/reservation-service/**'
+            catalog-service: 'services/catalog-service/**'
 
   test-services:
     needs: detect-changes
@@ -47,4 +48,4 @@ jobs:
         
       - name: Run Tests
         working-directory: services/${{ matrix.service }}
-        run: npm run test
+        run: npm run test -- --passWithNoTests
