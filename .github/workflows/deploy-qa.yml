@@ -160,6 +160,25 @@ jobs:
           # Write to GITHUB_OUTPUT so subsequent steps can reference it.
           echo "app_ips=${PRIVATE_IPS}" >> "$GITHUB_OUTPUT"
 
+      # ── Dynamic Bastion IP Discovery ────────────────────────────────────────
+      - name: Discover QA Bastion IP
+        id: discover-bastion
+        run: |
+          BASTION_NAME="uce-lab-bastion-qa"
+          BASTION_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=${BASTION_NAME}" "Name=instance-state-name,Values=running" \
+            --query "Reservations[*].Instances[*].PublicIpAddress" \
+            --output text \
+            --region ${{ env.AWS_REGION }})
+
+          if [ -z "$BASTION_IP" ] || [ "$BASTION_IP" == "None" ]; then
+            echo "::error::No running Bastion instance found with name '${BASTION_NAME}'."
+            exit 1
+          fi
+
+          echo "Discovered QA Bastion IP: ${BASTION_IP}"
+          echo "bastion_ip=${BASTION_IP}" >> "$GITHUB_OUTPUT"
+
       # ── SCP: copy compose file and DB scripts to ALL app instances ─────────────────────────
       # appleboy/scp-action also supports comma-separated hosts.
       - name: Copy compose file and DB scripts to QA EC2 instances
@@ -168,7 +187,7 @@ jobs:
           host: ${{ steps.discover-ips.outputs.app_ips }}
           username: ec2-user
           key: ${{ secrets.QA_EC2_SSH_PRIVATE_KEY }}
-          proxy_host: ${{ secrets.QA_BASTION_PUBLIC_IP }}
+          proxy_host: ${{ steps.discover-bastion.outputs.bastion_ip }}
           proxy_username: ec2-user
           proxy_key: ${{ secrets.QA_EC2_SSH_PRIVATE_KEY }}
           source: "docker-compose.qa.yml,db-init/"
@@ -183,7 +202,7 @@ jobs:
           host: ${{ steps.discover-ips.outputs.app_ips }}
           username: ec2-user
           key: ${{ secrets.QA_EC2_SSH_PRIVATE_KEY }}
-          proxy_host: ${{ secrets.QA_BASTION_PUBLIC_IP }}
+          proxy_host: ${{ steps.discover-bastion.outputs.bastion_ip }}
           proxy_username: ec2-user
           proxy_key: ${{ secrets.QA_EC2_SSH_PRIVATE_KEY }}
           # 'envs' securely injects variables into the remote shell.
