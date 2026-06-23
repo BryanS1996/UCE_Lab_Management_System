@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateCatalogDto } from './create-catalog.dto';
-import { IsBoolean, IsEnum, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsUrl } from 'class-validator';
 import { CatalogItemStatus } from '../entities/catalog.entity';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
