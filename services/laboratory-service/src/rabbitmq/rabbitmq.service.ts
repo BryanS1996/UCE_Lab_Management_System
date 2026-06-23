@@ -36,4 +36,20 @@ export class RabbitmqService {
       );
     }
   }
+
+  async publishLaboratoryAlert(payload: any) {
+    try {
+      await this.amqpConnection.publish(
+        'laboratory.events',
+        'laboratory.alert',
+        payload,
+      );
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      console.warn(
+        '[RabbitMQ] Could not publish laboratory.alert:',
+        errorMessage,
+      );
+    }
+  }
 }

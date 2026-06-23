@@ -157,6 +157,7 @@ services:
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
       RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
+      MQTT_URL: mqtt://mosquitto-qa:1883
     depends_on:
       laboratory-db-qa:
         condition: service_healthy
@@ -285,6 +286,23 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     networks:
       - uce-qa-network
+
+  # ─── QA: MQTT Broker (Eclipse Mosquitto) ─────────────
+  mosquitto-qa:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto-qa
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    networks:
+      - uce-qa-network
+    command: >
+      sh -c "echo 'listener 1883' > /mosquitto/config/mosquitto.conf && 
+      echo 'protocol mqtt' >> /mosquitto/config/mosquitto.conf &&
+      echo 'listener 9001' >> /mosquitto/config/mosquitto.conf &&
+      echo 'protocol websockets' >> /mosquitto/config/mosquitto.conf &&
+      echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf && 
+      /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"
 
   # ─── QA: Kafka Broker ─────────────────────────────────
   kafka-qa:

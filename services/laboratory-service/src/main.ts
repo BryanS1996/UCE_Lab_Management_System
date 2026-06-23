@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { AppModule } from './app.module';
@@ -21,6 +22,14 @@ const logger = WinstonModule.createLogger({
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger,
+  });
+
+  // Configuración Híbrida para MQTT
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.MQTT,
+    options: {
+      url: process.env.MQTT_URL || 'mqtt://localhost:1883',
+    },
   });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
@@ -46,10 +55,14 @@ async function bootstrap() {
     swaggerOptions: { persistAuthorization: true },
   });
 
+  // Iniciar MQTT antes del servidor HTTP
+  await app.startAllMicroservices();
+
   const port = process.env.PORT || 3002;
   await app.listen(port);
   logger.log(`Laboratory Service running on port ${port}`, 'Bootstrap');
   logger.log(`Swagger: http://localhost:${port}/api/docs`, 'Bootstrap');
+  logger.log(`MQTT Microservice connected`, 'Bootstrap');
 }
 
 void bootstrap();

@@ -4,14 +4,16 @@ export const INITIAL_LABORATORIES = [
   // Área: Computación y Desarrollo de Software
   {
     name: 'Laboratorio Computación 01',
-    description: 'Laboratorio estándar para ofimática e introducción a la programación.',
+    description:
+      'Laboratorio estándar para ofimática e introducción a la programación.',
     location: 'Facultad de Ingeniería - Piso 1 - Sala 101',
     max_capacity: 30,
     status: LaboratoryStatus.ACTIVE,
   },
   {
     name: 'Laboratorio Computación 02',
-    description: 'Laboratorio estándar para ofimática e introducción a la programación.',
+    description:
+      'Laboratorio estándar para ofimática e introducción a la programación.',
     location: 'Facultad de Ingeniería - Piso 1 - Sala 102',
     max_capacity: 30,
     status: LaboratoryStatus.ACTIVE,
@@ -25,21 +27,24 @@ export const INITIAL_LABORATORIES = [
   },
   {
     name: 'Laboratorio de Desarrollo Móvil',
-    description: 'Equipos Mac y PC de gama alta para emulación y desarrollo de apps iOS/Android.',
+    description:
+      'Equipos Mac y PC de gama alta para emulación y desarrollo de apps iOS/Android.',
     location: 'Facultad de Ingeniería - Piso 2 - Sala 201',
     max_capacity: 20,
     status: LaboratoryStatus.ACTIVE,
   },
   {
     name: 'Laboratorio de Videojuegos',
-    description: 'Estaciones de trabajo con GPUs dedicadas para Unity y Unreal Engine.',
+    description:
+      'Estaciones de trabajo con GPUs dedicadas para Unity y Unreal Engine.',
     location: 'Facultad de Ingeniería - Piso 2 - Sala 202',
     max_capacity: 15,
     status: LaboratoryStatus.MAINTENANCE,
   },
   {
     name: 'Laboratorio de Sistemas Operativos',
-    description: 'Sala aislada para prácticas de instalación y configuración de SO (Linux/Windows).',
+    description:
+      'Sala aislada para prácticas de instalación y configuración de SO (Linux/Windows).',
     location: 'Facultad de Ingeniería - Piso 2 - Sala 203',
     max_capacity: 25,
     status: LaboratoryStatus.ACTIVE,
@@ -48,7 +53,8 @@ export const INITIAL_LABORATORIES = [
   // Área: Redes, Seguridad y Datos
   {
     name: 'Laboratorio de Redes Cisco 1',
-    description: 'Equipamiento físico de routers y switches Cisco para prácticas de CCNA.',
+    description:
+      'Equipamiento físico de routers y switches Cisco para prácticas de CCNA.',
     location: 'Torre Tecnológica - Piso 3 - Sala 301',
     max_capacity: 20,
     status: LaboratoryStatus.ACTIVE,
@@ -62,14 +68,16 @@ export const INITIAL_LABORATORIES = [
   },
   {
     name: 'Laboratorio de Ciberseguridad',
-    description: 'Entorno aislado para prácticas de hacking ético y análisis de vulnerabilidades.',
+    description:
+      'Entorno aislado para prácticas de hacking ético y análisis de vulnerabilidades.',
     location: 'Torre Tecnológica - Piso 4 - Sala 401',
     max_capacity: 15,
     status: LaboratoryStatus.ACTIVE,
   },
   {
     name: 'Laboratorio de Bases de Datos',
-    description: 'Servidores locales para prácticas de SQL, NoSQL y administración de DBs.',
+    description:
+      'Servidores locales para prácticas de SQL, NoSQL y administración de DBs.',
     location: 'Torre Tecnológica - Piso 4 - Sala 402',
     max_capacity: 30,
     status: LaboratoryStatus.ACTIVE,
@@ -83,7 +91,8 @@ export const INITIAL_LABORATORIES = [
   },
   {
     name: 'Laboratorio de Inteligencia Artificial',
-    description: 'Workstations con Tensor Cores para entrenamiento de modelos Deep Learning.',
+    description:
+      'Workstations con Tensor Cores para entrenamiento de modelos Deep Learning.',
     location: 'Torre Tecnológica - Piso 5 - Sala 501',
     max_capacity: 15,
     status: LaboratoryStatus.ACTIVE,
@@ -113,7 +122,8 @@ export const INITIAL_LABORATORIES = [
   },
   {
     name: 'Laboratorio de Óptica',
-    description: 'Mesas ópticas, láseres y lentes para prácticas de luz y refracción.',
+    description:
+      'Mesas ópticas, láseres y lentes para prácticas de luz y refracción.',
     location: 'Edificio de Ciencias - Piso 1 - Sala 12',
     max_capacity: 15,
     status: LaboratoryStatus.INACTIVE,
@@ -127,7 +137,8 @@ export const INITIAL_LABORATORIES = [
   },
   {
     name: 'Laboratorio de Física Moderna',
-    description: 'Equipos de precisión para experimentos de física cuántica básica.',
+    description:
+      'Equipos de precisión para experimentos de física cuántica básica.',
     location: 'Edificio de Ciencias - Piso 2 - Sala 22',
     max_capacity: 10,
     status: LaboratoryStatus.MAINTENANCE,
@@ -136,14 +147,16 @@ export const INITIAL_LABORATORIES = [
   // Área: Química
   {
     name: 'Laboratorio de Química General 1',
-    description: 'Mesones con extractores, mecheros Bunsen y material de vidrio.',
+    description:
+      'Mesones con extractores, mecheros Bunsen y material de vidrio.',
     location: 'Pabellón de Química - Piso 1 - Lab 1',
     max_capacity: 30,
     status: LaboratoryStatus.ACTIVE,
   },
   {
     name: 'Laboratorio de Química General 2',
-    description: 'Mesones con extractores, mecheros Bunsen y material de vidrio.',
+    description:
+      'Mesones con extractores, mecheros Bunsen y material de vidrio.',
     location: 'Pabellón de Química - Piso 1 - Lab 2',
     max_capacity: 30,
     status: LaboratoryStatus.ACTIVE,
@@ -157,14 +170,16 @@ export const INITIAL_LABORATORIES = [
   },
   {
     name: 'Laboratorio de Química Analítica',
-    description: 'Equipos de titulación, espectrofotómetros y balanzas analíticas.',
+    description:
+      'Equipos de titulación, espectrofotómetros y balanzas analíticas.',
     location: 'Pabellón de Química - Piso 2 - Lab 4',
     max_capacity: 20,
     status: LaboratoryStatus.ACTIVE,
   },
   {
     name: 'Laboratorio de Fisicoquímica',
-    description: 'Instrumentación avanzada para medir propiedades físicas de compuestos.',
+    description:
+      'Instrumentación avanzada para medir propiedades físicas de compuestos.',
     location: 'Pabellón de Química - Piso 3 - Lab 5',
     max_capacity: 15,
     status: LaboratoryStatus.ACTIVE,
@@ -215,7 +230,8 @@ export const INITIAL_LABORATORIES = [
   },
   {
     name: 'Centro de Simulación Médica',
-    description: 'Maniquíes interactivos para prácticas de primeros auxilios y UCI.',
+    description:
+      'Maniquíes interactivos para prácticas de primeros auxilios y UCI.',
     location: 'Facultad de Medicina - Piso 2 - Sala C',
     max_capacity: 15,
     status: LaboratoryStatus.ACTIVE,

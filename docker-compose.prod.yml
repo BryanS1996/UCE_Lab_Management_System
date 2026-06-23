@@ -82,6 +82,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       RABBITMQ_URL: ${RABBITMQ_URL}
+      MQTT_URL: mqtt://mosquitto:1883
     depends_on:
       laboratory-db:
         condition: service_healthy
@@ -291,6 +292,24 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     networks:
       - uce-prod-network
+    restart: unless-stopped
+
+  # ─── Production: MQTT Broker (Eclipse Mosquitto) ──────────────────────────
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    networks:
+      - uce-prod-network
+    command: >
+      sh -c "echo 'listener 1883' > /mosquitto/config/mosquitto.conf && 
+      echo 'protocol mqtt' >> /mosquitto/config/mosquitto.conf &&
+      echo 'listener 9001' >> /mosquitto/config/mosquitto.conf &&
+      echo 'protocol websockets' >> /mosquitto/config/mosquitto.conf &&
+      echo 'allow_anonymous true' >> /mosquitto/config/mosquitto.conf && 
+      /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"
     restart: unless-stopped
 
   # ─── Production: Kafka Broker ─────────────────────────────────────────────
