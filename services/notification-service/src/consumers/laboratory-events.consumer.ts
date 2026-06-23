@@ -22,11 +22,11 @@ export class LaboratoryEventsConsumer {
     queue: 'notification.laboratory-alert',
     queueOptions: { durable: true },
   })
-  async handleLaboratoryAlert(payload: LaboratoryAlertPayload) {
+  handleLaboratoryAlert(payload: LaboratoryAlertPayload) {
     this.logger.error(
       `[Consumer] ¡Alerta de Laboratorio Crítica Recibida! Tipo: ${payload.alertType} - Lab: ${payload.labId}`,
     );
-    
+
     // Transmitimos la alerta por WebSockets a todos los clientes conectados en tiempo real
     this.notificationsGateway.broadcast('emergency_alert', {
       title: `¡Alerta Crítica: ${payload.alertType}!`,

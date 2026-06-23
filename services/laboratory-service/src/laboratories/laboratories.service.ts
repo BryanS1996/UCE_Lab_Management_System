@@ -33,7 +33,9 @@ export class LaboratoriesService implements OnModuleInit {
   async onModuleInit() {
     const count = await this.labRepository.count();
     if (count === 0) {
-      console.log('🌱 No laboratories found in database. Seeding 50 initial laboratories...');
+      console.log(
+        '🌱 No laboratories found in database. Seeding 50 initial laboratories...',
+      );
       for (const labData of INITIAL_LABORATORIES) {
         const lab = this.labRepository.create({
           ...labData,
