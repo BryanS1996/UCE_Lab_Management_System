@@ -8,6 +8,7 @@ import { LaboratoryModule } from './modules/laboratory/laboratory.module';
 import { ReservationModule } from './modules/reservation/reservation.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
+import { CatalogModule } from './modules/catalog/catalog.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { LoggerMiddleware } from './middlewares/logger.middleware';
     LaboratoryModule,
     ReservationModule,
     NotificationModule,
+    CatalogModule,
   ],
   controllers: [AppController],
   providers: [AppService],

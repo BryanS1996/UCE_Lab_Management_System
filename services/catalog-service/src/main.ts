@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { AppModule } from './app.module';
@@ -24,42 +23,30 @@ async function bootstrap() {
     logger,
   });
 
-  // ── MQTT Hybrid: suscribirse al broker Mosquitto ──────────────────────────
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.MQTT,
-    options: {
-      url: process.env.MQTT_URL || 'mqtt://localhost:1883',
-    },
-  });
-
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.enableCors({ origin: process.env.CORS_ORIGIN || '*', credentials: true });
 
   const config = new DocumentBuilder()
-    .setTitle('Notification Service — UCE Lab Management')
-    .setDescription(
-      'Microservicio de notificaciones: consume eventos RabbitMQ y hace push via WebSocket',
-    )
+    .setTitle('Catalog Service — UCE Lab Management')
+    .setDescription('Microservicio público para consultar el catálogo de laboratorios')
     .setVersion('1.0.0')
     .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
       'JWT',
     )
-    .addTag('notifications', 'Gestión de notificaciones')
+    .addTag('catalog', 'Catálogo de laboratorios')
     .addTag('health', 'Estado del servicio')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: { persistAuthorization: true },
+  });
 
-  const port = process.env.PORT || 3003;
-
-  // Iniciar el suscriptor MQTT antes del servidor HTTP
-  await app.startAllMicroservices();
-
+  const port = process.env.PORT || 3014;
   await app.listen(port);
-  logger.log(`Notification Service running on port ${port}`, 'Bootstrap');
-  logger.log(`WebSocket namespace: /notifications`, 'Bootstrap');
-  logger.log(`MQTT suscrito a: system/catalog/updated`, 'Bootstrap');
+  logger.log(`Catalog Service running on port ${port}`, 'Bootstrap');
+  logger.log(`Swagger: http://localhost:${port}/api/docs`, 'Bootstrap');
 }
+
 void bootstrap();

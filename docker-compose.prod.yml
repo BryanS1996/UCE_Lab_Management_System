@@ -119,6 +119,7 @@ services:
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
+      MQTT_URL: mqtt://mosquitto:1883
     depends_on:
       notification-db:
         condition: service_healthy
@@ -136,6 +137,40 @@ services:
       retries: 3
       start_period: 30s
 
+  catalog-service:
+    image: ${ECR_REGISTRY:-localhost}/uce-catalog-service:${IMAGE_TAG:-latest}
+    container_name: catalog-service
+    pull_policy: always
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      DB_HOST: ${CATALOG_DB_HOST}
+      DB_PORT: 5432
+      DB_USERNAME: ${CATALOG_DB_USER}
+      DB_PASSWORD: ${CATALOG_DB_PASS}
+      DB_NAME: catalog_service
+      DB_SSL: "false"
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      MQTT_URL: mqtt://mosquitto:1883
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   # ─── Production: API Gateway ──────────────────────────────────────────────
   api-gateway:
     image: ${ECR_REGISTRY:-localhost}/uce-api-gateway:${IMAGE_TAG:-latest}
@@ -148,6 +183,7 @@ services:
       RESERVATION_SERVICE_URL: http://reservation-service:3001
       LABORATORY_SERVICE_URL: http://laboratory-service:3002
       NOTIFICATION_SERVICE_URL: http://notification-service:3003
+      CATALOG_SERVICE_URL: http://catalog-service:3004
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:
@@ -160,6 +196,8 @@ services:
       laboratory-service:
         condition: service_healthy
       notification-service:
+        condition: service_healthy
+      catalog-service:
         condition: service_healthy
     networks:
       - uce-prod-network
@@ -265,6 +303,24 @@ services:
       timeout: 5s
       retries: 5
 
+  catalog-db:
+    image: postgres:15-alpine
+    container_name: catalog-db
+    environment:
+      POSTGRES_USER: ${CATALOG_DB_USER}
+      POSTGRES_PASSWORD: ${CATALOG_DB_PASS}
+      POSTGRES_DB: catalog_service
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CATALOG_DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ─── Production: RabbitMQ ─────────────────────────────────────────────────
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
@@ -336,6 +392,7 @@ volumes:
   reservation-db-data:
   laboratory-db-data:
   notification-db-data:
+  catalog-db-data:
   rabbitmq-data:
 
 networks:
