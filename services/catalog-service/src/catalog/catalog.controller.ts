@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { CatalogService } from './catalog.service';
 import { CreateCatalogDto } from './dto/create-catalog.dto';
 import { UpdateCatalogDto } from './dto/update-catalog.dto';
@@ -55,7 +64,9 @@ export class CatalogController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiBearerAuth('JWT')
-  @ApiOperation({ summary: 'Ver todos los laboratorios, incluyendo no publicados (Admin)' })
+  @ApiOperation({
+    summary: 'Ver todos los laboratorios, incluyendo no publicados (Admin)',
+  })
   findAllAdmin() {
     return this.catalogService.findAllAdmin();
   }

@@ -28,7 +28,9 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Catalog Service — UCE Lab Management')
-    .setDescription('Microservicio público para consultar el catálogo de laboratorios')
+    .setDescription(
+      'Microservicio público para consultar el catálogo de laboratorios',
+    )
     .setVersion('1.0.0')
     .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },

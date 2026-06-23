@@ -28,8 +28,13 @@ export class CatalogService {
   }
 
   async findOne(id: number) {
-    const item = await this.catalogRepository.findOne({ where: { laboratory_id: id } });
-    if (!item) throw new NotFoundException(`Laboratorio ${id} no encontrado en el catálogo`);
+    const item = await this.catalogRepository.findOne({
+      where: { laboratory_id: id },
+    });
+    if (!item)
+      throw new NotFoundException(
+        `Laboratorio ${id} no encontrado en el catálogo`,
+      );
     return item;
   }
 
@@ -45,6 +50,9 @@ export class CatalogService {
   }
 
   async updateStatus(laboratory_id: number, status: CatalogItemStatus) {
-    await this.catalogRepository.update({ laboratory_id }, { current_status: status });
+    await this.catalogRepository.update(
+      { laboratory_id },
+      { current_status: status },
+    );
   }
 }

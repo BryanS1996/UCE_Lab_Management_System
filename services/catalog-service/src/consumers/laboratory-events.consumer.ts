@@ -38,7 +38,9 @@ export class LaboratoryEventsConsumer {
         capacity: payload.max_capacity,
       };
       await this.catalogService.create(dto);
-      this.logger.log(`Laboratorio ${payload.lab_id} añadido automáticamente al catálogo.`);
+      this.logger.log(
+        `Laboratorio ${payload.lab_id} añadido automáticamente al catálogo.`,
+      );
 
       // ── MQTT: notificar al sistema que el catálogo cambió ──
       this.mqttClient
@@ -49,10 +51,14 @@ export class LaboratoryEventsConsumer {
         })
         .subscribe({
           error: (err: Error) =>
-            this.logger.warn(`[MQTT] No se pudo publicar system/catalog/updated: ${err.message}`),
+            this.logger.warn(
+              `[MQTT] No se pudo publicar system/catalog/updated: ${err.message}`,
+            ),
         });
     } catch (error) {
-      this.logger.error(`Error procesando laboratory.created: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error procesando laboratory.created: ${errorMessage}`);
     }
   }
 
@@ -81,10 +87,14 @@ export class LaboratoryEventsConsumer {
         })
         .subscribe({
           error: (err: Error) =>
-            this.logger.warn(`[MQTT] No se pudo publicar system/catalog/updated: ${err.message}`),
+            this.logger.warn(
+              `[MQTT] No se pudo publicar system/catalog/updated: ${err.message}`,
+            ),
         });
     } catch (error) {
-      this.logger.error(`Error procesando laboratory.updated: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error procesando laboratory.updated: ${errorMessage}`);
     }
   }
 }

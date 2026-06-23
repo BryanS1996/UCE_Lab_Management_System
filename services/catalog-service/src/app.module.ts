@@ -18,7 +18,8 @@ import { ConsumersModule } from './consumers/consumers.module';
       database: process.env.DB_NAME || 'catalog_service',
       autoLoadEntities: true,
       synchronize: true, // TRUE solo en local/QA para que cree las tablas automáticamente
-      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+      ssl:
+        process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     }),
     CommonModule,
     CatalogModule,
