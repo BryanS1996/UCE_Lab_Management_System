@@ -63,8 +63,8 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 180s
 
   laboratory-service:
     image: ${ECR_REGISTRY:-localhost}/uce-laboratory-service:${IMAGE_TAG:-latest}
@@ -134,8 +134,8 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost:3003/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 180s
 
   catalog-service:
     image: ${ECR_REGISTRY:-localhost}/uce-catalog-service:${IMAGE_TAG:-latest}
