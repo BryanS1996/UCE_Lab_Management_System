@@ -18,13 +18,10 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
     this.producer = this.kafka.producer();
   }
 
-  async onModuleInit() {
-    try {
-      await this.producer.connect();
-      this.logger.log('🚀 Conectado exitosamente a Apache Kafka como Productor');
-    } catch (error) {
-      this.logger.error(`❌ Falló la conexión a Kafka: ${(error as Error).message}`);
-    }
+  onModuleInit() {
+    this.producer.connect()
+      .then(() => this.logger.log('🚀 Conectado exitosamente a Apache Kafka como Productor'))
+      .catch((error) => this.logger.error(`❌ Falló la conexión a Kafka: ${(error as Error).message}`));
   }
 
   async onModuleDestroy() {

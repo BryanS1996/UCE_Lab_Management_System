@@ -44,7 +44,7 @@ export class ReservationsService {
     createReservationDto: CreateReservationDto,
     currentUser: CurrentUserData,
   ): Promise<Reservation> {
-    const { lab_id, start_time, end_time, purpose, notes } = createReservationDto;
+    const { lab_id, start_time, end_time, purpose, notes, attendees } = createReservationDto;
 
     // 1. Validate time range
     const startDate = new Date(start_time);
@@ -58,8 +58,15 @@ export class ReservationsService {
       throw new BadRequestException('end_time debe ser posterior a start_time');
     }
 
-    if (startDate < new Date()) {
+    const now = new Date();
+    if (startDate < now) {
       throw new BadRequestException('No se pueden crear reservas en el pasado');
+    }
+
+    // 1.1 Validate 24 hours of anticipation
+    const diffHours = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (diffHours < 24) {
+      throw new BadRequestException('Las reservas requieren al menos 24 horas de anticipación');
     }
 
     // 2. Verify that the laboratory exists and is active
@@ -74,6 +81,13 @@ export class ReservationsService {
     if (!laboratory.is_active) {
       throw new ConflictException(
         `El laboratorio '${laboratory.name}' no está disponible actualmente`,
+      );
+    }
+
+    // 2.1 Check laboratory capacity
+    if (attendees > laboratory.max_capacity) {
+      throw new BadRequestException(
+        `La cantidad de asistentes supera el aforo máximo del laboratorio (${laboratory.max_capacity})`
       );
     }
 

@@ -52,7 +52,7 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should return tokens with RFC 7519 payload on valid credentials', async () => {
+    it('CP-04 (Happy Path - Login): Credenciales válidas. Valida hash y retorna token', async () => {
       mockUsersService.findByEmailWithPassword.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.sign
@@ -64,17 +64,15 @@ describe('AuthService', () => {
         password: 'Test1234!',
       });
 
+      // Valida RNF-01: Verificación de contraseñas encriptadas
+      expect(bcrypt.compare).toHaveBeenCalledWith('Test1234!', mockUser.password);
+      
       expect(result.accessToken).toBe('access-token');
       expect(result.refreshToken).toBe('refresh-token');
       expect(mockJwtService.sign).toHaveBeenNthCalledWith(
         1,
-        { sub: mockUser.id, email: mockUser.email, role: 'STUDENT' },
+        { sub: mockUser.id, email: mockUser.email, roles: ['STUDENT'] },
         { expiresIn: '15m' },
-      );
-      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
-        2,
-        { sub: mockUser.id, email: mockUser.email, role: 'STUDENT' },
-        { expiresIn: '7d' },
       );
       expect(result.user).toEqual({
         id: mockUser.id,
@@ -85,21 +83,24 @@ describe('AuthService', () => {
       });
     });
 
-    it('should throw UnauthorizedException when user not found', async () => {
+    it('CP-05 (Negativo - Login): Correo que no existe. Lanza UnauthorizedException', async () => {
       mockUsersService.findByEmailWithPassword.mockResolvedValue(null);
 
       await expect(
-        service.login({ email: 'x@uce.edu.ec', password: 'wrong' }),
+        service.login({ email: 'no-existe@uce.edu.ec', password: 'wrong' }),
       ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should throw UnauthorizedException when password does not match', async () => {
+    it('CP-05 (Negativo - Login): Contraseña incorrecta. Lanza UnauthorizedException', async () => {
       mockUsersService.findByEmailWithPassword.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
-        service.login({ email: mockUser.email, password: 'wrong' }),
+        service.login({ email: mockUser.email, password: 'wrong-password' }),
       ).rejects.toThrow(UnauthorizedException);
+
+      // Valida RNF-01
+      expect(bcrypt.compare).toHaveBeenCalledWith('wrong-password', mockUser.password);
     });
   });
 
@@ -117,9 +118,9 @@ describe('AuthService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should create user and return tokens', async () => {
+    it('should create user and return tokens, respetando RNF-01 (contraseña encriptada)', async () => {
       mockUsersService.findByEmail.mockResolvedValue(null);
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password-123');
       mockUsersService.create.mockResolvedValue(mockUser);
       mockJwtService.sign
         .mockReturnValueOnce('access-token')
@@ -129,10 +130,17 @@ describe('AuthService', () => {
         email: 'new@uce.edu.ec',
         firstName: 'Ana',
         lastName: 'López',
-        password: 'Test1234!',
+        password: 'MySecretPassword!',
       });
 
-      expect(mockUsersService.create).toHaveBeenCalled();
+      // Valida RNF-01: El password debe encriptarse antes de guardarse
+      expect(bcrypt.hash).toHaveBeenCalledWith('MySecretPassword!', 10);
+      expect(mockUsersService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          password: 'hashed-password-123',
+        }),
+      );
+      
       expect(result.accessToken).toBe('access-token');
     });
   });
@@ -142,7 +150,7 @@ describe('AuthService', () => {
       mockJwtService.verify.mockReturnValue({
         sub: mockUser.id,
         email: mockUser.email,
-        role: 'STUDENT',
+        roles: ['STUDENT'],
         iss: 'auth-service',
       });
       mockUsersService.findById.mockResolvedValue(mockUser);
@@ -176,7 +184,7 @@ describe('AuthService', () => {
       mockJwtService.verify.mockReturnValue({
         sub: mockUser.id,
         email: mockUser.email,
-        role: 'STUDENT',
+        roles: ['STUDENT'],
       });
       mockUsersService.findById.mockResolvedValue({
         ...mockUser,

@@ -1,0 +1,65 @@
+name: 📝 Obtener Logs de QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      lines:
+        description: 'Número de líneas a mostrar por cada servicio'
+        required: true
+        default: '100'
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  fetch-logs:
+    name: Fetch Docker Logs from QA
+    runs-on: ubuntu-latest
+    environment: qa
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.QA_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.QA_AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.QA_AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Discover QA IPs (Bastion & App)
+        id: discover-ips
+        run: |
+          BASTION_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=uce-lab-bastion-qa" "Name=instance-state-name,Values=running" \
+            --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
+          
+          APP_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=uce-lab-asg-qa" "Name=instance-state-name,Values=running" \
+            --query "Reservations[*].Instances[*].PrivateIpAddress" --output text | tr '\t\n' ',' | sed 's/,$//')
+          
+          echo "bastion_ip=${BASTION_IP}" >> "$GITHUB_OUTPUT"
+          echo "app_ip=${APP_IP}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract Logs via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ steps.discover-ips.outputs.app_ip }}
+          username: ec2-user
+          key: ${{ secrets.QA_EC2_SSH_PRIVATE_KEY }}
+          proxy_host: ${{ steps.discover-ips.outputs.bastion_ip }}
+          proxy_username: ec2-user
+          proxy_key: ${{ secrets.QA_EC2_SSH_PRIVATE_KEY }}
+          script: |
+            echo "=========================================================="
+            echo "🐳 LOGS DE CATALOG-SERVICE (PUBLICADOR MQTT)"
+            echo "=========================================================="
+            docker logs --tail ${{ github.event.inputs.lines }} catalog-service-qa
+            
+            echo -e "\n=========================================================="
+            echo "🐳 LOGS DE NOTIFICATION-SERVICE (SUSCRIPTOR MQTT / WS)"
+            echo "=========================================================="
+            docker logs --tail ${{ github.event.inputs.lines }} notification-service-qa
+            
+            echo -e "\n=========================================================="
+            echo "🐳 LOGS DE MOSQUITTO BROKER (MQTT)"
+            echo "=========================================================="
+            docker logs --tail 50 mosquitto-qa
