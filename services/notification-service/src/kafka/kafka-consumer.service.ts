@@ -44,7 +44,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  async onModuleInit() {
+  onModuleInit() {
     this.consumer.connect()
       .then(async () => {
         await this.consumer.subscribe({

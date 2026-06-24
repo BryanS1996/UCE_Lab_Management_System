@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ResourcesService } from './resources.service';
 import { Resource, ResourceType } from '../laboratories/entities/resource.entity';
 import { Laboratory } from '../laboratories/entities/laboratory.entity';
-import { NotFoundException } from '@nestjs/common';
+
 
 describe('ResourcesService', () => {
   let service: ResourcesService;

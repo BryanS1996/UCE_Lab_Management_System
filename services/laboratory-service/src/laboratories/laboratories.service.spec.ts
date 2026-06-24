@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { LaboratoriesService } from './laboratories.service';
 import { Laboratory, LaboratoryStatus } from './entities/laboratory.entity';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
-import { ConflictException } from '@nestjs/common';
+
 
 describe('LaboratoriesService', () => {
   let service: LaboratoriesService;
