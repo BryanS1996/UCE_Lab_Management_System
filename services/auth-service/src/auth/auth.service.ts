@@ -96,7 +96,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    if (!payload.sub || !payload.email || !payload.role) {
+    if (!payload.sub || !payload.email || !payload.roles) {
       throw new UnauthorizedException('Invalid token payload');
     }
 
@@ -123,7 +123,7 @@ export class AuthService {
     return {
       sub: user.id,
       email: user.email,
-      role: user.roles?.[0]?.name ?? 'STUDENT',
+      roles: user.roles?.map(r => r.name) || ['STUDENT'],
     };
   }
 

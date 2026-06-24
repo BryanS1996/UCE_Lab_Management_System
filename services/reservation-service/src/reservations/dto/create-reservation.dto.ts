@@ -31,4 +31,9 @@ export class CreateReservationDto {
   @IsString()
   @MaxLength(1000, { message: 'Las notas no pueden superar los 1000 caracteres' })
   notes?: string;
+
+  @IsNotEmpty({ message: 'El número de asistentes es requerido' })
+  @IsInt()
+  @Min(1, { message: 'Debe haber al menos 1 asistente' })
+  attendees!: number;
 }
