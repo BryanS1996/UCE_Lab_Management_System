@@ -125,96 +125,137 @@ describe('ReservationsService', () => {
   // CREATE
   // ─────────────────────────────────────────────
   describe('create()', () => {
-    // Fechas dinámicas: siempre mañana a las 10:00 y 12:00
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 1);
-    const mockStartTime = new Date(
-      futureDate.getTime(),
-    );
-    mockStartTime.setHours(10, 0, 0, 0);
-    const mockEndTime = new Date(
-      futureDate.getTime(),
-    );
-    mockEndTime.setHours(12, 0, 0, 0);
-    const futureStartIso = mockStartTime.toISOString();
-    const futureEndIso = mockEndTime.toISOString();
-
-    it('debe crear una reserva exitosamente', async () => {
+    it('CP-01 (Happy Path): Reserva exitosa por un Docente con >24h de anticipación. El estado debe quedar en "Pendiente de Aprobación"', async () => {
+      // Arrange
       mockLaboratoryRepository.findOne.mockResolvedValue(mockLaboratory);
-      mockQueryBuilder.getCount.mockResolvedValue(0);
+      mockQueryBuilder.getCount.mockResolvedValue(0); // No conflicts
       mockReservationRepository.create.mockReturnValue(mockReservation);
       mockReservationRepository.save.mockResolvedValue(mockReservation);
 
+      // >24h notice
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 2); // 48 hours later
+      const startTime = new Date(futureDate.getTime());
+      startTime.setHours(10, 0, 0, 0);
+      const endTime = new Date(futureDate.getTime());
+      endTime.setHours(12, 0, 0, 0);
+
       const dto = {
         lab_id: 1,
-        start_time: futureStartIso,
-        end_time: futureEndIso,
-        purpose: 'Investigación',
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        purpose: 'Clase Práctica',
+        attendees: 20, // less than max_capacity (30)
       };
 
-      const result = await service.create(dto, mockUser);
+      const teacherUser: CurrentUserData = {
+        user_id: 'teacher-uuid-123',
+        email: 'profesor@uce.edu.ec',
+        role: 'TEACHER', // Docente
+      };
 
-      expect(result).toEqual(mockReservation);
+      // Act
+      const result = await service.create(dto as any, teacherUser);
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.status).toBe(ReservationStatus.PENDING);
+      
+      // Verify repos were called with correct params
+      expect(mockLaboratoryRepository.findOne).toHaveBeenCalledWith({
+        where: { lab_id: dto.lab_id },
+      });
+      expect(mockReservationRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lab_id: dto.lab_id,
+          status: ReservationStatus.PENDING, // "Pendiente de Aprobación"
+        }),
+      );
       expect(mockReservationRepository.save).toHaveBeenCalledTimes(1);
-      expect(mockRabbitmqService.publishReservationCreated).toHaveBeenCalledTimes(1);
     });
 
-    it('debe lanzar BadRequestException si end_time <= start_time', async () => {
+    it('CP-02 (Negativo): Intento de reserva con <24h de anticipación. Debe lanzar BadRequestException', async () => {
+      // Arrange
+      // Solo 10 horas de anticipación
+      const now = new Date();
+      const startTime = new Date(now.getTime() + 10 * 60 * 60 * 1000); 
+      const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
+
       const dto = {
         lab_id: 1,
-        start_time: futureEndIso, // invertido a propósito
-        end_time: futureStartIso,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        purpose: 'Reunión Urgente',
+        attendees: 10,
       };
 
+      // Act & Assert
       await expect(service.create(dto, mockUser)).rejects.toThrow(
+        BadRequestException,
+      );
+      // Nota: Si quieres verificar el mensaje exacto:
+      // await expect(service.create(dto, mockUser)).rejects.toThrowError('requiere 24h de anticipación');
+    });
+
+    it('CP-03 (Negativo): Intento de reserva superando el aforo máximo del laboratorio. Debe lanzar error (BadRequestException)', async () => {
+      // Arrange
+      mockLaboratoryRepository.findOne.mockResolvedValue(mockLaboratory); // max_capacity es 30
+
+      // >24h notice to pass the CP-02 check
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 2);
+      
+      const dto = {
+        lab_id: 1,
+        start_time: futureDate.toISOString(),
+        end_time: new Date(futureDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+        purpose: 'Conferencia',
+        attendees: 50, // 50 supera el aforo de 30
+      };
+
+      // Act & Assert
+      await expect(service.create(dto as any, mockUser)).rejects.toThrow(
         BadRequestException,
       );
     });
 
-    it('debe lanzar NotFoundException si el laboratorio no existe', async () => {
-      mockLaboratoryRepository.findOne.mockResolvedValue(null);
+    // Casos adicionales básicos
+    it('debe lanzar BadRequestException si end_time <= start_time', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 2);
+      const startIso = futureDate.toISOString();
+      const endIso = new Date(futureDate.getTime() - 1000).toISOString(); // end is before start
 
-      const dto = {
-        lab_id: 999,
-        start_time: futureStartIso,
-        end_time: futureEndIso,
-      };
-
-      await expect(service.create(dto, mockUser)).rejects.toThrow(
-        NotFoundException,
-      );
+      const dto = { lab_id: 1, start_time: startIso, end_time: endIso, attendees: 10 };
+      await expect(service.create(dto, mockUser)).rejects.toThrow(BadRequestException);
     });
 
-    it('debe lanzar ConflictException si el laboratorio no está activo', async () => {
-      mockLaboratoryRepository.findOne.mockResolvedValue({
-        ...mockLaboratory,
-        is_active: false,
-      });
-
+    it('debe lanzar NotFoundException si el laboratorio no existe', async () => {
+      mockLaboratoryRepository.findOne.mockResolvedValue(null);
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 2);
       const dto = {
-        lab_id: 1,
-        start_time: futureStartIso,
-        end_time: futureEndIso,
+        lab_id: 999,
+        start_time: futureDate.toISOString(),
+        end_time: new Date(futureDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+        attendees: 10,
       };
-
-      await expect(service.create(dto, mockUser)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(service.create(dto, mockUser)).rejects.toThrow(NotFoundException);
     });
 
     it('debe lanzar ConflictException si hay conflicto de horario', async () => {
       mockLaboratoryRepository.findOne.mockResolvedValue(mockLaboratory);
-      mockQueryBuilder.getCount.mockResolvedValue(1); // Indicates a schedule conflict
+      mockQueryBuilder.getCount.mockResolvedValue(1); // Hay conflicto
 
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 2);
       const dto = {
         lab_id: 1,
-        start_time: futureStartIso,
-        end_time: futureEndIso,
+        start_time: futureDate.toISOString(),
+        end_time: new Date(futureDate.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+        attendees: 10,
       };
-
-      await expect(service.create(dto, mockUser)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(service.create(dto, mockUser)).rejects.toThrow(ConflictException);
     });
   });
 

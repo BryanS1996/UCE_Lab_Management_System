@@ -6,7 +6,7 @@ export interface JwtPayload {
   /** Subject — UUID del usuario en PostgreSQL */
   sub: string;
   email: string;
-  role: string;
+  roles: string[];
   /** Issuer — "auth-service" (signOptions.issuer) */
   iss?: string;
   /** Issued At — timestamp Unix (automático) */
@@ -16,4 +16,4 @@ export interface JwtPayload {
 }
 
 /** Claims que se firman explícitamente (sin iat/exp/iss) */
-export type JwtSigningPayload = Pick<JwtPayload, 'sub' | 'email' | 'role'>;
+export type JwtSigningPayload = Pick<JwtPayload, 'sub' | 'email' | 'roles'>;
