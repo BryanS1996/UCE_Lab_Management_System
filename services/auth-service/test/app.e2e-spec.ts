@@ -31,10 +31,10 @@ describe('AuthService (e2e)', () => {
   // Nota: En la implementación actual, el AuthService.buildSigningPayload
   // guarda un campo 'role' (string), pero el RolesGuard espera un array 'roles'.
   const mockJwtAuthGuard = {
-    canActivate: (context: any) => {
-      const req = context.switchToHttp().getRequest();
+    canActivate: (context: import('@nestjs/common').ExecutionContext) => {
+      const req = context.switchToHttp().getRequest<import('express').Request>();
       // Simulamos a un STUDENT según CP-06
-      req.user = {
+      (req as unknown as { user: any }).user = {
         sub: 'uuid-123',
         email: 'student@uce.edu.ec',
         roles: ['STUDENT'], // Así lo devuelve el AuthService actual
@@ -73,22 +73,22 @@ describe('AuthService (e2e)', () => {
         user: { id: 'uuid-123', email: 'test@uce.edu.ec', roles: [{ name: 'STUDENT' }] },
       });
 
-      return request(app.getHttpServer())
+      return request(app.getHttpServer() as unknown as import('http').Server)
         .post('/auth/login')
         .send({
           email: 'test@uce.edu.ec',
           password: 'Password123!',
         })
         .expect(201)
-        .expect((res) => {
-          expect(res.body.accessToken).toBe('mock-access-token');
+        .expect((res: request.Response) => {
+          expect((res.body as { accessToken: string }).accessToken).toBe('mock-access-token');
         });
     });
 
     it('CP-05 (Negativo): Login con credenciales inválidas retorna 401', async () => {
       mockAuthService.login.mockRejectedValue(new UnauthorizedException('Invalid credentials'));
 
-      return request(app.getHttpServer())
+      return request(app.getHttpServer() as unknown as import('http').Server)
         .post('/auth/login')
         .send({
           email: 'no-existe@uce.edu.ec',
@@ -102,7 +102,7 @@ describe('AuthService (e2e)', () => {
     it('CP-06 (Seguridad): Usuario STUDENT intenta acceder a ruta de ADMIN/TEACHER retorna 403 Forbidden', async () => {
       // El request pasará por el JwtAuthGuard mockeado (asigna role: 'STUDENT')
       // y luego por el RolesGuard real.
-      return request(app.getHttpServer())
+      return request(app.getHttpServer() as unknown as import('http').Server)
         .get('/test-admin')
         .expect(403);
     });

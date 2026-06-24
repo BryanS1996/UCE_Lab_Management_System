@@ -1,6 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 // En un escenario real importarías AppModule: import { AppModule } from './../src/app.module';
 
 // Simularemos los módulos temporalmente para aislar la prueba E2E
@@ -44,27 +43,27 @@ describe('Laboratory & Resources (e2e)', () => {
   });
 
   describe('POST /laboratories', () => {
-    it.skip('CP-07 (Happy Path): Creación de un laboratorio nuevo', async () => {
+    it.skip('CP-07 (Happy Path): Creación de un laboratorio nuevo', () => {
       mockLaboratoriesService.create.mockResolvedValue({
         lab_id: 1,
         name: 'Lab E2E',
         max_capacity: 45,
       });
 
-      return request(app.getHttpServer())
+      return request(app.getHttpServer() as unknown as import('http').Server)
         .post('/laboratories')
         .send({
           name: 'Lab E2E',
           max_capacity: 45,
         })
         .expect(201)
-        .expect((res) => {
-          expect(res.body.max_capacity).toBe(45);
+        .expect((res: request.Response) => {
+          expect((res.body as { max_capacity: number }).max_capacity).toBe(45);
         });
     });
 
-    it.skip('CP-08 (Negativo - Validación DTO): max_capacity inválido lanza 400', async () => {
-      return request(app.getHttpServer())
+    it.skip('CP-08 (Negativo - Validación DTO): max_capacity inválido lanza 400', () => {
+      return request(app.getHttpServer() as unknown as import('http').Server)
         .post('/laboratories')
         .send({
           name: 'Lab Inválido',
@@ -75,7 +74,7 @@ describe('Laboratory & Resources (e2e)', () => {
   });
 
   describe('POST /laboratories/:lab_id/resources', () => {
-    it.skip('CP-09 (Happy Path): Agregar un recurso a un laboratorio existente', async () => {
+    it.skip('CP-09 (Happy Path): Agregar un recurso a un laboratorio existente', () => {
       mockResourcesService.create.mockResolvedValue({
         resource_id: 10,
         lab_id: 1,
@@ -83,15 +82,15 @@ describe('Laboratory & Resources (e2e)', () => {
         quantity: 1,
       });
 
-      return request(app.getHttpServer())
+      return request(app.getHttpServer() as unknown as import('http').Server)
         .post('/laboratories/1/resources')
         .send({
           name: 'Proyector',
           quantity: 1,
         })
         .expect(201)
-        .expect((res) => {
-          expect(res.body.lab_id).toBe(1);
+        .expect((res: request.Response) => {
+          expect((res.body as { lab_id: number }).lab_id).toBe(1);
         });
     });
 
