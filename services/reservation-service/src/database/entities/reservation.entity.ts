@@ -14,6 +14,7 @@ export enum ReservationStatus {
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
   CANCELLED = 'CANCELLED',
+  PENDING_PAYMENT = 'PENDING_PAYMENT',
 }
 
 @Entity('reservations')

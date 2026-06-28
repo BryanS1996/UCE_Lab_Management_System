@@ -15,6 +15,11 @@ export enum LaboratoryStatus {
   MAINTENANCE = 'MAINTENANCE',
 }
 
+export enum LaboratoryTier {
+  BASIC = 'BASIC',
+  PREMIUM = 'PREMIUM',
+}
+
 @Entity('laboratories')
 export class Laboratory {
   @PrimaryGeneratedColumn()
@@ -41,6 +46,13 @@ export class Laboratory {
 
   @Column({ default: true })
   is_active: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: LaboratoryTier,
+    default: LaboratoryTier.BASIC,
+  })
+  tier: LaboratoryTier;
 
   @Column({ nullable: true })
   created_by: string;

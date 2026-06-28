@@ -76,6 +76,7 @@ export class LaboratoriesService implements OnModuleInit {
       max_capacity: saved.max_capacity,
       location: saved.location,
       description: saved.description,
+      tier: saved.tier,
       created_by: saved.created_by,
       created_at: saved.created_at,
     });
@@ -141,6 +142,7 @@ export class LaboratoriesService implements OnModuleInit {
       max_capacity: updated.max_capacity,
       location: updated.location,
       description: updated.description,
+      tier: updated.tier,
       updated_by: updated.updated_by,
       updated_at: updated.updated_at,
     });
@@ -176,6 +178,7 @@ export class LaboratoriesService implements OnModuleInit {
       max_capacity: updated.max_capacity,
       location: updated.location,
       description: updated.description,
+      tier: updated.tier,
       updated_by: updated.updated_by,
       updated_at: updated.updated_at,
     });

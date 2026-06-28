@@ -8,7 +8,9 @@ interface LaboratoryEventPayload {
   status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
   max_capacity?: number;
   location?: string;
+
   description?: string;
+  tier?: 'BASIC' | 'PREMIUM';
 }
 
 @Injectable()
@@ -35,8 +37,10 @@ export class LaboratoriesConsumer {
             name: payload.name,
             max_capacity: payload.max_capacity ?? 30,
             is_active: payload.status !== 'INACTIVE',
+
             location: payload.location,
             description: payload.description,
+            tier: payload.tier as any,
           });
           return;
         }
@@ -51,6 +55,7 @@ export class LaboratoriesConsumer {
         is_active: payload.status !== 'INACTIVE',
         location: payload.location,
         description: payload.description,
+        tier: payload.tier as any,
       });
       this.logger.log(`✅ Laboratorio creado en DB local: ${payload.name} (ID: ${payload.lab_id})`);
     } catch (error) {
@@ -73,6 +78,7 @@ export class LaboratoriesConsumer {
         is_active: payload.status !== 'INACTIVE',
         location: payload.location,
         description: payload.description,
+        tier: payload.tier as any,
       });
       this.logger.log(`✅ Laboratorio actualizado en DB local: ${payload.name} (ID: ${payload.lab_id})`);
     } catch (error) {
@@ -87,6 +93,7 @@ export class LaboratoriesConsumer {
             is_active: payload.status !== 'INACTIVE',
             location: payload.location,
             description: payload.description,
+            tier: payload.tier as any,
           });
         } catch (createError) {
           this.logger.error(`❌ Error creando laboratorio tras fallo de actualización: ${(createError as Error).message}`);

@@ -1,4 +1,4 @@
-import { LaboratoryStatus } from './entities/laboratory.entity';
+import { LaboratoryStatus, LaboratoryTier } from './entities/laboratory.entity';
 
 export const INITIAL_LABORATORIES = [
   // Área: Computación y Desarrollo de Software
@@ -40,6 +40,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Ingeniería - Piso 2 - Sala 202',
     max_capacity: 15,
     status: LaboratoryStatus.MAINTENANCE,
+    tier: LaboratoryTier.PREMIUM,
   },
   {
     name: 'Laboratorio de Sistemas Operativos',
@@ -88,6 +89,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Torre Tecnológica - Piso 4 - Sala 403',
     max_capacity: 25,
     status: LaboratoryStatus.ACTIVE,
+    tier: LaboratoryTier.PREMIUM,
   },
   {
     name: 'Laboratorio de Inteligencia Artificial',
@@ -96,6 +98,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Torre Tecnológica - Piso 5 - Sala 501',
     max_capacity: 15,
     status: LaboratoryStatus.ACTIVE,
+    tier: LaboratoryTier.PREMIUM,
   },
 
   // Área: Física

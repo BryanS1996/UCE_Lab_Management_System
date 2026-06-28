@@ -8,6 +8,11 @@ import {
 } from 'typeorm';
 import { Reservation } from './reservation.entity';
 
+export enum LaboratoryTier {
+  BASIC = 'BASIC',
+  PREMIUM = 'PREMIUM',
+}
+
 @Entity('laboratories')
 export class Laboratory {
   @PrimaryGeneratedColumn({ name: 'lab_id' })
@@ -21,6 +26,13 @@ export class Laboratory {
 
   @Column('boolean', { default: true, name: 'is_active' })
   is_active: boolean = true;
+
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: LaboratoryTier.BASIC,
+  })
+  tier: LaboratoryTier = LaboratoryTier.BASIC;
 
   @Column('varchar', { length: 100, nullable: true })
   location?: string;

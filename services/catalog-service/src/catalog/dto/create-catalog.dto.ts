@@ -1,5 +1,6 @@
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { CatalogItemTier } from '../entities/catalog.entity';
 
 export class CreateCatalogDto {
   @ApiProperty({
@@ -21,4 +22,8 @@ export class CreateCatalogDto {
   @IsNumber()
   @IsOptional()
   capacity?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  tier?: CatalogItemTier;
 }

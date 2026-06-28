@@ -33,6 +33,7 @@ export class LaboratoriesService implements OnModuleInit {
           is_active: labData.status !== 'INACTIVE',
           location: labData.location,
           description: labData.description,
+          tier: labData.tier as any,
         });
         await this.laboratoryRepository.save(lab);
       }

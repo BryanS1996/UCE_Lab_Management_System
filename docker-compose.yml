@@ -237,6 +237,99 @@ services:
       timeout: 10s
       retries: 3
 
+  # ─── LOCAL: Payment Service (puerto 3006) ───────────────
+  payment-service:
+    build:
+      context: ./services/payment-service
+      dockerfile: Dockerfile
+    container_name: payment-service
+    environment:
+      NODE_ENV: development
+      PORT: 3006
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_dummy}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_dummy}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - uce-local-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── LOCAL: MongoDB (para Incident Service) ─────────────
+  mongo:
+    image: mongo:6.0
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-db-data:/data/db
+    networks:
+      - uce-local-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── LOCAL: LocalStack (S3) ─────────────────────────────
+  localstack:
+    image: localstack/localstack
+    container_name: localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - uce-local-network
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:4566/_localstack/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─── LOCAL: Incident Service (puerto 3007) ──────────────
+  incident-service:
+    build:
+      context: ./services/incident-service
+      dockerfile: Dockerfile
+    container_name: incident-service
+    environment:
+      NODE_ENV: development
+      PORT: 3007
+      MONGODB_URI: mongodb://mongo:27017/incidents
+      AWS_ENDPOINT: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_S3_BUCKET: incidents-bucket
+      RESERVATION_SERVICE_URL: http://reservation-service:3011
+    depends_on:
+      mongo:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      reservation-service:
+        condition: service_healthy
+    networks:
+      - uce-local-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # ─── LOCAL: API Gateway (puerto 3000) ────────────────────
   api-gateway:
     build:
@@ -250,6 +343,8 @@ services:
       RESERVATION_SERVICE_URL: http://reservation-service:3011
       LABORATORY_SERVICE_URL: http://laboratory-service:3012
       NOTIFICATION_SERVICE_URL: http://notification-service:3013
+      PAYMENT_SERVICE_URL: http://payment-service:3006
+      INCIDENT_SERVICE_URL: http://incident-service:3007
       JWT_SECRET: local-secret-key-change-in-production
       CORS_ORIGIN: "*"
     ports:
@@ -259,6 +354,8 @@ services:
       - reservation-service
       - laboratory-service
       - notification-service
+      - payment-service
+      - incident-service
     networks:
       - uce-local-network
     restart: unless-stopped
@@ -324,6 +421,7 @@ volumes:
   laboratory-db-data:
   notification-db-data:
   rabbitmq-data:
+  mongo-db-data:
 
 networks:
   uce-local-network:

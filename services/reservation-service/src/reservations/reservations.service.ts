@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { Reservation, ReservationStatus, Laboratory } from '../database/entities';
 import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { KafkaProducerService } from '../kafka/kafka-producer.service';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 
@@ -44,7 +45,7 @@ export class ReservationsService {
     createReservationDto: CreateReservationDto,
     currentUser: CurrentUserData,
   ): Promise<Reservation> {
-    const { lab_id, start_time, end_time, purpose, notes, attendees } = createReservationDto;
+    const { lab_id, start_time, end_time, purpose, notes } = createReservationDto;
 
     // 1. Validate time range
     const startDate = new Date(start_time);
@@ -84,13 +85,6 @@ export class ReservationsService {
       );
     }
 
-    // 2.1 Check laboratory capacity
-    if (attendees > laboratory.max_capacity) {
-      throw new BadRequestException(
-        `La cantidad de asistentes supera el aforo máximo del laboratorio (${laboratory.max_capacity})`
-      );
-    }
-
     // 3. Check for scheduling conflicts using an efficient query
     const conflictCount = await this.reservationRepository
       .createQueryBuilder('r')
@@ -118,7 +112,7 @@ export class ReservationsService {
       end_time: endDate,
       purpose,
       notes,
-      status: ReservationStatus.PENDING,
+      status: laboratory.tier === 'PREMIUM' ? ReservationStatus.PENDING_PAYMENT : ReservationStatus.CONFIRMED,
     });
 
     const saved = await this.reservationRepository.save(reservation);
@@ -146,7 +140,7 @@ export class ReservationsService {
         startTime: startDate.toISOString(),
         endTime: endDate.toISOString(),
         purpose: purpose || 'Sin motivo especificado',
-        status: 'PENDING',
+        status: laboratory.tier === 'PREMIUM' ? 'PENDING_PAYMENT' : 'CONFIRMED',
       })
       .catch((err) =>
         this.logger.error('Error publicando a Kafka para correo', err),
@@ -314,6 +308,55 @@ export class ReservationsService {
 
     this.logger.log(`🚫 Reserva cancelada: ${id}`);
     return cancelled;
+  }
+
+  /**
+   * Confirm a reservation internally (e.g. from payment webhook)
+   */
+  async confirmInternal(id: string): Promise<Reservation> {
+    const reservation = await this.reservationRepository.findOne({
+      where: { reservation_id: id },
+      relations: ['laboratory'],
+    });
+
+    if (!reservation) {
+      throw new NotFoundException(`Reserva con ID ${id} no encontrada`);
+    }
+
+    if (reservation.status !== ReservationStatus.PENDING_PAYMENT && reservation.status !== ReservationStatus.PENDING) {
+      throw new BadRequestException(`No se puede confirmar una reserva con estado '${reservation.status}'`);
+    }
+
+    reservation.status = ReservationStatus.CONFIRMED;
+    const confirmed = await this.reservationRepository.save(reservation);
+
+    this.rabbitmqService
+      .publishReservationConfirmed({
+        reservation_id: confirmed.reservation_id,
+        user_id: confirmed.user_id,
+        lab_id: confirmed.lab_id,
+        start_time: confirmed.start_time,
+        end_time: confirmed.end_time,
+        paid: true,
+      } as any)
+      .catch((err) => this.logger.error('Error publicando ReservationConfirmed', err));
+
+    if (confirmed.user_email) {
+      this.kafkaProducer
+        .sendEmailNotification({
+          email: confirmed.user_email,
+          userName: confirmed.user_name || confirmed.user_email.split('@')[0],
+          labName: confirmed.laboratory?.name || `Laboratorio ID ${confirmed.lab_id}`,
+          startTime: confirmed.start_time.toISOString(),
+          endTime: confirmed.end_time.toISOString(),
+          purpose: confirmed.purpose || 'Sin motivo especificado',
+          status: 'CONFIRMED',
+        })
+        .catch((err) => this.logger.error('Error publicando a Kafka para correo de confirmación', err));
+    }
+
+    this.logger.log(`✅ Reserva confirmada internamente: ${id}`);
+    return confirmed;
   }
 
   /**
@@ -496,5 +539,36 @@ export class ReservationsService {
         count: Number(tl.count),
       })),
     };
+  }
+
+  @RabbitSubscribe({
+    exchange: 'reservation.events',
+    routingKey: 'payment.completed',
+    queue: 'reservation.payment.completed.queue',
+  })
+  async handlePaymentCompleted(payload: { reservation_id: string; status: string }) {
+    this.logger.log(`Received payment.completed event for reservation: ${payload.reservation_id}`);
+    try {
+      const reservation = await this.reservationRepository.findOne({
+        where: { reservation_id: payload.reservation_id },
+      });
+
+      if (reservation && reservation.status === ReservationStatus.PENDING_PAYMENT) {
+        reservation.status = ReservationStatus.CONFIRMED;
+        await this.reservationRepository.save(reservation);
+        this.logger.log(`Reservation ${payload.reservation_id} status updated to CONFIRMED.`);
+
+        // Publish reservation confirmed event
+        this.rabbitmqService.publishReservationConfirmed({
+          reservation_id: reservation.reservation_id,
+          user_id: reservation.user_id,
+          lab_id: reservation.lab_id,
+          start_time: reservation.start_time,
+          end_time: reservation.end_time,
+        }).catch(e => this.logger.error('Error publishing reservation confirmed event', e));
+      }
+    } catch (error) {
+      this.logger.error(`Error handling payment.completed for ${payload.reservation_id}:`, error);
+    }
   }
 }

@@ -6,7 +6,7 @@ export interface Reservation {
   lab_id: number;
   start_time: string;
   end_time: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'PENDING_PAYMENT';
   purpose?: string;
   notes?: string;
   requires_payment: boolean;

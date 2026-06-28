@@ -11,6 +11,7 @@ interface LaboratoryEventPayload {
   max_capacity: number;
   status: string;
   is_active: boolean;
+  tier?: string;
 }
 
 @Injectable()
@@ -36,6 +37,7 @@ export class LaboratoryEventsConsumer {
         name: payload.name,
         description: payload.description,
         capacity: payload.max_capacity,
+        tier: payload.tier as any,
       };
       await this.catalogService.create(dto);
       this.logger.log(
@@ -75,6 +77,7 @@ export class LaboratoryEventsConsumer {
         name: payload.name,
         description: payload.description,
         capacity: payload.max_capacity,
+        tier: payload.tier as any,
       });
       this.logger.log(`Catálogo actualizado para el lab ${payload.lab_id}.`);
 

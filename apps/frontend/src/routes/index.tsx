@@ -6,6 +6,7 @@ import { Dashboard } from '../pages/Dashboard';
 import { Laboratories } from '../pages/Laboratories';
 import { MyReservations } from '../pages/MyReservations';
 import { GlobalReservations } from '../pages/GlobalReservations';
+import { Incidents } from '../pages/Incidents';
 import {
   LoginView,
   RegisterView,
@@ -78,6 +79,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={['ADMIN', 'LAB_MANAGER']}>
             <ReportsPlaceholder />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'incidentes',
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'LAB_MANAGER']}>
+            <Incidents />
           </ProtectedRoute>
         ),
       },
