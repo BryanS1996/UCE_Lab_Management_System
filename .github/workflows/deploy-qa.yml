@@ -102,6 +102,16 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-latest
 
+      - name: Build & Push — Payment Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/payment-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:qa-${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:qa-latest
+
+
       - name: Build & Push — API Gateway
         uses: docker/build-push-action@v5
         with:
@@ -207,7 +217,7 @@ jobs:
           proxy_key: ${{ secrets.QA_EC2_SSH_PRIVATE_KEY }}
           # 'envs' securely injects variables into the remote shell.
           # They are NOT interpolated as plaintext into the script string.
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,IMAGE_TAG,ECR_REGISTRY
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,IMAGE_TAG,ECR_REGISTRY,QA_ENV_FILE
           # sync: true ensures the script runs sequentially on each host,
           # providing a controlled rolling-style deploy across the ASG fleet.
           sync: true
@@ -222,12 +232,16 @@ jobs:
             done
             
             cd /home/ec2-user/app
+            
+            # Escribir el archivo .env desde el GitHub Secret QA_ENV_FILE
+            printf '%s\n' "$QA_ENV_FILE" > /home/ec2-user/app/.env
+
             # Re-authenticate with ECR using the session credentials passed via envs.
             aws ecr get-login-password --region "$AWS_REGION" \
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
             docker compose -f docker-compose.qa.yml pull \
               api-gateway-qa auth-service-qa reservation-service-qa laboratory-service-qa \
-              notification-service-qa catalog-service-qa frontend-qa
+              notification-service-qa catalog-service-qa payment-service-qa frontend-qa
             docker compose -f docker-compose.qa.yml up -d
 
             # Esperar a que los servicios estén listos (hasta 3 minutos)
@@ -267,3 +281,4 @@ jobs:
           AWS_REGION: ${{ env.AWS_REGION }}
           IMAGE_TAG: qa-${{ github.sha }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          QA_ENV_FILE: ${{ secrets.QA_ENV_FILE }}
