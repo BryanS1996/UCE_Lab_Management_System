@@ -171,6 +171,30 @@ services:
       retries: 3
       start_period: 30s
 
+  payment-service:
+    image: ${ECR_REGISTRY:-localhost}/uce-payment-service:${IMAGE_TAG:-latest}
+    container_name: payment-service
+    pull_policy: always
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL_PROD:-http://localhost}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   # ─── Production: API Gateway ──────────────────────────────────────────────
   api-gateway:
     image: ${ECR_REGISTRY:-localhost}/uce-api-gateway:${IMAGE_TAG:-latest}
@@ -184,6 +208,7 @@ services:
       LABORATORY_SERVICE_URL: http://laboratory-service:3002
       NOTIFICATION_SERVICE_URL: http://notification-service:3003
       CATALOG_SERVICE_URL: http://catalog-service:3004
+      PAYMENT_SERVICE_URL: http://payment-service:3005
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:
@@ -198,6 +223,8 @@ services:
       notification-service:
         condition: service_healthy
       catalog-service:
+        condition: service_healthy
+      payment-service:
         condition: service_healthy
     networks:
       - uce-prod-network
