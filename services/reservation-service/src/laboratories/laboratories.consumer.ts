@@ -1,7 +1,7 @@
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { LaboratoriesService } from './laboratories.service';
-import { LaboratoryTier } from '../database/entities';
+import { LaboratoryTier } from '../database/entities/laboratory.entity';
 
 interface LaboratoryEventPayload {
   lab_id: number;
