@@ -1,6 +1,6 @@
 import { IsString, IsInt, IsOptional, Min, Max, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { LaboratoryStatus } from '../entities/laboratory.entity';
+import { LaboratoryStatus, LaboratoryTier } from '../entities/laboratory.entity';
 
 export class CreateLaboratoryDto {
   @ApiProperty({ example: 'Laboratorio de Computación A' })
@@ -27,4 +27,9 @@ export class CreateLaboratoryDto {
   @IsOptional()
   @IsEnum(LaboratoryStatus)
   status?: LaboratoryStatus;
+
+  @ApiPropertyOptional({ enum: LaboratoryTier })
+  @IsOptional()
+  @IsEnum(LaboratoryTier)
+  tier?: LaboratoryTier;
 }

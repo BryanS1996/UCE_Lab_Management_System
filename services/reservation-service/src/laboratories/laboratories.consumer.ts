@@ -1,6 +1,7 @@
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { LaboratoriesService } from './laboratories.service';
+import { LaboratoryTier } from '../database/entities/laboratory.entity';
 
 interface LaboratoryEventPayload {
   lab_id: number;
@@ -8,7 +9,9 @@ interface LaboratoryEventPayload {
   status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
   max_capacity?: number;
   location?: string;
+
   description?: string;
+  tier?: 'BASIC' | 'PREMIUM';
 }
 
 @Injectable()
@@ -35,8 +38,10 @@ export class LaboratoriesConsumer {
             name: payload.name,
             max_capacity: payload.max_capacity ?? 30,
             is_active: payload.status !== 'INACTIVE',
+
             location: payload.location,
             description: payload.description,
+            tier: payload.tier as LaboratoryTier,
           });
           return;
         }
@@ -51,6 +56,7 @@ export class LaboratoriesConsumer {
         is_active: payload.status !== 'INACTIVE',
         location: payload.location,
         description: payload.description,
+        tier: payload.tier as LaboratoryTier,
       });
       this.logger.log(`✅ Laboratorio creado en DB local: ${payload.name} (ID: ${payload.lab_id})`);
     } catch (error) {
@@ -73,6 +79,7 @@ export class LaboratoriesConsumer {
         is_active: payload.status !== 'INACTIVE',
         location: payload.location,
         description: payload.description,
+        tier: payload.tier as LaboratoryTier,
       });
       this.logger.log(`✅ Laboratorio actualizado en DB local: ${payload.name} (ID: ${payload.lab_id})`);
     } catch (error) {
@@ -87,6 +94,7 @@ export class LaboratoriesConsumer {
             is_active: payload.status !== 'INACTIVE',
             location: payload.location,
             description: payload.description,
+            tier: payload.tier as LaboratoryTier,
           });
         } catch (createError) {
           this.logger.error(`❌ Error creando laboratorio tras fallo de actualización: ${(createError as Error).message}`);

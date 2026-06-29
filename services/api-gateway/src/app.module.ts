@@ -10,6 +10,9 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 import { CatalogModule } from './modules/catalog/catalog.module';
 
+import { PaymentModule } from './modules/payment/payment.module';
+import { IncidentModule } from './modules/incident/incident.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,6 +24,8 @@ import { CatalogModule } from './modules/catalog/catalog.module';
     ReservationModule,
     NotificationModule,
     CatalogModule,
+    PaymentModule,
+    IncidentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

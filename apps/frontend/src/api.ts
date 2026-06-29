@@ -5,12 +5,15 @@ const REFRESH_KEY = 'uce_refresh_token';
 
 let refreshInFlight: Promise<string | null> | null = null;
 
+
 // Forzar siempre rutas relativas para Docker/Nginx
 const apiUrls = {
   auth: '/api/auth',
   reservation: '/api/reservations',
   laboratory: '/api/laboratories',
   notification: '/api/notifications',
+  incident: '/api/incidents',
+  payment: '/api/payments',
 };
 
 export function getToken(): string | null {
@@ -100,9 +103,12 @@ export async function apiFetch(
   retryOn401 = true,
 ): Promise<unknown> {
   const headers = new Headers(options.headers);
-  if (!headers.has('Content-Type') && options.body) {
+  
+  // No establecer application/json si el body es un FormData (subida de archivos)
+  if (!headers.has('Content-Type') && options.body && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
+  
   const token = getToken();
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
@@ -157,4 +163,16 @@ export const endpoints = {
   notificationMy: () => apiFetch(apiUrls.notification, '/my'),
   notificationUnread: () =>
     apiFetch(apiUrls.notification, '/my/unread-count'),
+  incidentList: () => apiFetch(apiUrls.incident, ''),
+  incidentGet: (id: string) => apiFetch(apiUrls.incident, `/${id}`),
+  incidentCreate: (formData: FormData) =>
+    apiFetch(apiUrls.incident, '', {
+      method: 'POST',
+      body: formData as any,
+    }),
+  paymentCheckoutSession: (reservation_id: string, lab_name: string) =>
+    apiFetch(apiUrls.payment, '/checkout-session', {
+      method: 'POST',
+      body: JSON.stringify({ reservation_id, lab_name }),
+    }),
 };

@@ -18,6 +18,7 @@ export function isTokenExpired(token: string): boolean {
 }
 
 export function mapRole(backendRole: string): UserRole {
+  if (!backendRole) return 'ESTUDIANTE';
   const roleName = backendRole.toLowerCase();
   switch (roleName) {
     case 'admin':

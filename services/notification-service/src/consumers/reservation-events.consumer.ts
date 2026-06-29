@@ -41,14 +41,18 @@ export class ReservationEventsConsumer {
     queue: 'notification.reservation-confirmed',
     queueOptions: { durable: true },
   })
-  async handleReservationConfirmed(payload: ReservationEventPayload) {
+  async handleReservationConfirmed(payload: ReservationEventPayload & { paid?: boolean }) {
     this.logger.log(
       `[Consumer] ReservationConfirmed: ${payload.reservation_id}`,
     );
+    const message = payload.paid 
+      ? `¡Pago confirmado, tu reserva está lista! (Lab ID: ${payload.lab_id})` 
+      : `Tu reserva para el laboratorio ID ${payload.lab_id} el ${new Date(payload.start_time).toLocaleDateString('es-EC')} ha sido CONFIRMADA.`;
+
     await this.notificationsService.create({
       user_id: payload.user_id,
       title: 'Reserva Confirmada ✅',
-      message: `Tu reserva para el laboratorio ID ${payload.lab_id} el ${new Date(payload.start_time).toLocaleDateString('es-EC')} ha sido CONFIRMADA.`,
+      message,
       type: NotificationType.RESERVATION_CONFIRMED,
       metadata: payload,
     });

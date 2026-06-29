@@ -5,12 +5,13 @@ locals {
     "uce-laboratory-service",
     "uce-notification-service",
     "uce-catalog-service",
+    "uce-payment-service",
     "uce-api-gateway",
     "uce-frontend",
   ]
   # Puerto 80 (frontend nginx) es el punto de entrada del ALB — igual que QA.
   # Los puertos 3000-3004 son internos entre microservicios (no expuestos al ALB).
-  service_ports    = [80, 3000, 3001, 3002, 3003, 3004]
+  service_ports    = [80, 3000, 3001, 3002, 3003, 3004, 3005]
   api_gateway_port = 80
 }
 

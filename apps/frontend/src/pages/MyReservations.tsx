@@ -11,7 +11,9 @@ import {
   BookmarkX,
   XCircle,
   FileSpreadsheet,
+  CreditCard,
 } from 'lucide-react';
+import { endpoints } from '../api';
 
 export const MyReservations: React.FC = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -20,7 +22,7 @@ export const MyReservations: React.FC = () => {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   
   // Status filter state
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'CONFIRMED' | 'PENDING' | 'CANCELLED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'CONFIRMED' | 'PENDING' | 'PENDING_PAYMENT' | 'CANCELLED'>('ALL');
 
   const fetchReservations = async () => {
     setLoading(true);
@@ -63,6 +65,24 @@ export const MyReservations: React.FC = () => {
     }
   };
 
+  const handlePayStripe = async (id: string, labName: string) => {
+    setActionLoadingId(id);
+    setError('');
+    try {
+      const res: any = await endpoints.paymentCheckoutSession(id, labName);
+      if (res && res.url) {
+        window.location.href = res.url;
+      } else {
+        setError('No se pudo iniciar el pago. ' + (res?.error || ''));
+      }
+    } catch (err: any) {
+      console.error('Error in payment checkout:', err);
+      setError('Error al conectar con la pasarela de pago.');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   // Mapear filtros de estado
   const filteredReservations = reservations.filter((res) => {
     if (statusFilter === 'ALL') return true;
@@ -75,6 +95,8 @@ export const MyReservations: React.FC = () => {
         return <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] px-2.5 py-1 rounded-lg font-bold">Confirmada</span>;
       case 'PENDING':
         return <span className="bg-amber-50 text-amber-600 border border-amber-100 text-[10px] px-2.5 py-1 rounded-lg font-bold">Pendiente</span>;
+      case 'PENDING_PAYMENT':
+        return <span className="bg-blue-50 text-blue-600 border border-blue-100 text-[10px] px-2.5 py-1 rounded-lg font-bold">Pago Pendiente</span>;
       case 'CANCELLED':
         return <span className="bg-red-50 text-red-600 border border-red-100 text-[10px] px-2.5 py-1 rounded-lg font-bold">Cancelada</span>;
       default:
@@ -91,17 +113,17 @@ export const MyReservations: React.FC = () => {
       </div>
 
       {/* Barra de Filtros */}
-      <Card className="p-4 flex justify-between items-center">
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest hidden md:inline">
-          Filtrar por estado
+      <Card className="p-4 flex justify-between items-center overflow-x-auto">
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest hidden lg:inline mr-4">
+          Filtrar
         </span>
-        <div className="flex gap-1.5 p-1 bg-slate-100 rounded-xl w-full md:w-auto text-xs font-bold font-sans">
-          {(['ALL', 'CONFIRMED', 'PENDING', 'CANCELLED'] as const).map((status) => (
+        <div className="flex gap-1.5 p-1 bg-slate-100 rounded-xl min-w-max text-xs font-bold font-sans">
+          {(['ALL', 'CONFIRMED', 'PENDING', 'PENDING_PAYMENT', 'CANCELLED'] as const).map((status) => (
             <button
               key={status}
-              onClick={() => setStatusFilter(status)}
+              onClick={() => setStatusFilter(status as any)}
               className={`
-                px-4 py-2 rounded-lg transition-all cursor-pointer flex-1 md:flex-none
+                px-4 py-2 rounded-lg transition-all cursor-pointer
                 ${
                   statusFilter === status
                     ? 'bg-white text-slate-950 shadow-sm'
@@ -109,7 +131,7 @@ export const MyReservations: React.FC = () => {
                 }
               `}
             >
-              {status === 'ALL' ? 'Todas' : status === 'CONFIRMED' ? 'Confirmadas' : status === 'PENDING' ? 'Pendientes' : 'Canceladas'}
+              {status === 'ALL' ? 'Todas' : status === 'CONFIRMED' ? 'Confirmadas' : status === 'PENDING' ? 'Pendientes' : status === 'PENDING_PAYMENT' ? 'Por Pagar' : 'Canceladas'}
             </button>
           ))}
         </div>
@@ -173,8 +195,20 @@ export const MyReservations: React.FC = () => {
                 </span>
               </div>
 
-              {/* Botón de Cancelación */}
-              <div className="w-full md:w-auto flex justify-end">
+              {/* Acciones */}
+              <div className="w-full md:w-auto flex flex-col sm:flex-row justify-end gap-2">
+                {res.status === 'PENDING_PAYMENT' && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white w-full md:w-auto"
+                    isLoading={actionLoadingId === res.reservation_id}
+                    onClick={() => handlePayStripe(res.reservation_id, res.laboratory?.name || 'Laboratorio Premium')}
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Pagar con Stripe
+                  </Button>
+                )}
                 {res.status !== 'CANCELLED' ? (
                   <Button
                     variant="outline"

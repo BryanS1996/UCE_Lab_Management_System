@@ -16,7 +16,9 @@ import {
   AlertCircle,
   CheckCircle2,
   SlidersHorizontal,
+  CreditCard,
 } from 'lucide-react';
+import { endpoints } from '../api';
 
 const TIME_SLOTS = [
   { label: '07:00 - 09:00', start: '07:00', end: '09:00' },
@@ -107,18 +109,34 @@ export const Laboratories: React.FC = () => {
         bookingPayload.notes = bookingNotes.trim();
       }
 
-      await reservationApi.create(bookingPayload);
+      const res = await reservationApi.create(bookingPayload);
 
-      setBookingSuccess('¡Tu solicitud de reserva ha sido enviada exitosamente!');
-      
-      setSelectedSlotIndex(null);
-      setBookingPurpose('');
-      setBookingNotes('');
-      
-      setTimeout(() => {
-        setIsBookingOpen(false);
-        setBookingSuccess('');
-      }, 2000);
+      if (selectedLabForBooking.tier === 'PREMIUM') {
+        setBookingSuccess('Redirigiendo al portal de pagos...');
+        try {
+          const paymentRes: any = await endpoints.paymentCheckoutSession(res.reservation_id, selectedLabForBooking.name);
+          if (paymentRes && paymentRes.url) {
+            window.location.href = paymentRes.url;
+            return;
+          } else {
+            setError('No se pudo iniciar el pago. ' + (paymentRes?.error || ''));
+          }
+        } catch (paymentErr) {
+          console.error('Error starting checkout session:', paymentErr);
+          setBookingSuccess('');
+          setError('Error al conectar con la pasarela de pago.');
+        }
+      } else {
+        setBookingSuccess('¡Tu solicitud de reserva ha sido enviada exitosamente!');
+        setSelectedSlotIndex(null);
+        setBookingPurpose('');
+        setBookingNotes('');
+        
+        setTimeout(() => {
+          setIsBookingOpen(false);
+          setBookingSuccess('');
+        }, 2000);
+      }
     } catch (err: any) {
       console.error('Error creating booking:', err);
       setError(err.response?.data?.message || 'Error al procesar la reserva. Verifica los datos.');
@@ -195,10 +213,19 @@ export const Laboratories: React.FC = () => {
           {filteredLabs.map((lab) => (
             <Card key={lab.lab_id} className="p-6 flex flex-col justify-between hover:scale-[1.01] transition-transform">
               <div className="space-y-4">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-black text-slate-900 text-lg leading-tight truncate max-w-[70%]">
-                    {lab.name}
-                  </h3>
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex flex-col gap-1.5 overflow-hidden flex-1">
+                    <h3 className="font-black text-slate-900 text-lg leading-tight truncate">
+                      {lab.name}
+                    </h3>
+                    <span className={`w-fit text-[10px] font-extrabold px-2 py-0.5 rounded-full border tracking-wide uppercase ${
+                      lab.tier === 'PREMIUM'
+                        ? 'bg-gradient-to-r from-amber-200 to-yellow-400 text-amber-900 border-amber-300 shadow-sm'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}>
+                      {lab.tier === 'PREMIUM' ? '✨ Premium' : 'Básico'}
+                    </span>
+                  </div>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                     lab.status === 'ACTIVE'
                       ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
@@ -360,9 +387,16 @@ export const Laboratories: React.FC = () => {
                 type="submit"
                 variant="primary"
                 isLoading={bookingLoading}
-                className="flex-1 py-3"
+                className={`flex-1 py-3 ${selectedLabForBooking?.tier === 'PREMIUM' ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
               >
-                Confirmar Reserva
+                {selectedLabForBooking?.tier === 'PREMIUM' ? (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2 inline" />
+                    Pagar Reserva
+                  </>
+                ) : (
+                  'Confirmar Reserva'
+                )}
               </Button>
             </div>
           </form>

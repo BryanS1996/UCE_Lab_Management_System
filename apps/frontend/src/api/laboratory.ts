@@ -17,6 +17,7 @@ export interface Laboratory {
   max_capacity: number;
   status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
   is_active: boolean;
+  tier?: 'BASIC' | 'PREMIUM';
   resources?: LaboratoryResource[];
 }
 

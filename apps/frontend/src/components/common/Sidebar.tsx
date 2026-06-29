@@ -17,6 +17,7 @@ import {
   FlaskConical,
   ChevronRight,
   Menu,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -90,6 +91,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       label: 'Reportes',
       icon: BarChart3,
       roles: ['ADMIN', 'LAB_MANAGER'],
+    },
+    {
+      path: '/incidentes',
+      label: 'Incidentes',
+      icon: AlertTriangle,
     },
     {
       path: '/usuarios',

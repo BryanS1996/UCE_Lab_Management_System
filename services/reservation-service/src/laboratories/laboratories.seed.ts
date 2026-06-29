@@ -6,6 +6,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Ingeniería - Piso 1 - Sala 101',
     max_capacity: 30,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio Computación 02',
@@ -13,6 +14,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Ingeniería - Piso 1 - Sala 102',
     max_capacity: 30,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio Computación 03',
@@ -20,6 +22,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Ingeniería - Piso 1 - Sala 103',
     max_capacity: 25,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Desarrollo Móvil',
@@ -27,6 +30,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Ingeniería - Piso 2 - Sala 201',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Videojuegos',
@@ -34,6 +38,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Ingeniería - Piso 2 - Sala 202',
     max_capacity: 15,
     status: 'MAINTENANCE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Sistemas Operativos',
@@ -41,6 +46,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Ingeniería - Piso 2 - Sala 203',
     max_capacity: 25,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
 
   // Área: Redes, Seguridad y Datos
@@ -50,6 +56,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Torre Tecnológica - Piso 3 - Sala 301',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Redes Cisco 2',
@@ -57,6 +64,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Torre Tecnológica - Piso 3 - Sala 302',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Ciberseguridad',
@@ -64,6 +72,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Torre Tecnológica - Piso 4 - Sala 401',
     max_capacity: 15,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Bases de Datos',
@@ -71,6 +80,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Torre Tecnológica - Piso 4 - Sala 402',
     max_capacity: 30,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Big Data',
@@ -78,6 +88,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Torre Tecnológica - Piso 4 - Sala 403',
     max_capacity: 25,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Inteligencia Artificial',
@@ -85,6 +96,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Torre Tecnológica - Piso 5 - Sala 501',
     max_capacity: 15,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
 
   // Área: Física
@@ -94,6 +106,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Edificio de Ciencias - PB - Sala 01',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Física Clásica B',
@@ -101,6 +114,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Edificio de Ciencias - PB - Sala 02',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Electromagnetismo',
@@ -108,6 +122,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Edificio de Ciencias - Piso 1 - Sala 11',
     max_capacity: 25,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Óptica',
@@ -115,6 +130,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Edificio de Ciencias - Piso 1 - Sala 12',
     max_capacity: 15,
     status: 'INACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Termodinámica',
@@ -122,6 +138,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Edificio de Ciencias - Piso 2 - Sala 21',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Física Moderna',
@@ -129,6 +146,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Edificio de Ciencias - Piso 2 - Sala 22',
     max_capacity: 10,
     status: 'MAINTENANCE',
+    tier: 'BASIC',
   },
 
   // Área: Química
@@ -138,6 +156,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Pabellón de Química - Piso 1 - Lab 1',
     max_capacity: 30,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Química General 2',
@@ -145,6 +164,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Pabellón de Química - Piso 1 - Lab 2',
     max_capacity: 30,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Química Orgánica',
@@ -152,6 +172,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Pabellón de Química - Piso 2 - Lab 3',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Química Analítica',
@@ -159,6 +180,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Pabellón de Química - Piso 2 - Lab 4',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Fisicoquímica',
@@ -166,6 +188,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Pabellón de Química - Piso 3 - Lab 5',
     max_capacity: 15,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Análisis Instrumental',
@@ -173,6 +196,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Pabellón de Química - Piso 3 - Lab 6',
     max_capacity: 10,
     status: 'MAINTENANCE',
+    tier: 'BASIC',
   },
 
   // Área: Biología y Medicina
@@ -182,6 +206,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Biología - Piso 1 - Sala 1',
     max_capacity: 30,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Microbiología',
@@ -189,6 +214,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Biología - Piso 2 - Sala 2',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Genética',
@@ -196,6 +222,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Biología - Piso 3 - Sala 3',
     max_capacity: 15,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Anatomía',
@@ -203,6 +230,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Medicina - Subsuelo - Sala A',
     max_capacity: 40,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Histología',
@@ -210,6 +238,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Medicina - Piso 1 - Sala B',
     max_capacity: 25,
     status: 'INACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Centro de Simulación Médica',
@@ -217,6 +246,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Medicina - Piso 2 - Sala C',
     max_capacity: 15,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
 
   // Área: Electrónica y Telecomunicaciones
@@ -226,6 +256,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Electrónica - Piso 1 - Lab A',
     max_capacity: 25,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Electrónica Analógica',
@@ -233,6 +264,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Electrónica - Piso 1 - Lab B',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Electrónica Digital',
@@ -240,6 +272,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Electrónica - Piso 2 - Lab C',
     max_capacity: 25,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Microprocesadores',
@@ -247,6 +280,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Electrónica - Piso 2 - Lab D',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Telecomunicaciones 1',
@@ -254,6 +288,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Electrónica - Piso 3 - Lab E',
     max_capacity: 15,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Fibra Óptica',
@@ -261,6 +296,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Electrónica - Piso 3 - Lab F',
     max_capacity: 12,
     status: 'MAINTENANCE',
+    tier: 'BASIC',
   },
 
   // Robótica, Mecatrónica y Civil
@@ -270,6 +306,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Centro de Innovación - Nave 1',
     max_capacity: 15,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Robótica Móvil',
@@ -277,6 +314,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Centro de Innovación - Nave 2',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Control y Automatización',
@@ -284,6 +322,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Centro de Innovación - Nave 3',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Diseño CAD/CAM',
@@ -291,6 +330,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Centro de Diseño - Sala 1',
     max_capacity: 25,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Mecánica de Suelos',
@@ -298,6 +338,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Ingeniería Civil - PB',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Hidráulica',
@@ -305,6 +346,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Ingeniería Civil - Ext',
     max_capacity: 15,
     status: 'INACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Topografía',
@@ -312,6 +354,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Ingeniería Civil - Piso 1',
     max_capacity: 20,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
 
   // Salas de Uso Múltiple y Estructuras Especiales
@@ -321,6 +364,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Biblioteca Central - Piso 1',
     max_capacity: 50,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Sala de Computación Libre B',
@@ -328,6 +372,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Biblioteca Central - Piso 2',
     max_capacity: 50,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Idiomas 1',
@@ -335,6 +380,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Centro de Idiomas - Piso 1',
     max_capacity: 30,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Idiomas 2',
@@ -342,6 +388,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Centro de Idiomas - Piso 2',
     max_capacity: 30,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Taller de Arquitectura',
@@ -349,6 +396,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Arquitectura - Sala Magna',
     max_capacity: 40,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
   {
     name: 'Estudio de Grabación Audiovisual',
@@ -356,6 +404,7 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Artes - Estudio 1',
     max_capacity: 10,
     status: 'MAINTENANCE',
+    tier: 'BASIC',
   },
   {
     name: 'Laboratorio de Edición de Video',
@@ -363,5 +412,6 @@ export const INITIAL_LABORATORIES = [
     location: 'Facultad de Artes - Sala 2',
     max_capacity: 15,
     status: 'ACTIVE',
+    tier: 'BASIC',
   },
 ];
