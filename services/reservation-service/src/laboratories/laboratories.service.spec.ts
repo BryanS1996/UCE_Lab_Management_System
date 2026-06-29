@@ -28,6 +28,7 @@ const mockLaboratory: Laboratory = {
   max_capacity: 30,
   is_active: true,
   location: 'Bloque A',
+  tier: 'BASIC' as any,
   created_at: new Date(),
   updated_at: new Date(),
 };
