@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Laboratory } from '../database/entities';
 import { Reservation, ReservationStatus } from '../database/entities';
+import { LaboratoryTier } from '../database/entities/laboratory.entity';
 import { CreateLaboratoryDto, UpdateLaboratoryDto } from './dto';
 import { INITIAL_LABORATORIES } from './laboratories.seed';
 
@@ -33,6 +34,7 @@ export class LaboratoriesService implements OnModuleInit {
           is_active: labData.status !== 'INACTIVE',
           location: labData.location,
           description: labData.description,
+          tier: labData.tier as LaboratoryTier,
         });
         await this.laboratoryRepository.save(lab);
       }

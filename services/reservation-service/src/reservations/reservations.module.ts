@@ -7,6 +7,8 @@ import { CommonModule } from '../common/common.module';
 import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
 import { KafkaModule } from '../kafka/kafka.module';
 
+import { PaymentConsumer } from './payment.consumer';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Reservation, Laboratory]),
@@ -15,7 +17,7 @@ import { KafkaModule } from '../kafka/kafka.module';
     KafkaModule,
   ],
   controllers: [ReservationsController],
-  providers: [ReservationsService],
+  providers: [ReservationsService, PaymentConsumer],
   exports: [ReservationsService],
 })
 export class ReservationsModule {}

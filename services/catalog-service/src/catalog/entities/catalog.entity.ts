@@ -12,6 +12,11 @@ export enum CatalogItemStatus {
   MAINTENANCE = 'MAINTENANCE',
 }
 
+export enum CatalogItemTier {
+  BASIC = 'BASIC',
+  PREMIUM = 'PREMIUM',
+}
+
 @Entity('catalog_items')
 export class CatalogItem {
   @PrimaryColumn()
@@ -38,6 +43,13 @@ export class CatalogItem {
     default: CatalogItemStatus.AVAILABLE,
   })
   current_status: CatalogItemStatus;
+
+  @Column({
+    type: 'enum',
+    enum: CatalogItemTier,
+    default: CatalogItemTier.BASIC,
+  })
+  tier: CatalogItemTier;
 
   @CreateDateColumn()
   created_at: Date;
