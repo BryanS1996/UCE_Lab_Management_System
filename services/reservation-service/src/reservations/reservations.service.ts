@@ -338,6 +338,7 @@ export class ReservationsService {
         start_time: confirmed.start_time,
         end_time: confirmed.end_time,
         paid: true,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any)
       .catch((err) => this.logger.error('Error publicando ReservationConfirmed', err));
 

@@ -1,7 +1,7 @@
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { ReservationsService } from './reservations.service';
-import { ReservationStatus } from '../database/entities';
+
 
 interface PaymentSucceededPayload {
   reservation_id: string;

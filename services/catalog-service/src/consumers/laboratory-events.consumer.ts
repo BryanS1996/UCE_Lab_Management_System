@@ -3,6 +3,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { CatalogService } from '../catalog/catalog.service';
 import { CreateCatalogDto } from '../catalog/dto/create-catalog.dto';
+import { CatalogItemTier } from '../catalog/entities/catalog.entity';
 
 interface LaboratoryEventPayload {
   lab_id: number;
@@ -37,7 +38,7 @@ export class LaboratoryEventsConsumer {
         name: payload.name,
         description: payload.description,
         capacity: payload.max_capacity,
-        tier: payload.tier as any,
+        tier: payload.tier as CatalogItemTier,
       };
       await this.catalogService.create(dto);
       this.logger.log(
@@ -77,7 +78,7 @@ export class LaboratoryEventsConsumer {
         name: payload.name,
         description: payload.description,
         capacity: payload.max_capacity,
-        tier: payload.tier as any,
+        tier: payload.tier as CatalogItemTier,
       });
       this.logger.log(`Catálogo actualizado para el lab ${payload.lab_id}.`);
 
