@@ -105,6 +105,16 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:latest
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:${{ github.sha }}
 
+      - name: Build & Push — Payment Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/payment-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:latest
+            ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:${{ github.sha }}
+
+
       - name: Build & Push — API Gateway
         uses: docker/build-push-action@v5
         with:
@@ -239,7 +249,7 @@ jobs:
 
             docker compose -f docker-compose.prod.yml pull \
               api-gateway auth-service reservation-service laboratory-service \
-              notification-service catalog-service frontend
+              notification-service catalog-service payment-service frontend
 
             docker compose -f docker-compose.prod.yml up -d
 
