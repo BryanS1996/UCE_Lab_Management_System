@@ -274,6 +274,52 @@ services:
       - uce-qa-network
     restart: unless-stopped
 
+  # ─── QA: Incident Database ─────────────────────────────
+  incident-db-qa:
+    image: mongo:6
+    container_name: incident-db-qa
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${INCIDENT_DB_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${INCIDENT_DB_PASS:-admin}
+    volumes:
+      - incident-db-qa-data:/data/db
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── QA: Incident Service (puerto 3017) ──────────────
+  incident-service-qa:
+    image: ${ECR_REGISTRY:-localhost}/uce-incident-service:${IMAGE_TAG:-qa-latest}
+    build:
+      context: ./services/incident-service
+      dockerfile: Dockerfile
+    container_name: incident-service-qa
+    pull_policy: always
+    environment:
+      NODE_ENV: qa
+      PORT: 3017
+      MONGODB_URI: mongodb://${INCIDENT_DB_USER:-admin}:${INCIDENT_DB_PASS:-admin}@incident-db-qa:27017/incident_service_qa?authSource=admin
+      RESERVATION_SERVICE_URL: http://reservation-service-qa:3011
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      AWS_ACCESS_KEY_ID: ${QA_AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${QA_AWS_SECRET_ACCESS_KEY}
+    depends_on:
+      incident-db-qa:
+        condition: service_healthy
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3017/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
   # ─── QA: Payment Service (puerto 3016) ───────────────
   payment-service-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-payment-service:${IMAGE_TAG:-qa-latest}
@@ -318,6 +364,7 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification-service-qa:3013
       CATALOG_SERVICE_URL: http://catalog-service-qa:3014
       PAYMENT_SERVICE_URL: http://payment-service-qa:3016
+      INCIDENT_SERVICE_URL: http://incident-service-qa:3017
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
     ports:
@@ -331,6 +378,7 @@ services:
       - notification-service-qa
       - catalog-service-qa
       - payment-service-qa
+      - incident-service-qa
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -410,6 +458,7 @@ volumes:
   laboratory-db-qa-data:
   notification-db-qa-data:
   catalog-db-qa-data:
+  incident-db-qa-data:
   rabbitmq-qa-data:
 
 networks:
