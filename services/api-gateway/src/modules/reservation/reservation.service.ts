@@ -11,9 +11,13 @@ export class ReservationService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.reservationServiceUrl = this.configService.get<string>('RESERVATION_SERVICE_URL');
+    this.reservationServiceUrl = this.configService.get<string>(
+      'RESERVATION_SERVICE_URL',
+    );
     if (!this.reservationServiceUrl) {
-      throw new Error('RESERVATION_SERVICE_URL is not defined in environment variables');
+      throw new Error(
+        'RESERVATION_SERVICE_URL is not defined in environment variables',
+      );
     }
   }
 
@@ -38,9 +42,12 @@ export class ReservationService {
 
   async getAdminStats(authHeader: string) {
     const response = await firstValueFrom(
-      this.httpService.get(`${this.reservationServiceUrl}/reservations/admin/stats`, {
-        headers: { Authorization: authHeader },
-      }),
+      this.httpService.get(
+        `${this.reservationServiceUrl}/reservations/admin/stats`,
+        {
+          headers: { Authorization: authHeader },
+        },
+      ),
     );
     return response.data;
   }
@@ -56,45 +63,64 @@ export class ReservationService {
 
   async createReservation(authHeader: string, createDto: any) {
     const response = await firstValueFrom(
-      this.httpService.post(`${this.reservationServiceUrl}/reservations`, createDto, {
-        headers: { Authorization: authHeader },
-      }),
+      this.httpService.post(
+        `${this.reservationServiceUrl}/reservations`,
+        createDto,
+        {
+          headers: { Authorization: authHeader },
+        },
+      ),
     );
     return response.data;
   }
 
   async confirmReservation(authHeader: string, id: string) {
     const response = await firstValueFrom(
-      this.httpService.patch(`${this.reservationServiceUrl}/reservations/${id}/confirm`, {}, {
-        headers: { Authorization: authHeader },
-      }),
+      this.httpService.patch(
+        `${this.reservationServiceUrl}/reservations/${id}/confirm`,
+        {},
+        {
+          headers: { Authorization: authHeader },
+        },
+      ),
     );
     return response.data;
   }
 
   async rejectReservation(authHeader: string, id: string) {
     const response = await firstValueFrom(
-      this.httpService.patch(`${this.reservationServiceUrl}/reservations/${id}/reject`, {}, {
-        headers: { Authorization: authHeader },
-      }),
+      this.httpService.patch(
+        `${this.reservationServiceUrl}/reservations/${id}/reject`,
+        {},
+        {
+          headers: { Authorization: authHeader },
+        },
+      ),
     );
     return response.data;
   }
 
   async updateReservation(authHeader: string, id: string, updateDto: any) {
     const response = await firstValueFrom(
-      this.httpService.patch(`${this.reservationServiceUrl}/reservations/${id}`, updateDto, {
-        headers: { Authorization: authHeader },
-      }),
+      this.httpService.patch(
+        `${this.reservationServiceUrl}/reservations/${id}`,
+        updateDto,
+        {
+          headers: { Authorization: authHeader },
+        },
+      ),
     );
     return response.data;
   }
 
   async cancelReservation(authHeader: string, id: string) {
     const response = await firstValueFrom(
-      this.httpService.delete(`${this.reservationServiceUrl}/reservations/${id}`, {
-        headers: { Authorization: authHeader },
-      }),
+      this.httpService.delete(
+        `${this.reservationServiceUrl}/reservations/${id}`,
+        {
+          headers: { Authorization: authHeader },
+        },
+      ),
     );
     return response.data;
   }

@@ -13,13 +13,18 @@ export class AuthService {
   ) {
     this.authServiceUrl = this.configService.get<string>('AUTH_SERVICE_URL');
     if (!this.authServiceUrl) {
-      throw new Error('AUTH_SERVICE_URL is not defined in environment variables');
+      throw new Error(
+        'AUTH_SERVICE_URL is not defined in environment variables',
+      );
     }
   }
 
   async register(registerDto: any) {
     const response = await firstValueFrom(
-      this.httpService.post(`${this.authServiceUrl}/auth/register`, registerDto),
+      this.httpService.post(
+        `${this.authServiceUrl}/auth/register`,
+        registerDto,
+      ),
     );
     return response.data;
   }
@@ -49,9 +54,13 @@ export class AuthService {
 
   async changePassword(authHeader: string, changePasswordDto: any) {
     const response = await firstValueFrom(
-      this.httpService.patch(`${this.authServiceUrl}/auth/change-password`, changePasswordDto, {
-        headers: { Authorization: authHeader },
-      }),
+      this.httpService.patch(
+        `${this.authServiceUrl}/auth/change-password`,
+        changePasswordDto,
+        {
+          headers: { Authorization: authHeader },
+        },
+      ),
     );
     return response.data;
   }

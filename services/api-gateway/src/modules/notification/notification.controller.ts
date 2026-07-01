@@ -16,7 +16,10 @@ export class NotificationController {
   }
 
   @Patch(':id/read')
-  markAsRead(@Headers('authorization') authHeader: string, @Param('id') id: string) {
+  markAsRead(
+    @Headers('authorization') authHeader: string,
+    @Param('id') id: string,
+  ) {
     return this.notificationService.markAsRead(authHeader, id);
   }
 

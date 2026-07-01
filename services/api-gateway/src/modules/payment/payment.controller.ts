@@ -13,13 +13,15 @@ export class PaymentController {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
   ) {
-    this.paymentServiceUrl = this.configService.get<string>('PAYMENT_SERVICE_URL') || 'http://localhost:3006';
+    this.paymentServiceUrl =
+      this.configService.get<string>('PAYMENT_SERVICE_URL') ||
+      'http://localhost:3006';
   }
 
   @All('*')
   async proxy(@Req() req: Request, @Res() res: Response) {
     const targetUrl = `${this.paymentServiceUrl}${req.originalUrl}`;
-    
+
     try {
       const response = await firstValueFrom(
         this.httpService.request({
@@ -30,16 +32,19 @@ export class PaymentController {
             ...req.headers,
             host: undefined,
           },
-        })
+        }),
       );
-      
+
       res.status(response.status).json(response.data);
     } catch (error) {
       const axiosError = error as AxiosError;
       if (axiosError.response) {
         res.status(axiosError.response.status).json(axiosError.response.data);
       } else {
-        res.status(500).json({ message: 'Internal Server Error', error: (error as Error).message });
+        res.status(500).json({
+          message: 'Internal Server Error',
+          error: (error as Error).message,
+        });
       }
     }
   }

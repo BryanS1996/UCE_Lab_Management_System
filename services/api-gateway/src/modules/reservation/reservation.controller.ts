@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Headers, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Headers,
+  Query,
+} from '@nestjs/common';
 import { ReservationService } from './reservation.service';
 
 @Controller('api/reservations')
@@ -24,32 +34,51 @@ export class ReservationController {
   }
 
   @Get(':id')
-  getReservation(@Headers('authorization') authHeader: string, @Param('id') id: string) {
+  getReservation(
+    @Headers('authorization') authHeader: string,
+    @Param('id') id: string,
+  ) {
     return this.reservationService.getReservation(authHeader, id);
   }
 
   @Post()
-  createReservation(@Headers('authorization') authHeader: string, @Body() createDto: any) {
+  createReservation(
+    @Headers('authorization') authHeader: string,
+    @Body() createDto: any,
+  ) {
     return this.reservationService.createReservation(authHeader, createDto);
   }
 
   @Patch(':id/confirm')
-  confirmReservation(@Headers('authorization') authHeader: string, @Param('id') id: string) {
+  confirmReservation(
+    @Headers('authorization') authHeader: string,
+    @Param('id') id: string,
+  ) {
     return this.reservationService.confirmReservation(authHeader, id);
   }
 
   @Patch(':id/reject')
-  rejectReservation(@Headers('authorization') authHeader: string, @Param('id') id: string) {
+  rejectReservation(
+    @Headers('authorization') authHeader: string,
+    @Param('id') id: string,
+  ) {
     return this.reservationService.rejectReservation(authHeader, id);
   }
 
   @Patch(':id')
-  updateReservation(@Headers('authorization') authHeader: string, @Param('id') id: string, @Body() updateDto: any) {
+  updateReservation(
+    @Headers('authorization') authHeader: string,
+    @Param('id') id: string,
+    @Body() updateDto: any,
+  ) {
     return this.reservationService.updateReservation(authHeader, id, updateDto);
   }
 
   @Delete(':id')
-  cancelReservation(@Headers('authorization') authHeader: string, @Param('id') id: string) {
+  cancelReservation(
+    @Headers('authorization') authHeader: string,
+    @Param('id') id: string,
+  ) {
     return this.reservationService.cancelReservation(authHeader, id);
   }
 }

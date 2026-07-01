@@ -5,10 +5,7 @@ import { LaboratoryController } from './laboratory.controller';
 import { LaboratoryService } from './laboratory.service';
 
 @Module({
-  imports: [
-    HttpModule,
-    ConfigModule,
-  ],
+  imports: [HttpModule, ConfigModule],
   controllers: [LaboratoryController],
   providers: [LaboratoryService],
   exports: [LaboratoryService],
