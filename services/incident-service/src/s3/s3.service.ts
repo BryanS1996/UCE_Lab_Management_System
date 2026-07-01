@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, S3ClientConfig } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 
@@ -12,7 +12,7 @@ export class S3Service {
     const endpoint = this.configService.get<string>('AWS_ENDPOINT');
     const region = this.configService.get<string>('AWS_REGION') || 'us-east-1';
 
-    const s3Config: any = {
+    const s3Config: S3ClientConfig = {
       region,
       credentials: {
         accessKeyId:
@@ -46,8 +46,9 @@ export class S3Service {
       await this.s3Client.send(command);
 
       const endpoint = this.configService.get<string>('AWS_ENDPOINT');
-      const region = this.configService.get<string>('AWS_REGION') || 'us-east-1';
-      
+      const region =
+        this.configService.get<string>('AWS_REGION') || 'us-east-1';
+
       if (endpoint) {
         return `${endpoint}/${bucket}/${fileName}`;
       }
