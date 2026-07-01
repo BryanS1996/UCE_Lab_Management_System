@@ -8,6 +8,11 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 
+interface JwtPayload {
+  exp?: number;
+  [key: string]: unknown;
+}
+
 @WebSocketGateway({
   cors: { origin: '*' },
   namespace: '/notifications',
@@ -28,7 +33,7 @@ export class NotificationsGateway
 
   private checkToken(client: Socket): boolean {
     const token =
-      client.handshake.auth?.token ||
+      (client.handshake.auth?.token as string | undefined) ||
       (client.handshake.headers?.authorization
         ? client.handshake.headers.authorization.split(' ')[1]
         : null);
@@ -37,7 +42,7 @@ export class NotificationsGateway
       try {
         const payload = JSON.parse(
           Buffer.from(token.split('.')[1], 'base64').toString(),
-        );
+        ) as JwtPayload;
         if (payload && payload.exp) {
           const now = Math.floor(Date.now() / 1000);
           if (payload.exp < now) {
@@ -74,7 +79,7 @@ export class NotificationsGateway
   }
 
   // Método para emitir notificación a un usuario específico
-  emitToUser(userId: string, event: string, data: any) {
+  emitToUser(userId: string, event: string, data: unknown) {
     const socketId = this.connectedUsers.get(userId);
     if (socketId) {
       this.server.to(socketId).emit(event, data);
@@ -83,7 +88,7 @@ export class NotificationsGateway
   }
 
   // Método para broadcast
-  broadcast(event: string, data: any) {
+  broadcast(event: string, data: unknown) {
     this.server.emit(event, data);
   }
 }
