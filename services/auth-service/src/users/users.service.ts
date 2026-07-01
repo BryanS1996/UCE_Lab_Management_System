@@ -16,16 +16,18 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     const { role, ...userData } = createUserDto;
-    
+
     // Hash password inside service logic
     if (userData.password) {
       userData.password = await bcrypt.hash(userData.password, 10);
     }
-    
+
     const user = this.usersRepository.create(userData);
 
     const roleName = role || RoleName.STUDENT;
-    const userRole = await this.roleRepository.findOne({ where: { name: roleName } });
+    const userRole = await this.roleRepository.findOne({
+      where: { name: roleName },
+    });
     if (userRole) {
       user.roles = [userRole];
     }
@@ -98,9 +100,14 @@ export class UsersService {
   }
 
   async updateRole(id: string, roleName: RoleName) {
-    const user = await this.usersRepository.findOne({ where: { id }, relations: ['roles'] });
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['roles'],
+    });
     if (!user) return null;
-    const role = await this.roleRepository.findOne({ where: { name: roleName } });
+    const role = await this.roleRepository.findOne({
+      where: { name: roleName },
+    });
     if (role) {
       user.roles = [role];
       await this.usersRepository.save(user);

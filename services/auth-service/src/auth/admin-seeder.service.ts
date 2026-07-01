@@ -19,7 +19,9 @@ export class AdminSeederService implements OnApplicationBootstrap {
     this.logger.log('Checking for default admin user...');
 
     // Ensure ADMIN role exists
-    let adminRole = await this.roleRepository.findOne({ where: { name: RoleName.ADMIN } });
+    let adminRole = await this.roleRepository.findOne({
+      where: { name: RoleName.ADMIN },
+    });
     if (!adminRole) {
       adminRole = this.roleRepository.create({
         name: RoleName.ADMIN,
@@ -30,12 +32,14 @@ export class AdminSeederService implements OnApplicationBootstrap {
 
     // Check if admin user exists
     const adminEmail = 'admin@uce.edu.ec';
-    const existingAdmin = await this.userRepository.findOne({ where: { email: adminEmail } });
+    const existingAdmin = await this.userRepository.findOne({
+      where: { email: adminEmail },
+    });
 
     if (!existingAdmin) {
       this.logger.log(`Creating default admin user: ${adminEmail}`);
       const hashedPassword = await bcrypt.hash('Admin1234!', 10);
-      
+
       const newAdmin = this.userRepository.create({
         email: adminEmail,
         firstName: 'Super',
@@ -46,19 +50,25 @@ export class AdminSeederService implements OnApplicationBootstrap {
       });
 
       await this.userRepository.save(newAdmin);
-      this.logger.log(`✅ Super administrador ${adminEmail} inicializado correctamente.`);
+      this.logger.log(
+        `✅ Super administrador ${adminEmail} inicializado correctamente.`,
+      );
     } else {
       // Ensure the existing admin has the ADMIN role
       const hasAdminRole = await this.userRepository.findOne({
         where: { email: adminEmail },
         relations: ['roles'],
       });
-      
-      const roleExists = hasAdminRole?.roles?.find((r) => r.name === RoleName.ADMIN);
+
+      const roleExists = hasAdminRole?.roles?.find(
+        (r) => r.name === RoleName.ADMIN,
+      );
       if (!roleExists && hasAdminRole) {
         hasAdminRole.roles = [...(hasAdminRole.roles || []), adminRole];
         await this.userRepository.save(hasAdminRole);
-        this.logger.log(`✅ Rol ADMIN asignado al usuario existente ${adminEmail}.`);
+        this.logger.log(
+          `✅ Rol ADMIN asignado al usuario existente ${adminEmail}.`,
+        );
       } else {
         this.logger.log(`Admin user ${adminEmail} already exists.`);
       }

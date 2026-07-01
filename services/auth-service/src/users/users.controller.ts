@@ -57,7 +57,10 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleName.ADMIN)
   @Patch(':id/status')
-  async updateStatus(@Param('id') id: string, @Body('isActive') isActive: boolean) {
+  async updateStatus(
+    @Param('id') id: string,
+    @Body('isActive') isActive: boolean,
+  ) {
     return this.usersService.updateStatus(id, isActive);
   }
 

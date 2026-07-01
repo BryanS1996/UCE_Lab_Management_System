@@ -49,6 +49,7 @@ describe('UsersService', () => {
         email: 'new@uce.edu.ec',
         firstName: 'Ana',
         lastName: 'López',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         password: expect.any(String),
       }),
     );
