@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Decodificamos el token para obtener el rol del backend
     const decoded = decodeJwtPayload(accessToken);
-    const mappedRole = decoded ? mapRole(decoded.role) : 'ESTUDIANTE';
+    const mappedRole = decoded ? mapRole(decoded.roles?.[0] || decoded.role || '') : 'ESTUDIANTE';
 
     setUser({
       id: userPayload.id || decoded?.sub || '',

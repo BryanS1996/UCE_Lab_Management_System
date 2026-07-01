@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Headers,
+} from '@nestjs/common';
 import { CatalogService } from './catalog.service';
 
 @Controller('api/catalog')
@@ -21,17 +30,27 @@ export class CatalogController {
   }
 
   @Post()
-  createCatalogItem(@Headers('authorization') authHeader: string, @Body() createDto: any) {
+  createCatalogItem(
+    @Headers('authorization') authHeader: string,
+    @Body() createDto: any,
+  ) {
     return this.catalogService.createCatalogItem(authHeader, createDto);
   }
 
   @Patch(':id')
-  updateCatalogItem(@Headers('authorization') authHeader: string, @Param('id') id: string, @Body() updateDto: any) {
+  updateCatalogItem(
+    @Headers('authorization') authHeader: string,
+    @Param('id') id: string,
+    @Body() updateDto: any,
+  ) {
     return this.catalogService.updateCatalogItem(authHeader, id, updateDto);
   }
 
   @Delete(':id')
-  deleteCatalogItem(@Headers('authorization') authHeader: string, @Param('id') id: string) {
+  deleteCatalogItem(
+    @Headers('authorization') authHeader: string,
+    @Param('id') id: string,
+  ) {
     return this.catalogService.deleteCatalogItem(authHeader, id);
   }
 }

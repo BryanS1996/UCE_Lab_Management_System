@@ -81,7 +81,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'mis-reservas',
-        element: <MyReservations />,
+        element: (
+          <ProtectedRoute allowedRoles={['ESTUDIANTE', 'DOCENTE', 'LAB_MANAGER']}>
+            <MyReservations />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'notificaciones',
@@ -113,7 +117,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'configuracion',
-        element: <SettingsPlaceholder />,
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <SettingsPlaceholder />
+          </ProtectedRoute>
+        ),
       },
     ],
   },

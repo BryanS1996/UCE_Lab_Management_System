@@ -5,10 +5,7 @@ import { ReservationController } from './reservation.controller';
 import { ReservationService } from './reservation.service';
 
 @Module({
-  imports: [
-    HttpModule,
-    ConfigModule,
-  ],
+  imports: [HttpModule, ConfigModule],
   controllers: [ReservationController],
   providers: [ReservationService],
   exports: [ReservationService],

@@ -343,25 +343,27 @@ export const Laboratories: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-50 flex">
-                {lab.status === 'ACTIVE' ? (
-                  <Button
-                    variant="primary"
-                    onClick={() => handleOpenBooking(lab)}
-                    className="w-full py-2.5"
-                  >
-                    Reservar Laboratorio
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    disabled
-                    className="w-full py-2.5"
-                  >
-                    No Disponible
-                  </Button>
-                )}
-              </div>
+              {!isAdmin && (
+                <div className="mt-6 pt-4 border-t border-slate-50 flex">
+                  {lab.status === 'ACTIVE' ? (
+                    <Button
+                      variant="primary"
+                      onClick={() => handleOpenBooking(lab)}
+                      className="w-full py-2.5"
+                    >
+                      Reservar Laboratorio
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      disabled
+                      className="w-full py-2.5"
+                    >
+                      No Disponible
+                    </Button>
+                  )}
+                </div>
+              )}
             </Card>
           ))}
         </div>

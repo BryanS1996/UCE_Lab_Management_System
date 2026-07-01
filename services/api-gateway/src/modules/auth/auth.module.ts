@@ -5,10 +5,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
 @Module({
-  imports: [
-    HttpModule,
-    ConfigModule,
-  ],
+  imports: [HttpModule, ConfigModule],
   controllers: [AuthController],
   providers: [AuthService],
   exports: [AuthService],
