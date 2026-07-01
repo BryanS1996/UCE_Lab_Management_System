@@ -1,18 +1,37 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../database/entities';
+import { User, Role, RoleName } from '../database/entities';
 import { CreateUserDto, UpdateUserDto } from './dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const user = this.usersRepository.create(createUserDto);
+    const { role, ...userData } = createUserDto;
+
+    // Hash password inside service logic
+    if (userData.password) {
+      userData.password = await bcrypt.hash(userData.password, 10);
+    }
+
+    const user = this.usersRepository.create(userData);
+
+    const roleName = role || RoleName.STUDENT;
+    const userRole = await this.roleRepository.findOne({
+      where: { name: roleName },
+    });
+    if (userRole) {
+      user.roles = [userRole];
+    }
+
     return this.usersRepository.save(user);
   }
 
@@ -78,6 +97,27 @@ export class UsersService {
 
   async updatePassword(id: string, hashedPassword: string) {
     return this.usersRepository.update(id, { password: hashedPassword });
+  }
+
+  async updateRole(id: string, roleName: RoleName) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['roles'],
+    });
+    if (!user) return null;
+    const role = await this.roleRepository.findOne({
+      where: { name: roleName },
+    });
+    if (role) {
+      user.roles = [role];
+      await this.usersRepository.save(user);
+    }
+    return this.findById(id);
+  }
+
+  async updateStatus(id: string, isActive: boolean) {
+    await this.usersRepository.update(id, { isActive });
+    return this.findById(id);
   }
 
   async remove(id: string) {

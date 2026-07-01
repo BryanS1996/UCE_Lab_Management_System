@@ -7,8 +7,9 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Reservation, ReservationStatus, Laboratory } from '../database/entities';
+import { LaboratoryStatus } from '../database/entities/laboratory.entity';
 import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
@@ -32,6 +33,7 @@ export class ReservationsService {
     private readonly laboratoryRepository: Repository<Laboratory>,
     private readonly rabbitmqService: RabbitmqService,
     private readonly kafkaProducer: KafkaProducerService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -45,7 +47,7 @@ export class ReservationsService {
     createReservationDto: CreateReservationDto,
     currentUser: CurrentUserData,
   ): Promise<Reservation> {
-    const { lab_id, start_time, end_time, purpose, notes } = createReservationDto;
+    const { lab_id, start_time, end_time, purpose, notes, attendees } = createReservationDto;
 
     // 1. Validate time range
     const startDate = new Date(start_time);
@@ -85,51 +87,79 @@ export class ReservationsService {
       );
     }
 
-    // 3. Check for scheduling conflicts using an efficient query
-    const conflictCount = await this.reservationRepository
-      .createQueryBuilder('r')
-      .where('r.lab_id = :lab_id', { lab_id })
-      .andWhere('r.status IN (:...statuses)', {
-        statuses: [ReservationStatus.CONFIRMED, ReservationStatus.PENDING],
-      })
-      .andWhere('r.start_time < :endTime', { endTime: endDate })
-      .andWhere('r.end_time > :startTime', { startTime: startDate })
-      .getCount();
-
-    if (conflictCount > 0) {
+    if (laboratory.status === LaboratoryStatus.MAINTENANCE) {
       throw new ConflictException(
-        'Ya existe una reserva en ese horario para este laboratorio',
+        `El laboratorio '${laboratory.name}' se encuentra en mantenimiento`,
       );
     }
 
-    // 4. Create the reservation
-    const reservation = this.reservationRepository.create({
-      lab_id,
-      user_id: currentUser.user_id, // Taken from the JWT, not the request body
-      user_email: currentUser.email,
-      user_name: currentUser.email.split('@')[0],
-      start_time: startDate,
-      end_time: endDate,
-      purpose,
-      notes,
-      status: laboratory.tier === 'PREMIUM' ? ReservationStatus.PENDING_PAYMENT : ReservationStatus.CONFIRMED,
-    });
+    // 2.1 Validate capacity (aforo)
+    if (attendees > laboratory.max_capacity) {
+      throw new BadRequestException(
+        `El número de asistentes (${attendees}) excede la capacidad máxima del laboratorio (${laboratory.max_capacity})`,
+      );
+    }
 
-    const saved = await this.reservationRepository.save(reservation);
+    // 3. Check for scheduling conflicts using an efficient query and Pessimistic Locking
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // 5. Publish ReservationCreated event (fire-and-forget)
-    this.rabbitmqService
-      .publishReservationCreated({
+    let saved: Reservation;
+
+    try {
+      const conflictCount = await queryRunner.manager
+        .createQueryBuilder(Reservation, 'r')
+        .setLock('pessimistic_write')
+        .where('r.lab_id = :lab_id', { lab_id })
+        .andWhere('r.status IN (:...statuses)', {
+          statuses: [ReservationStatus.CONFIRMED, ReservationStatus.PENDING],
+        })
+        .andWhere('r.start_time < :endTime', { endTime: endDate })
+        .andWhere('r.end_time > :startTime', { startTime: startDate })
+        .getCount();
+
+      if (conflictCount > 0) {
+        throw new ConflictException(
+          'Ya existe una reserva en ese horario para este laboratorio',
+        );
+      }
+
+      // 4. Create the reservation
+      const reservation = this.reservationRepository.create({
+        lab_id,
+        user_id: currentUser.user_id, // Taken from the JWT, not the request body
+        user_email: currentUser.email,
+        user_name: currentUser.email.split('@')[0],
+        start_time: startDate,
+        end_time: endDate,
+        purpose,
+        notes,
+        status: laboratory.tier === 'PREMIUM' ? ReservationStatus.PENDING_PAYMENT : ReservationStatus.CONFIRMED,
+      });
+
+      saved = await queryRunner.manager.save(reservation);
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+
+    // 5. Publish ReservationCreated event (fire-and-forget, without affecting DB transaction)
+    try {
+      await this.rabbitmqService.publishReservationCreated({
         reservation_id: saved.reservation_id,
         user_id: saved.user_id,
         lab_id: saved.lab_id,
         start_time: saved.start_time,
         end_time: saved.end_time,
         purpose: saved.purpose,
-      })
-      .catch((err) =>
-        this.logger.error('Error publicando ReservationCreated', err),
-      );
+      });
+    } catch (err) {
+      this.logger.error('Error publicando ReservationCreated. El broker podría estar caído.', err);
+    }
 
     // 6. Publish Kafka event for email confirmation (fire-and-forget)
     this.kafkaProducer

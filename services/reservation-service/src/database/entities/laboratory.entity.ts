@@ -13,6 +13,12 @@ export enum LaboratoryTier {
   PREMIUM = 'PREMIUM',
 }
 
+export enum LaboratoryStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  MAINTENANCE = 'MAINTENANCE',
+}
+
 @Entity('laboratories')
 export class Laboratory {
   @PrimaryGeneratedColumn({ name: 'lab_id' })
@@ -26,6 +32,13 @@ export class Laboratory {
 
   @Column('boolean', { default: true, name: 'is_active' })
   is_active: boolean = true;
+
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: LaboratoryStatus.ACTIVE,
+  })
+  status: LaboratoryStatus = LaboratoryStatus.ACTIVE;
 
   @Column({
     type: 'varchar',

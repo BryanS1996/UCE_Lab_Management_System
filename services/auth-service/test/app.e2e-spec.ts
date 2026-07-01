@@ -1,5 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, Controller, Get, UseGuards, SetMetadata, UnauthorizedException } from '@nestjs/common';
+import {
+  INestApplication,
+  Controller,
+  Get,
+  UseGuards,
+  SetMetadata,
+  UnauthorizedException,
+} from '@nestjs/common';
 import request from 'supertest';
 import { AuthController } from '../src/auth/auth.controller';
 import { AuthService } from '../src/auth/auth.service';
@@ -21,7 +28,7 @@ class TestAdminController {
 
 describe('AuthService (e2e)', () => {
   let app: INestApplication;
-  
+
   // Mocks
   const mockAuthService = {
     login: jest.fn(),
@@ -32,7 +39,9 @@ describe('AuthService (e2e)', () => {
   // guarda un campo 'role' (string), pero el RolesGuard espera un array 'roles'.
   const mockJwtAuthGuard = {
     canActivate: (context: import('@nestjs/common').ExecutionContext) => {
-      const req = context.switchToHttp().getRequest<import('express').Request>();
+      const req = context
+        .switchToHttp()
+        .getRequest<import('express').Request>();
       // Simulamos a un STUDENT según CP-06
       (req as unknown as { user: any }).user = {
         sub: 'uuid-123',
@@ -70,10 +79,14 @@ describe('AuthService (e2e)', () => {
       mockAuthService.login.mockResolvedValue({
         accessToken: 'mock-access-token',
         refreshToken: 'mock-refresh-token',
-        user: { id: 'uuid-123', email: 'test@uce.edu.ec', roles: [{ name: 'STUDENT' }] },
+        user: {
+          id: 'uuid-123',
+          email: 'test@uce.edu.ec',
+          roles: [{ name: 'STUDENT' }],
+        },
       });
 
-      return request(app.getHttpServer() as unknown as import('http').Server)
+      return request(app.getHttpServer())
         .post('/auth/login')
         .send({
           email: 'test@uce.edu.ec',
@@ -81,14 +94,18 @@ describe('AuthService (e2e)', () => {
         })
         .expect(201)
         .expect((res: request.Response) => {
-          expect((res.body as { accessToken: string }).accessToken).toBe('mock-access-token');
+          expect((res.body as { accessToken: string }).accessToken).toBe(
+            'mock-access-token',
+          );
         });
     });
 
     it('CP-05 (Negativo): Login con credenciales inválidas retorna 401', async () => {
-      mockAuthService.login.mockRejectedValue(new UnauthorizedException('Invalid credentials'));
+      mockAuthService.login.mockRejectedValue(
+        new UnauthorizedException('Invalid credentials'),
+      );
 
-      return request(app.getHttpServer() as unknown as import('http').Server)
+      return request(app.getHttpServer())
         .post('/auth/login')
         .send({
           email: 'no-existe@uce.edu.ec',
@@ -102,9 +119,8 @@ describe('AuthService (e2e)', () => {
     it('CP-06 (Seguridad): Usuario STUDENT intenta acceder a ruta de ADMIN/TEACHER retorna 403 Forbidden', async () => {
       // El request pasará por el JwtAuthGuard mockeado (asigna role: 'STUDENT')
       // y luego por el RolesGuard real.
-      return request(app.getHttpServer() as unknown as import('http').Server)
-        .get('/test-admin')
-        .expect(403);
+
+      return request(app.getHttpServer()).get('/test-admin').expect(403);
     });
   });
 });

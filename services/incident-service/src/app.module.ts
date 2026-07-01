@@ -9,8 +9,10 @@ import { S3Module } from './s3/s3.module';
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/incidents',
+      useFactory: (configService: ConfigService) => ({
+        uri:
+          configService.get<string>('MONGODB_URI') ||
+          'mongodb://localhost:27017/incidents',
       }),
       inject: [ConfigService],
     }),

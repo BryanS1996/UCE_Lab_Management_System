@@ -65,8 +65,11 @@ describe('AuthService', () => {
       });
 
       // Valida RNF-01: Verificación de contraseñas encriptadas
-      expect(bcrypt.compare).toHaveBeenCalledWith('Test1234!', mockUser.password);
-      
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'Test1234!',
+        mockUser.password,
+      );
+
       expect(result.accessToken).toBe('access-token');
       expect(result.refreshToken).toBe('refresh-token');
       expect(mockJwtService.sign).toHaveBeenNthCalledWith(
@@ -100,7 +103,10 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
 
       // Valida RNF-01
-      expect(bcrypt.compare).toHaveBeenCalledWith('wrong-password', mockUser.password);
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'wrong-password',
+        mockUser.password,
+      );
     });
   });
 
@@ -140,7 +146,7 @@ describe('AuthService', () => {
           password: 'hashed-password-123',
         }),
       );
-      
+
       expect(result.accessToken).toBe('access-token');
     });
   });
