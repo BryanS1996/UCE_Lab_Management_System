@@ -205,8 +205,8 @@ services:
       MONGODB_URI: mongodb://${INCIDENT_DB_USER:-admin}:${INCIDENT_DB_PASS:-admin}@incident-db:27017/incident_service?authSource=admin
       RESERVATION_SERVICE_URL: http://reservation-service:3001
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
-      AWS_ACCESS_KEY_ID: ${PROD_AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${PROD_AWS_SECRET_ACCESS_KEY}
+      AWS_ACCESS_KEY_ID: 
+      AWS_SECRET_ACCESS_KEY: 
     depends_on:
       incident-db:
         condition: service_healthy

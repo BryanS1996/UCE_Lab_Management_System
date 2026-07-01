@@ -24,9 +24,6 @@ services:
   # ─── QA: Auth Service (puerto 3010) ──────────────────
   auth-service-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-auth-service:${IMAGE_TAG:-qa-latest}
-    build:
-      context: ./services/auth-service
-      dockerfile: Dockerfile
     container_name: auth-service-qa
     environment:
       NODE_ENV: qa
@@ -89,9 +86,6 @@ services:
   # ─── QA: Reservation Service (puerto 3011) ───────────
   reservation-service-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-reservation-service:${IMAGE_TAG:-qa-latest}
-    build:
-      context: ./services/reservation-service
-      dockerfile: Dockerfile
     container_name: reservation-service-qa
     environment:
       NODE_ENV: qa
@@ -141,9 +135,6 @@ services:
   # ─── QA: Laboratory Service (puerto 3012) ────────────
   laboratory-service-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-laboratory-service:${IMAGE_TAG:-qa-latest}
-    build:
-      context: ./services/laboratory-service
-      dockerfile: Dockerfile
     container_name: laboratory-service-qa
     environment:
       NODE_ENV: qa
@@ -190,9 +181,6 @@ services:
   # ─── QA: Notification Service (puerto 3013) ──────────
   notification-service-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-notification-service:${IMAGE_TAG:-qa-latest}
-    build:
-      context: ./services/notification-service
-      dockerfile: Dockerfile
     container_name: notification-service-qa
     environment:
       NODE_ENV: qa
@@ -246,9 +234,6 @@ services:
   # ─── QA: Catalog Service (puerto 3014) ───────────────
   catalog-service-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-catalog-service:${IMAGE_TAG:-qa-latest}
-    build:
-      context: ./services/catalog-service
-      dockerfile: Dockerfile
     container_name: catalog-service-qa
     environment:
       NODE_ENV: qa
@@ -295,9 +280,6 @@ services:
   # ─── QA: Incident Service (puerto 3017) ──────────────
   incident-service-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-incident-service:${IMAGE_TAG:-qa-latest}
-    build:
-      context: ./services/incident-service
-      dockerfile: Dockerfile
     container_name: incident-service-qa
     pull_policy: always
     environment:
@@ -306,8 +288,8 @@ services:
       MONGODB_URI: mongodb://${INCIDENT_DB_USER:-admin}:${INCIDENT_DB_PASS:-admin}@incident-db-qa:27017/incident_service_qa?authSource=admin
       RESERVATION_SERVICE_URL: http://reservation-service-qa:3011
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
-      AWS_ACCESS_KEY_ID: ${QA_AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${QA_AWS_SECRET_ACCESS_KEY}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
     depends_on:
       incident-db-qa:
         condition: service_healthy
@@ -323,9 +305,6 @@ services:
   # ─── QA: Payment Service (puerto 3016) ───────────────
   payment-service-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-payment-service:${IMAGE_TAG:-qa-latest}
-    build:
-      context: ./services/payment-service
-      dockerfile: Dockerfile
     container_name: payment-service-qa
     environment:
       NODE_ENV: qa
@@ -349,9 +328,6 @@ services:
   # ─── QA: API Gateway ─────────────────────────────────
   api-gateway-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-api-gateway:${IMAGE_TAG:-qa-latest}
-    build:
-      context: ./services/api-gateway
-      dockerfile: Dockerfile
     container_name: api-gateway-qa
     pull_policy: always
     environment:
@@ -389,9 +365,6 @@ services:
   # ─── QA: Frontend (puerto 80) ────────────────────────
   frontend-qa:
     image: ${ECR_REGISTRY:-localhost}/uce-frontend:${IMAGE_TAG:-qa-latest}
-    build:
-      context: ./apps/frontend
-      dockerfile: Dockerfile
     container_name: frontend-qa
     ports:
       - "80:80"
