@@ -5,7 +5,6 @@ export enum RoleName {
   ADMIN = 'admin',
   PROFESSOR = 'professor',
   STUDENT = 'student',
-  LAB_MANAGER = 'lab_manager',
 }
 
 @Entity('roles')

@@ -29,8 +29,6 @@ export function mapRole(backendRole: string): UserRole {
     case 'student':
     case 'estudiante':
       return 'ESTUDIANTE';
-    case 'lab_manager':
-      return 'LAB_MANAGER';
     default:
       return 'ESTUDIANTE';
   }
