@@ -291,7 +291,7 @@ jobs:
           proxy_key: ${{ secrets.QA_EC2_SSH_PRIVATE_KEY }}
           # 'envs' securely injects variables into the remote shell.
           # They are NOT interpolated as plaintext into the script string.
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,IMAGE_TAG,ECR_REGISTRY,QA_ENV_FILE
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,QA_ENV_FILE
           # sync: true ensures the script runs sequentially on each host,
           # providing a controlled rolling-style deploy across the ASG fleet.
           sync: true
@@ -353,6 +353,5 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.QA_AWS_SECRET_ACCESS_KEY }}
           AWS_SESSION_TOKEN: ${{ secrets.QA_AWS_SESSION_TOKEN }}
           AWS_REGION: ${{ env.AWS_REGION }}
-          IMAGE_TAG: qa-${{ github.sha }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           QA_ENV_FILE: ${{ secrets.QA_ENV_FILE }}
