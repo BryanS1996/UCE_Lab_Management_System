@@ -28,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       user_id: payload.sub,
       email: payload.email,
-      roles: payload.roles || (payload.role ? [payload.role] : []),
+      roles: payload.roles?.map(r => r.toUpperCase()) || (payload.role ? [payload.role.toUpperCase()] : []),
     };
   }
 }
