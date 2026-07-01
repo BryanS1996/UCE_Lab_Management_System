@@ -17,8 +17,17 @@ export class IncidentController {
     this.incidentServiceUrl = this.configService.get<string>('INCIDENT_SERVICE_URL') || 'http://localhost:3007';
   }
 
+  @All()
+  async proxyRoot(@Req() req: Request, @Res() res: Response) {
+    return this.handleProxy(req, res);
+  }
+
   @All('*')
   async proxy(@Req() req: Request, @Res() res: Response) {
+    return this.handleProxy(req, res);
+  }
+
+  private async handleProxy(req: Request, res: Response) {
     const targetUrl = `${this.incidentServiceUrl}${req.originalUrl}`;
     
     try {

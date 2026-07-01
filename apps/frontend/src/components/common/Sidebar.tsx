@@ -80,6 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       path: '/mis-reservas',
       label: 'Mis Reservas',
       icon: UserCheck,
+      roles: ['ESTUDIANTE', 'DOCENTE', 'LAB_MANAGER'],
     },
     {
       path: '/notificaciones',
@@ -108,6 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       path: '/configuracion',
       label: 'Configuración',
       icon: Settings,
+      roles: ['ADMIN'],
     },
   ];
 
