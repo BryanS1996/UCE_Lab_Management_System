@@ -23,6 +23,10 @@ export class CreateReservationDto {
   end_time!: string;
 
   @IsOptional()
+  @IsInt({ message: 'El número de asistentes debe ser un número entero' })
+  attendees?: number;
+
+  @IsOptional()
   @IsString()
   @MaxLength(500, { message: 'El motivo de la reserva no puede superar los 500 caracteres' })
   purpose?: string;

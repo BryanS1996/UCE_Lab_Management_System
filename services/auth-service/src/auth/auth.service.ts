@@ -44,9 +44,8 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const emailNormalized = loginDto.email.trim().toLowerCase();
-    const user = await this.usersService.findByEmailWithPassword(
-      emailNormalized,
-    );
+    const user =
+      await this.usersService.findByEmailWithPassword(emailNormalized);
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -123,7 +122,7 @@ export class AuthService {
     return {
       sub: user.id,
       email: user.email,
-      roles: user.roles?.map(r => r.name) || ['STUDENT'],
+      roles: user.roles?.map((r) => r.name) || ['STUDENT'],
     };
   }
 

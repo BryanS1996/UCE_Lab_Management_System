@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
-import { User } from '../database/entities';
+import { User, Role } from '../database/entities';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -20,6 +20,7 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: mockRepository },
+        { provide: getRepositoryToken(Role), useValue: mockRepository },
       ],
     }).compile();
 
@@ -43,7 +44,15 @@ describe('UsersService', () => {
     mockRepository.save.mockResolvedValue(created);
 
     await expect(service.create(dto)).resolves.toEqual(created);
-    expect(mockRepository.create).toHaveBeenCalledWith(dto);
+    expect(mockRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'new@uce.edu.ec',
+        firstName: 'Ana',
+        lastName: 'López',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        password: expect.any(String),
+      }),
+    );
     expect(mockRepository.save).toHaveBeenCalledWith(created);
   });
 

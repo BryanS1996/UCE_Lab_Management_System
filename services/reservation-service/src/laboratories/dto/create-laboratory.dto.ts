@@ -9,7 +9,7 @@ import {
   Length,
 } from 'class-validator';
 
-import { LaboratoryTier } from '../../database/entities/laboratory.entity';
+import { LaboratoryTier, LaboratoryStatus } from '../../database/entities/laboratory.entity';
 
 export class CreateLaboratoryDto {
   @IsOptional()
@@ -39,6 +39,9 @@ export class CreateLaboratoryDto {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean = true;
+
+  @IsOptional()
+  status?: LaboratoryStatus;
 
   @IsOptional()
   tier?: LaboratoryTier;

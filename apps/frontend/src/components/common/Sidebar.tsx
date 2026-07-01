@@ -58,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       path: '/dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
+      roles: ['ADMIN'],
     },
     {
       path: '/laboratorios',

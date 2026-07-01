@@ -5,12 +5,13 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies';
-import { User } from '../database/entities';
+import { User, Role } from '../database/entities';
 import { UsersModule } from '../users/users.module';
+import { AdminSeederService } from './admin-seeder.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Role]),
     UsersModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -23,7 +24,7 @@ import { UsersModule } from '../users/users.module';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, AdminSeederService],
   controllers: [AuthController],
   exports: [AuthService],
 })

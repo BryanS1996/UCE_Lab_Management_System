@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { LaboratoriesService } from './laboratories.service';
 import { Laboratory, Reservation, ReservationStatus } from '../database/entities';
+import { LaboratoryStatus } from '../database/entities/laboratory.entity';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
 const mockQueryBuilder = {
@@ -24,10 +25,11 @@ const mockReservationRepository = {
 
 const mockLaboratory: Laboratory = {
   lab_id: 1,
-  name: 'Laboratorio A',
+  name: 'Laboratorio de Computación A',
   max_capacity: 30,
   is_active: true,
-  location: 'Bloque A',
+  status: LaboratoryStatus.ACTIVE,
+  location: 'Bloque A - Piso 2',
   tier: 'BASIC' as any,
   created_at: new Date(),
   updated_at: new Date(),

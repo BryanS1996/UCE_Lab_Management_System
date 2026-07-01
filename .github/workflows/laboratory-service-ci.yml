@@ -1,8 +1,12 @@
 name: Laboratory Service — CI
 
-# Deshabilitado: La validación se maneja centralmente en pr-validation.yml
-# La construcción se maneja en docker-publish.yml
 on:
+  push:
+    paths:
+      - 'services/laboratory-service/**'
+  pull_request:
+    paths:
+      - 'services/laboratory-service/**'
   workflow_dispatch:
 
 jobs:
@@ -19,9 +23,18 @@ jobs:
       - name: Install
         working-directory: services/laboratory-service
         run: npm ci --legacy-peer-deps
+      - name: Lint
+        working-directory: services/laboratory-service
+        run: npm run lint --if-present
       - name: Build
         working-directory: services/laboratory-service
         run: npm run build
       - name: Test
         working-directory: services/laboratory-service
-        run: npm run test -- --forceExit
+        run: npm run test -- --passWithNoTests
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: laboratory-coverage
+          path: services/laboratory-service/coverage/
+          retention-days: 7

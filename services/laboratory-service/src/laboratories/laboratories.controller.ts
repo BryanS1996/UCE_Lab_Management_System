@@ -23,6 +23,8 @@ import { LaboratoriesService } from './laboratories.service';
 import { CreateLaboratoryDto, UpdateLaboratoryDto } from './dto';
 import { LaboratoryStatus } from './entities/laboratory.entity';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { CurrentUserData } from '../common/decorators/current-user.decorator';
 
@@ -32,7 +34,8 @@ export class LaboratoriesController {
   constructor(private readonly laboratoriesService: LaboratoriesService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Crear un nuevo laboratorio' })
   @ApiResponse({ status: 201, description: 'Laboratorio creado exitosamente' })
@@ -81,7 +84,8 @@ export class LaboratoriesController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Actualizar laboratorio' })
   @ApiResponse({ status: 200, description: 'Laboratorio actualizado' })
@@ -98,7 +102,8 @@ export class LaboratoriesController {
   }
 
   @Patch(':id/status')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Cambiar estado del laboratorio' })
   @ApiResponse({ status: 200, description: 'Estado actualizado' })
@@ -111,7 +116,8 @@ export class LaboratoriesController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiBearerAuth('JWT')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Desactivar laboratorio (soft delete)' })

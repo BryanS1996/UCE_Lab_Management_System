@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AuthLayout } from '../layouts/AuthLayout';
+import { useAuth } from '../context/AuthContext';
 import { DashboardLayout } from '../layouts/DashboardLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { Dashboard } from '../pages/Dashboard';
@@ -17,6 +18,14 @@ import {
   UsersPlaceholder,
   SettingsPlaceholder,
 } from './PlaceholderViews';
+
+const RootRedirect = () => {
+  const { user } = useAuth();
+  if (user?.role === 'ADMIN') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <Navigate to="/laboratorios" replace />;
+};
 
 export const router = createBrowserRouter([
   // RUTAS PÚBLICAS (Usa AuthLayout)
@@ -44,11 +53,15 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: <Navigate to="/dashboard" replace />,
+        element: <RootRedirect />,
       },
       {
         path: 'dashboard',
-        element: <Dashboard />,
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <Dashboard />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'laboratorios',
@@ -108,7 +121,7 @@ export const router = createBrowserRouter([
   // Comodín para redirigir a rutas válidas
   {
     path: '*',
-    element: <Navigate to="/dashboard" replace />,
+    element: <RootRedirect />,
   },
 ]);
 export default router;
