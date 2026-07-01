@@ -38,7 +38,7 @@ cat > /home/ec2-user/app/docker-compose.autoheal.yml <<'EOF'
 version: '3.8'
 services:
   auth-service:
-    image: ${ecr_registry}/uce-auth-service:latest
+    image: ${ecr_registry}/uce-auth-service:${environment}-latest
     container_name: auth-service-autoheal
     ports:
       - "3010:3010"
@@ -50,7 +50,7 @@ services:
       retries: 3
 
   reservation-service:
-    image: ${ecr_registry}/uce-reservation-service:latest
+    image: ${ecr_registry}/uce-reservation-service:${environment}-latest
     container_name: reservation-service-autoheal
     ports:
       - "3011:3011"
@@ -62,7 +62,7 @@ services:
       retries: 3
 
   laboratory-service:
-    image: ${ecr_registry}/uce-laboratory-service:latest
+    image: ${ecr_registry}/uce-laboratory-service:${environment}-latest
     container_name: laboratory-service-autoheal
     ports:
       - "3012:3012"
@@ -74,7 +74,7 @@ services:
       retries: 3
 
   notification-service:
-    image: ${ecr_registry}/uce-notification-service:latest
+    image: ${ecr_registry}/uce-notification-service:${environment}-latest
     container_name: notification-service-autoheal
     ports:
       - "3013:3013"
@@ -86,7 +86,7 @@ services:
       retries: 3
 
   frontend:
-    image: ${ecr_registry}/uce-frontend:latest
+    image: ${ecr_registry}/uce-frontend:${environment}-latest
     container_name: frontend-autoheal
     ports:
       - "80:80"
