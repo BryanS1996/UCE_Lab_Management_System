@@ -70,7 +70,7 @@ export const router = createBrowserRouter([
       {
         path: 'reservas',
         element: (
-          <ProtectedRoute allowedRoles={['ADMIN', 'DOCENTE', 'LAB_MANAGER']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'DOCENTE']}>
             <GlobalReservations />
           </ProtectedRoute>
         ),
@@ -82,7 +82,7 @@ export const router = createBrowserRouter([
       {
         path: 'mis-reservas',
         element: (
-          <ProtectedRoute allowedRoles={['ESTUDIANTE', 'DOCENTE', 'LAB_MANAGER']}>
+          <ProtectedRoute allowedRoles={['ESTUDIANTE', 'DOCENTE']}>
             <MyReservations />
           </ProtectedRoute>
         ),
@@ -94,7 +94,7 @@ export const router = createBrowserRouter([
       {
         path: 'reportes',
         element: (
-          <ProtectedRoute allowedRoles={['ADMIN', 'LAB_MANAGER']}>
+          <ProtectedRoute allowedRoles={['ADMIN']}>
             <ReportsPlaceholder />
           </ProtectedRoute>
         ),
@@ -102,7 +102,7 @@ export const router = createBrowserRouter([
       {
         path: 'incidentes',
         element: (
-          <ProtectedRoute allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'LAB_MANAGER']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE']}>
             <Incidents />
           </ProtectedRoute>
         ),

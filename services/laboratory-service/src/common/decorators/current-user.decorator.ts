@@ -3,12 +3,12 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 export interface CurrentUserData {
   user_id: string;
   email: string;
-  role: string;
+  roles: string[];
 }
 
 export const CurrentUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): CurrentUserData => {
     const request = ctx.switchToHttp().getRequest<{ user?: CurrentUserData }>();
-    return request.user ?? { user_id: '', email: '', role: '' };
+    return request.user ?? { user_id: '', email: '', roles: [] };
   },
 );

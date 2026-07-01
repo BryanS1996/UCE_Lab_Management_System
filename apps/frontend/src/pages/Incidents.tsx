@@ -11,7 +11,7 @@ export const Incidents: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const isAdminOrManager = user?.role === 'ADMIN' || user?.role === 'LAB_MANAGER';
+  const isAdminOrManager = user?.role === 'ADMIN';
 
   const fetchIncidents = async () => {
     try {

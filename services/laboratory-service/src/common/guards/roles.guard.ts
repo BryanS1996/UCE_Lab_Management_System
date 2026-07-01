@@ -21,9 +21,9 @@ export class RolesGuard implements CanActivate {
       .getRequest<{ user?: CurrentUserData }>();
     const user = request.user;
     
-    // El payload JWT decodificado en laboratory-service expone 'role' como string
-    if (user && user.role) {
-      return requiredRoles.includes(user.role);
+    // El payload JWT decodificado expone 'roles' como string[]
+    if (user && user.roles) {
+      return requiredRoles.some((role) => user.roles.includes(role));
     }
     
     return false;
