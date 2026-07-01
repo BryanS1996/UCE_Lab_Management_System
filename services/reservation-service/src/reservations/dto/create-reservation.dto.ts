@@ -22,10 +22,9 @@ export class CreateReservationDto {
   @IsDateString()
   end_time!: string;
 
-  @IsNotEmpty({ message: 'El número de asistentes es requerido' })
+  @IsOptional()
   @IsInt({ message: 'El número de asistentes debe ser un número entero' })
-  @Min(1, { message: 'Debe haber al menos 1 asistente' })
-  attendees!: number;
+  attendees?: number;
 
   @IsOptional()
   @IsString()

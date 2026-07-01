@@ -94,7 +94,7 @@ export class ReservationsService {
     }
 
     // 2.1 Validate capacity (aforo)
-    if (attendees > laboratory.max_capacity) {
+    if (attendees && attendees > laboratory.max_capacity) {
       throw new BadRequestException(
         `El número de asistentes (${attendees}) excede la capacidad máxima del laboratorio (${laboratory.max_capacity})`,
       );

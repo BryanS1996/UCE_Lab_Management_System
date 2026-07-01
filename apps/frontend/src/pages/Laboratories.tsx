@@ -5,6 +5,7 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { laboratoryApi, Laboratory } from '../api/laboratory';
 import { reservationApi } from '../api/reservation';
+import { useAuth } from '../context/AuthContext';
 import {
   Search,
   MapPin,
@@ -17,6 +18,9 @@ import {
   CheckCircle2,
   SlidersHorizontal,
   CreditCard,
+  Plus,
+  Edit,
+  Trash2,
 } from 'lucide-react';
 import { endpoints } from '../api';
 
@@ -47,6 +51,19 @@ export const Laboratories: React.FC = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState('');
 
+  // Admin State
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [editingLab, setEditingLab] = useState<Laboratory | null>(null);
+  const [adminFormData, setAdminFormData] = useState({
+    name: '',
+    description: '',
+    location: '',
+    max_capacity: 30,
+    tier: 'BASIC',
+  });
+
   const fetchLaboratories = async () => {
     setLoading(true);
     setError('');
@@ -75,6 +92,57 @@ export const Laboratories: React.FC = () => {
     setIsBookingOpen(true);
     setBookingSuccess('');
     setError('');
+  };
+
+  const handleOpenAdminModal = (lab?: Laboratory) => {
+    if (lab) {
+      setEditingLab(lab);
+      setAdminFormData({
+        name: lab.name,
+        description: lab.description || '',
+        location: lab.location || '',
+        max_capacity: lab.max_capacity,
+        tier: lab.tier || 'BASIC',
+      });
+    } else {
+      setEditingLab(null);
+      setAdminFormData({
+        name: '',
+        description: '',
+        location: '',
+        max_capacity: 30,
+        tier: 'BASIC',
+      });
+    }
+    setIsAdminModalOpen(true);
+  };
+
+  const handleAdminSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingLab) {
+        await laboratoryApi.update(editingLab.lab_id, adminFormData);
+      } else {
+        await laboratoryApi.create(adminFormData);
+      }
+      setIsAdminModalOpen(false);
+      fetchLaboratories();
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Error al guardar el laboratorio');
+    }
+  };
+
+  const handleDeleteLab = async (labId: number) => {
+    if (window.confirm('¿Estás seguro de eliminar este laboratorio?')) {
+      try {
+        await laboratoryApi.delete(labId);
+        fetchLaboratories();
+      } catch (err: any) {
+        console.error(err);
+        setError('Error al eliminar el laboratorio');
+      }
+    }
   };
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
@@ -177,6 +245,12 @@ export const Laboratories: React.FC = () => {
           />
         </div>
 
+        {isAdmin && (
+          <Button onClick={() => handleOpenAdminModal()} className="flex items-center gap-2 whitespace-nowrap bg-indigo-600 hover:bg-indigo-700">
+            <Plus className="w-4 h-4" /> Crear Lab
+          </Button>
+        )}
+
         {/* Pestañas de Filtro */}
         <div className="flex gap-1.5 p-1 bg-slate-100 rounded-xl w-full md:w-auto text-xs font-bold font-sans">
           {(['ALL', 'ACTIVE', 'MAINTENANCE', 'INACTIVE'] as const).map((status) => (
@@ -215,9 +289,17 @@ export const Laboratories: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-start gap-2">
                   <div className="flex flex-col gap-1.5 overflow-hidden flex-1">
-                    <h3 className="font-black text-slate-900 text-lg leading-tight truncate">
-                      {lab.name}
-                    </h3>
+                    <div className="flex items-center gap-2 justify-between">
+                      <h3 className="font-black text-slate-900 text-lg leading-tight truncate">
+                        {lab.name}
+                      </h3>
+                      {isAdmin && (
+                        <div className="flex gap-1 ml-auto shrink-0 bg-slate-50 p-1 rounded-lg border border-slate-100">
+                          <button onClick={(e) => { e.stopPropagation(); handleOpenAdminModal(lab); }} className="p-1.5 hover:bg-white rounded-md shadow-sm text-slate-500 hover:text-blue-600 transition-all"><Edit className="w-3.5 h-3.5" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteLab(lab.lab_id); }} className="p-1.5 hover:bg-white rounded-md shadow-sm text-slate-500 hover:text-red-600 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      )}
+                    </div>
                     <span className={`w-fit text-[10px] font-extrabold px-2 py-0.5 rounded-full border tracking-wide uppercase ${
                       lab.tier === 'PREMIUM'
                         ? 'bg-gradient-to-r from-amber-200 to-yellow-400 text-amber-900 border-amber-300 shadow-sm'
@@ -401,6 +483,70 @@ export const Laboratories: React.FC = () => {
             </div>
           </form>
         )}
+      </Modal>
+
+      {/* Admin CRUD Modal */}
+      <Modal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        title={editingLab ? 'Editar Laboratorio' : 'Crear Laboratorio'}
+      >
+        <form onSubmit={handleAdminSubmit} className="space-y-4">
+          <Input
+            id="admin_name"
+            label="Nombre del Laboratorio"
+            value={adminFormData.name}
+            onChange={(e) => setAdminFormData({ ...adminFormData, name: e.target.value })}
+            required
+          />
+          <Input
+            id="admin_location"
+            label="Ubicación"
+            value={adminFormData.location}
+            onChange={(e) => setAdminFormData({ ...adminFormData, location: e.target.value })}
+            required
+          />
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <Input
+                id="admin_capacity"
+                type="number"
+                label="Capacidad Máxima"
+                value={adminFormData.max_capacity.toString()}
+                onChange={(e) => setAdminFormData({ ...adminFormData, max_capacity: parseInt(e.target.value) || 0 })}
+                required
+              />
+            </div>
+            <div className="flex-1 space-y-1.5 text-left">
+              <label className="block text-xs font-semibold text-slate-700">Tipo (Tier)</label>
+              <select
+                className="w-full text-sm rounded-xl border border-slate-200 p-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                value={adminFormData.tier}
+                onChange={(e) => setAdminFormData({ ...adminFormData, tier: e.target.value })}
+              >
+                <option value="BASIC">Básico</option>
+                <option value="PREMIUM">Premium</option>
+              </select>
+            </div>
+          </div>
+          <div className="space-y-1.5 text-left">
+            <label className="block text-xs font-semibold text-slate-700">Descripción</label>
+            <textarea
+              className="w-full text-sm rounded-xl border border-slate-200 p-3 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              rows={3}
+              value={adminFormData.description}
+              onChange={(e) => setAdminFormData({ ...adminFormData, description: e.target.value })}
+            />
+          </div>
+          <div className="flex gap-3 pt-3">
+            <Button type="button" variant="outline" onClick={() => setIsAdminModalOpen(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button type="submit" variant="primary" className="flex-1 bg-indigo-600 hover:bg-indigo-700">
+              Guardar
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );
