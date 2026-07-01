@@ -195,6 +195,31 @@ services:
       retries: 3
       start_period: 30s
 
+  incident-service:
+    image: ${ECR_REGISTRY:-localhost}/uce-incident-service:${IMAGE_TAG:-latest}
+    container_name: incident-service
+    pull_policy: always
+    environment:
+      NODE_ENV: production
+      PORT: 3006
+      MONGODB_URI: mongodb://${INCIDENT_DB_USER:-admin}:${INCIDENT_DB_PASS:-admin}@incident-db:27017/incident_service?authSource=admin
+      RESERVATION_SERVICE_URL: http://reservation-service:3001
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      AWS_ACCESS_KEY_ID: ${PROD_AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${PROD_AWS_SECRET_ACCESS_KEY}
+    depends_on:
+      incident-db:
+        condition: service_healthy
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   # ─── Production: API Gateway ──────────────────────────────────────────────
   api-gateway:
     image: ${ECR_REGISTRY:-localhost}/uce-api-gateway:${IMAGE_TAG:-latest}
@@ -209,6 +234,7 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification-service:3003
       CATALOG_SERVICE_URL: http://catalog-service:3004
       PAYMENT_SERVICE_URL: http://payment-service:3005
+      INCIDENT_SERVICE_URL: http://incident-service:3006
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:
@@ -225,6 +251,8 @@ services:
       catalog-service:
         condition: service_healthy
       payment-service:
+        condition: service_healthy
+      incident-service:
         condition: service_healthy
     networks:
       - uce-prod-network
@@ -257,6 +285,24 @@ services:
       start_period: 5s
 
   # ─── Production: Databases ────────────────────────────────────────────────
+  incident-db:
+    image: mongo:6
+    container_name: incident-db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${INCIDENT_DB_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${INCIDENT_DB_PASS:-admin}
+    volumes:
+      - incident-db-data:/data/db
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
   auth-db:
     image: postgres:15-alpine
     container_name: auth-db
@@ -420,6 +466,7 @@ volumes:
   laboratory-db-data:
   notification-db-data:
   catalog-db-data:
+  incident-db-data:
   rabbitmq-data:
 
 networks:

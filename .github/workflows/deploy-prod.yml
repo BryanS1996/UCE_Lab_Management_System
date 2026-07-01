@@ -20,6 +20,8 @@ jobs:
           - laboratory-service
           - notification-service
           - catalog-service
+          - payment-service
+          - incident-service
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -104,6 +106,15 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:latest
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:${{ github.sha }}
+
+      - name: Build & Push — Incident Service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/incident-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:latest
+            ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:${{ github.sha }}
 
       - name: Build & Push — Payment Service
         uses: docker/build-push-action@v5
@@ -249,7 +260,7 @@ jobs:
 
             docker compose -f docker-compose.prod.yml pull \
               api-gateway auth-service reservation-service laboratory-service \
-              notification-service catalog-service payment-service frontend
+              notification-service catalog-service payment-service incident-service frontend
 
             docker compose -f docker-compose.prod.yml up -d
 
@@ -322,6 +333,8 @@ jobs:
             - `uce-laboratory-service`
             - `uce-notification-service`
             - `uce-catalog-service`
+            - `uce-payment-service`
+            - `uce-incident-service`
             - `uce-api-gateway`
             - `uce-frontend`
 
