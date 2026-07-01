@@ -1,9 +1,10 @@
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ReservationsService } from './reservations.service';
 import { Reservation, ReservationStatus, Laboratory } from '../database/entities';
+import { LaboratoryStatus } from '../database/entities/laboratory.entity';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 import { KafkaProducerService } from '../kafka/kafka-producer.service';
 import { BadRequestException, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { CurrentUserData } from '../common/decorators/current-user.decorator';
 
 // Mock factory for QueryBuilder
 const mockQueryBuilder = {
+  setLock: jest.fn().mockReturnThis(),
   where: jest.fn().mockReturnThis(),
   andWhere: jest.fn().mockReturnThis(),
   orderBy: jest.fn().mockReturnThis(),
@@ -19,11 +21,27 @@ const mockQueryBuilder = {
 };
 
 const mockReservationRepository = {
-  create: jest.fn(),
   save: jest.fn(),
   findOne: jest.fn(),
   find: jest.fn(),
   createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+  create: jest.fn(),
+};
+
+const mockQueryRunner = {
+  connect: jest.fn(),
+  startTransaction: jest.fn(),
+  commitTransaction: jest.fn(),
+  rollbackTransaction: jest.fn(),
+  release: jest.fn(),
+  manager: {
+    createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+    save: jest.fn(),
+  },
+};
+
+const mockDataSource = {
+  createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
 };
 
 const mockLaboratoryRepository = {
@@ -59,6 +77,7 @@ const mockLaboratory: Laboratory = {
   name: 'Laboratorio de Computación A',
   max_capacity: 30,
   is_active: true,
+  status: LaboratoryStatus.ACTIVE,
   location: 'Bloque A - Piso 2',
   tier: 'BASIC' as any,
   created_at: new Date(),
@@ -86,12 +105,14 @@ describe('ReservationsService', () => {
     jest.clearAllMocks();
 
     // Reset mock query builder before each test
+    mockQueryBuilder.setLock.mockReturnThis();
     mockQueryBuilder.where.mockReturnThis();
     mockQueryBuilder.andWhere.mockReturnThis();
     mockQueryBuilder.orderBy.mockReturnThis();
     mockQueryBuilder.getMany.mockResolvedValue([]);
     mockQueryBuilder.getCount.mockResolvedValue(0);
     mockReservationRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+    mockQueryRunner.manager.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -112,6 +133,10 @@ describe('ReservationsService', () => {
           provide: KafkaProducerService,
           useValue: mockKafkaProducerService,
         },
+        {
+          provide: DataSource,
+          useValue: mockDataSource,
+        },
       ],
     }).compile();
 
@@ -131,7 +156,7 @@ describe('ReservationsService', () => {
       mockLaboratoryRepository.findOne.mockResolvedValue(mockLaboratory);
       mockQueryBuilder.getCount.mockResolvedValue(0); // No conflicts
       mockReservationRepository.create.mockReturnValue(mockReservation);
-      mockReservationRepository.save.mockResolvedValue(mockReservation);
+      mockQueryRunner.manager.save.mockResolvedValue(mockReservation);
 
       // >24h notice
       const futureDate = new Date();
@@ -172,7 +197,7 @@ describe('ReservationsService', () => {
           status: ReservationStatus.CONFIRMED,
         }),
       );
-      expect(mockReservationRepository.save).toHaveBeenCalledTimes(1);
+      expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(1);
     });
 
     it('CP-02 (Negativo): Intento de reserva con <24h de anticipación. Debe lanzar BadRequestException', async () => {
@@ -198,7 +223,7 @@ describe('ReservationsService', () => {
       // await expect(service.create(dto, mockUser)).rejects.toThrowError('requiere 24h de anticipación');
     });
 
-    it.skip('CP-03 (Negativo): Intento de reserva superando el aforo máximo del laboratorio. Debe lanzar error (BadRequestException)', async () => {
+    it('CP-03 (Negativo): Intento de reserva superando el aforo máximo del laboratorio. Debe lanzar error (BadRequestException)', async () => {
       // Arrange
       mockLaboratoryRepository.findOne.mockResolvedValue(mockLaboratory); // max_capacity es 30
 

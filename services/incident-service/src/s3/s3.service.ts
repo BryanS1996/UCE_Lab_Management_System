@@ -7,11 +7,8 @@ import * as path from 'path';
 @Injectable()
 export class S3Service {
   private readonly s3Client: S3Client;
-  private readonly bucketName: string;
   private readonly logger = new Logger(S3Service.name);
-
   constructor(private readonly configService: ConfigService) {
-    this.bucketName = this.configService.get<string>('AWS_S3_BUCKET') || 'incidents-bucket';
     
     // Configuración para LocalStack si estamos en desarrollo local
     const endpoint = this.configService.get<string>('AWS_ENDPOINT') || 'http://localhost:4566';
@@ -28,13 +25,13 @@ export class S3Service {
     });
   }
 
-  async uploadFile(file: Express.Multer.File): Promise<string> {
+  async uploadFile(file: Express.Multer.File, bucket: string): Promise<string> {
     const fileExtension = path.extname(file.originalname);
     const fileName = `${uuidv4()}${fileExtension}`;
 
     try {
       const command = new PutObjectCommand({
-        Bucket: this.bucketName,
+        Bucket: bucket,
         Key: fileName,
         Body: file.buffer,
         ContentType: file.mimetype,
@@ -44,7 +41,7 @@ export class S3Service {
       await this.s3Client.send(command);
 
       const endpoint = this.configService.get<string>('AWS_ENDPOINT') || 'http://localhost:4566';
-      return `${endpoint}/${this.bucketName}/${fileName}`;
+      return `${endpoint}/${bucket}/${fileName}`;
     } catch (error) {
       this.logger.error(`Error uploading file to S3: ${(error as Error).message}`);
       throw error;

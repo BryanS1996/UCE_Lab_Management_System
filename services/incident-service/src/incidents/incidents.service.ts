@@ -56,8 +56,9 @@ export class IncidentsService {
     // 2. Subir evidencias a S3
     const evidenceUrls: string[] = [];
     if (files && files.length > 0) {
+      const bucket = this.configService.get<string>('AWS_S3_BUCKET') || 'incidents-bucket';
       for (const file of files) {
-        const url = await this.s3Service.uploadFile(file);
+        const url = await this.s3Service.uploadFile(file, bucket);
         evidenceUrls.push(url);
       }
     }

@@ -1,7 +1,7 @@
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { LaboratoriesService } from './laboratories.service';
-import { LaboratoryTier } from '../database/entities/laboratory.entity';
+import { LaboratoryTier, LaboratoryStatus } from '../database/entities/laboratory.entity';
 
 interface LaboratoryEventPayload {
   lab_id: number;
@@ -38,7 +38,7 @@ export class LaboratoriesConsumer {
             name: payload.name,
             max_capacity: payload.max_capacity ?? 30,
             is_active: payload.status !== 'INACTIVE',
-
+            status: payload.status as LaboratoryStatus,
             location: payload.location,
             description: payload.description,
             tier: payload.tier as LaboratoryTier,
@@ -54,6 +54,7 @@ export class LaboratoriesConsumer {
         name: payload.name,
         max_capacity: payload.max_capacity ?? 30,
         is_active: payload.status !== 'INACTIVE',
+        status: payload.status as LaboratoryStatus,
         location: payload.location,
         description: payload.description,
         tier: payload.tier as LaboratoryTier,
@@ -77,6 +78,7 @@ export class LaboratoriesConsumer {
         name: payload.name,
         max_capacity: payload.max_capacity,
         is_active: payload.status !== 'INACTIVE',
+        status: payload.status as LaboratoryStatus,
         location: payload.location,
         description: payload.description,
         tier: payload.tier as LaboratoryTier,
@@ -92,6 +94,7 @@ export class LaboratoriesConsumer {
             name: payload.name,
             max_capacity: payload.max_capacity ?? 30,
             is_active: payload.status !== 'INACTIVE',
+            status: payload.status as LaboratoryStatus,
             location: payload.location,
             description: payload.description,
             tier: payload.tier as LaboratoryTier,

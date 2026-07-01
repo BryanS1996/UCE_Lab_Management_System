@@ -23,6 +23,35 @@ export class NotificationsGateway
 
   handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
+    this.checkToken(client);
+  }
+
+  private checkToken(client: Socket): boolean {
+    const token =
+      client.handshake.auth?.token ||
+      (client.handshake.headers?.authorization
+        ? client.handshake.headers.authorization.split(' ')[1]
+        : null);
+
+    if (token) {
+      try {
+        const payload = JSON.parse(
+          Buffer.from(token.split('.')[1], 'base64').toString(),
+        );
+        if (payload && payload.exp) {
+          const now = Math.floor(Date.now() / 1000);
+          if (payload.exp < now) {
+            this.logger.log(`Token expired for client ${client.id}`);
+            client.emit('token_expired', { message: 'Tu sesión ha expirado' });
+            client.disconnect();
+            return false;
+          }
+        }
+      } catch (e) {
+        this.logger.error('Error parsing JWT', e);
+      }
+    }
+    return true;
   }
 
   handleDisconnect(client: Socket) {
@@ -38,6 +67,7 @@ export class NotificationsGateway
 
   @SubscribeMessage('register')
   handleRegister(client: Socket, userId: string) {
+    if (!this.checkToken(client)) return;
     this.connectedUsers.set(userId, client.id);
     this.logger.log(`User ${userId} registered with socket ${client.id}`);
     client.emit('registered', { success: true, userId });

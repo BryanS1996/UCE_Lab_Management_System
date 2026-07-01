@@ -22,6 +22,11 @@ export class CreateReservationDto {
   @IsDateString()
   end_time!: string;
 
+  @IsNotEmpty({ message: 'El número de asistentes es requerido' })
+  @IsInt({ message: 'El número de asistentes debe ser un número entero' })
+  @Min(1, { message: 'Debe haber al menos 1 asistente' })
+  attendees!: number;
+
   @IsOptional()
   @IsString()
   @MaxLength(500, { message: 'El motivo de la reserva no puede superar los 500 caracteres' })
