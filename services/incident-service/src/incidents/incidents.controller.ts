@@ -1,4 +1,12 @@
-import { Controller, Post, Body, UseInterceptors, UploadedFiles, Get, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseInterceptors,
+  UploadedFiles,
+  Get,
+  Param,
+} from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { IncidentsService } from './incidents.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';

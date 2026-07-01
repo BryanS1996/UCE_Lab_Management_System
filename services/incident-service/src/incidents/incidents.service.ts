@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Incident, IncidentDocument } from './schemas/incident.schema';
@@ -7,6 +12,11 @@ import { S3Service } from '../s3/s3.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
+
+interface ReservationInfo {
+  user_id: string;
+  lab_id: number;
+}
 
 @Injectable()
 export class IncidentsService {
@@ -21,16 +31,23 @@ export class IncidentsService {
   ) {
     // Apuntamos al api-gateway o directamente al reservation-service.
     // Usualmente a través de DNS interno en docker o un config.
-    this.reservationServiceUrl = this.configService.get<string>('RESERVATION_SERVICE_URL') || 'http://localhost:3003';
+    this.reservationServiceUrl =
+      this.configService.get<string>('RESERVATION_SERVICE_URL') ||
+      'http://localhost:3003';
   }
 
-  async create(createIncidentDto: CreateIncidentDto, files: Express.Multer.File[]): Promise<Incident> {
+  async create(
+    createIncidentDto: CreateIncidentDto,
+    files: Express.Multer.File[],
+  ): Promise<Incident> {
     const { user_id, reservation_id, lab_id } = createIncidentDto;
 
     // 1. Validar que la reserva existe y pertenece al usuario, y es del mismo lab
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.reservationServiceUrl}/api/reservations/${reservation_id}`)
+        this.httpService.get<ReservationInfo>(
+          `${this.reservationServiceUrl}/api/reservations/${reservation_id}`,
+        ),
       );
       const reservation = response.data;
 
@@ -43,20 +60,32 @@ export class IncidentsService {
       }
 
       if (reservation.lab_id !== Number(lab_id)) {
-        throw new BadRequestException('La reserva no corresponde al laboratorio indicado');
+        throw new BadRequestException(
+          'La reserva no corresponde al laboratorio indicado',
+        );
       }
-    } catch (error: any) {
-      this.logger.error(`Error validando reserva: ${error.message}`);
-      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(`Error validando reserva: ${error.message}`);
+      } else {
+        this.logger.error('Error validando reserva');
+      }
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
-      throw new BadRequestException('Error al validar la reserva (posiblemente no exista)');
+      throw new BadRequestException(
+        'Error al validar la reserva (posiblemente no exista)',
+      );
     }
 
     // 2. Subir evidencias a S3
     const evidenceUrls: string[] = [];
     if (files && files.length > 0) {
-      const bucket = this.configService.get<string>('AWS_S3_BUCKET') || 'incidents-bucket';
+      const bucket =
+        this.configService.get<string>('AWS_S3_BUCKET') || 'incidents-bucket';
       for (const file of files) {
         const url = await this.s3Service.uploadFile(file, bucket);
         evidenceUrls.push(url);

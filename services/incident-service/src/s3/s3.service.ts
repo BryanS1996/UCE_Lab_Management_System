@@ -9,9 +9,9 @@ export class S3Service {
   private readonly s3Client: S3Client;
   private readonly logger = new Logger(S3Service.name);
   constructor(private readonly configService: ConfigService) {
-    
     // Configuración para LocalStack si estamos en desarrollo local
-    const endpoint = this.configService.get<string>('AWS_ENDPOINT') || 'http://localhost:4566';
+    const endpoint =
+      this.configService.get<string>('AWS_ENDPOINT') || 'http://localhost:4566';
     const region = this.configService.get<string>('AWS_REGION') || 'us-east-1';
 
     this.s3Client = new S3Client({
@@ -19,8 +19,10 @@ export class S3Service {
       endpoint,
       forcePathStyle: true, // Requerido para LocalStack
       credentials: {
-        accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID') || 'test',
-        secretAccessKey: this.configService.get<string>('AWS_SECRET_ACCESS_KEY') || 'test',
+        accessKeyId:
+          this.configService.get<string>('AWS_ACCESS_KEY_ID') || 'test',
+        secretAccessKey:
+          this.configService.get<string>('AWS_SECRET_ACCESS_KEY') || 'test',
       },
     });
   }
@@ -40,10 +42,14 @@ export class S3Service {
 
       await this.s3Client.send(command);
 
-      const endpoint = this.configService.get<string>('AWS_ENDPOINT') || 'http://localhost:4566';
+      const endpoint =
+        this.configService.get<string>('AWS_ENDPOINT') ||
+        'http://localhost:4566';
       return `${endpoint}/${bucket}/${fileName}`;
     } catch (error) {
-      this.logger.error(`Error uploading file to S3: ${(error as Error).message}`);
+      this.logger.error(
+        `Error uploading file to S3: ${(error as Error).message}`,
+      );
       throw error;
     }
   }

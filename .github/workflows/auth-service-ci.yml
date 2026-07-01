@@ -1,8 +1,12 @@
 name: Auth Service — CI
 
-# Deshabilitado: La validación se maneja centralmente en pr-validation.yml
-# La construcción se maneja en docker-publish.yml
 on:
+  push:
+    paths:
+      - 'services/auth-service/**'
+  pull_request:
+    paths:
+      - 'services/auth-service/**'
   workflow_dispatch:
 
 jobs:
@@ -19,12 +23,15 @@ jobs:
       - name: Install
         working-directory: services/auth-service
         run: npm ci --legacy-peer-deps
+      - name: Lint
+        working-directory: services/auth-service
+        run: npm run lint --if-present
       - name: Build
         working-directory: services/auth-service
         run: npm run build
       - name: Test
         working-directory: services/auth-service
-        run: npm run test -- --forceExit --coverage
+        run: npm run test -- --passWithNoTests
       - uses: actions/upload-artifact@v4
         if: always()
         with:

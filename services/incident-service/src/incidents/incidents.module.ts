@@ -8,7 +8,9 @@ import { S3Module } from '../s3/s3.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Incident.name, schema: IncidentSchema }]),
+    MongooseModule.forFeature([
+      { name: Incident.name, schema: IncidentSchema },
+    ]),
     HttpModule,
     S3Module,
   ],

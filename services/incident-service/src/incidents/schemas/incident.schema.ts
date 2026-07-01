@@ -26,7 +26,11 @@ export class Incident {
   @Prop({ required: true })
   reservation_id: string;
 
-  @Prop({ type: String, enum: IncidentStatus, default: IncidentStatus.REPORTED })
+  @Prop({
+    type: String,
+    enum: IncidentStatus,
+    default: IncidentStatus.REPORTED,
+  })
   status: IncidentStatus;
 
   @Prop({ type: [String], default: [] })
