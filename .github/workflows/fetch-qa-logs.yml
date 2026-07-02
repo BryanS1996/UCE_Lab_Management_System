@@ -31,11 +31,20 @@ jobs:
           BASTION_IP=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=uce-lab-bastion-qa" "Name=instance-state-name,Values=running" \
             --query "Reservations[*].Instances[*].PublicIpAddress" --output text)
-          
+
+          # Use the autoscaling API (same as deploy-qa.yml) to find InService instances.
+          # Filtering by Name tag on instances is unreliable because ASG propagates the
+          # 'aws:autoscaling:groupName' tag, not the 'Name' tag, to launched instances.
+          ASG_INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names "uce-lab-asg-qa" \
+            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
+            --output text)
+
           APP_IP=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=uce-lab-asg-qa" "Name=instance-state-name,Values=running" \
-            --query "Reservations[*].Instances[*].PrivateIpAddress" --output text | tr '\t\n' ',' | sed 's/,$//')
-          
+            --instance-ids $ASG_INSTANCE_IDS \
+            --query "Reservations[*].Instances[*].PrivateIpAddress" \
+            --output text | tr '\t\n' ',' | sed 's/,$//')
+
           echo "bastion_ip=${BASTION_IP}" >> "$GITHUB_OUTPUT"
           echo "app_ip=${APP_IP}" >> "$GITHUB_OUTPUT"
 

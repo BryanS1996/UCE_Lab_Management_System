@@ -4,37 +4,17 @@ on:
   push:
     paths:
       - 'services/laboratory-service/**'
+      - '.github/workflows/_service-ci.yml'
   pull_request:
     paths:
       - 'services/laboratory-service/**'
+      - '.github/workflows/_service-ci.yml'
   workflow_dispatch:
 
 jobs:
-  lint-and-test:
-    name: Lint & Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: services/laboratory-service/package-lock.json
-      - name: Install
-        working-directory: services/laboratory-service
-        run: npm ci --legacy-peer-deps
-      - name: Lint
-        working-directory: services/laboratory-service
-        run: npm run lint --if-present
-      - name: Build
-        working-directory: services/laboratory-service
-        run: npm run build
-      - name: Test
-        working-directory: services/laboratory-service
-        run: npm run test -- --passWithNoTests
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: laboratory-coverage
-          path: services/laboratory-service/coverage/
-          retention-days: 7
+  ci:
+    uses: ./.github/workflows/_service-ci.yml
+    with:
+      service-name: laboratory
+      service-dir: services/laboratory-service
+      coverage-artifact-name: laboratory-coverage

@@ -1,0 +1,57 @@
+name: Service CI — Reusable
+
+# This is a REUSABLE workflow. Call it from each service's *-ci.yml file.
+# It accepts the service name and directory path as inputs so that
+# one single source of truth defines how every service is tested.
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        description: 'Short identifier used for artifact naming (e.g. auth)'
+        required: true
+        type: string
+      service-dir:
+        description: 'Path to the service directory (e.g. services/auth-service)'
+        required: true
+        type: string
+      coverage-artifact-name:
+        description: 'Name for the uploaded coverage artifact'
+        required: true
+        type: string
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ${{ inputs.service-dir }}/package-lock.json
+
+      - name: Install
+        working-directory: ${{ inputs.service-dir }}
+        run: npm ci --legacy-peer-deps
+
+      - name: Lint
+        working-directory: ${{ inputs.service-dir }}
+        run: npm run lint --if-present
+
+      - name: Build
+        working-directory: ${{ inputs.service-dir }}
+        run: npm run build
+
+      - name: Test
+        working-directory: ${{ inputs.service-dir }}
+        run: npm run test -- --passWithNoTests
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ inputs.coverage-artifact-name }}
+          path: ${{ inputs.service-dir }}/coverage/
+          retention-days: 7
