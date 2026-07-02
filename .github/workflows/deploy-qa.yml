@@ -105,8 +105,6 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-auth-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-auth-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & Push — Reservation Service
         if: needs.detect-changes.outputs.reservation-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -117,8 +115,6 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-reservation-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-reservation-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & Push — Laboratory Service
         if: needs.detect-changes.outputs.laboratory-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -129,8 +125,6 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-laboratory-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-laboratory-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & Push — Notification Service
         if: needs.detect-changes.outputs.notification-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -141,8 +135,6 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & Push — Catalog Service
         if: needs.detect-changes.outputs.catalog-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -153,8 +145,6 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & Push — Incident Service
         if: needs.detect-changes.outputs.incident-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -165,8 +155,6 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & Push — Payment Service
         if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -177,8 +165,6 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & Push — API Gateway
         if: needs.detect-changes.outputs.api-gateway == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -189,8 +175,6 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-api-gateway:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-api-gateway:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Build & Push — Frontend
         if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -201,8 +185,6 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-frontend:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-frontend:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       # ── Dynamic IP Discovery ────────────────────────────────────────────────
       # Queries AWS for all RUNNING instances in the QA ASG by Name tag.
