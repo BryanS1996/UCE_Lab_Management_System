@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  ci:
+  lint-and-test:
     uses: ./.github/workflows/_service-ci.yml
     with:
       service-name: auth
