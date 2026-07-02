@@ -573,9 +573,9 @@ export class ReservationsService {
   }
 
   @RabbitSubscribe({
-    exchange: 'reservation.events',
-    routingKey: 'payment.completed',
-    queue: 'reservation.payment.completed.queue',
+    exchange: 'amq.topic',
+    routingKey: 'payment.succeeded',
+    queue: 'reservation.payment.succeeded.queue',
   })
   async handlePaymentCompleted(payload: { reservation_id: string; status: string }) {
     this.logger.log(`Received payment.completed event for reservation: ${payload.reservation_id}`);
@@ -596,6 +596,7 @@ export class ReservationsService {
           lab_id: reservation.lab_id,
           start_time: reservation.start_time,
           end_time: reservation.end_time,
+          paid: true,
         }).catch(e => this.logger.error('Error publishing reservation confirmed event', e));
       }
     } catch (error) {
