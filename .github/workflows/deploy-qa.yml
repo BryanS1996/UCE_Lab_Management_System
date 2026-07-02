@@ -1,4 +1,4 @@
-﻿name: Deploy - QA
+name: Deploy — QA
 
 on:
   push:
@@ -81,7 +81,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # â”€â”€ AWS Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      # ── AWS Auth ────────────────────────────────────────────────────────────
       # Explicitly passes AWS_SESSION_TOKEN for AWS Academy temporary credentials.
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -95,8 +95,8 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # â”€â”€ Build & Push â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-      - name: Build & Push â€” Auth Service
+      # ── Build & Push ────────────────────────────────────────────────────────
+      - name: Build & Push — Auth Service
         if: needs.detect-changes.outputs.auth-service == 'true' || needs.detect-changes.outputs.compose == 'true'
         uses: docker/build-push-action@v5
         with:
@@ -106,9 +106,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-auth-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-auth-service:qa-latest
 
-
-
-      - name: Build & Push â€” Reservation Service
+      - name: Build & Push — Reservation Service
         if: needs.detect-changes.outputs.reservation-service == 'true' || needs.detect-changes.outputs.compose == 'true'
         uses: docker/build-push-action@v5
         with:
@@ -118,9 +116,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-reservation-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-reservation-service:qa-latest
 
-
-
-      - name: Build & Push â€” Laboratory Service
+      - name: Build & Push — Laboratory Service
         if: needs.detect-changes.outputs.laboratory-service == 'true' || needs.detect-changes.outputs.compose == 'true'
         uses: docker/build-push-action@v5
         with:
@@ -130,9 +126,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-laboratory-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-laboratory-service:qa-latest
 
-
-
-      - name: Build & Push â€” Notification Service
+      - name: Build & Push — Notification Service
         if: needs.detect-changes.outputs.notification-service == 'true' || needs.detect-changes.outputs.compose == 'true'
         uses: docker/build-push-action@v5
         with:
@@ -142,9 +136,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-latest
 
-
-
-      - name: Build & Push â€” Catalog Service
+      - name: Build & Push — Catalog Service
         if: needs.detect-changes.outputs.catalog-service == 'true' || needs.detect-changes.outputs.compose == 'true'
         uses: docker/build-push-action@v5
         with:
@@ -154,9 +146,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-latest
 
-
-
-      - name: Build & Push â€” Incident Service
+      - name: Build & Push — Incident Service
         if: needs.detect-changes.outputs.incident-service == 'true' || needs.detect-changes.outputs.compose == 'true'
         uses: docker/build-push-action@v5
         with:
@@ -166,9 +156,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:qa-latest
 
-
-
-      - name: Build & Push â€” Payment Service
+      - name: Build & Push — Payment Service
         if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.compose == 'true'
         uses: docker/build-push-action@v5
         with:
@@ -178,9 +166,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:qa-latest
 
-
-
-      - name: Build & Push â€” API Gateway
+      - name: Build & Push — API Gateway
         if: needs.detect-changes.outputs.api-gateway == 'true' || needs.detect-changes.outputs.compose == 'true'
         uses: docker/build-push-action@v5
         with:
@@ -190,9 +176,7 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-api-gateway:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-api-gateway:qa-latest
 
-
-
-      - name: Build & Push â€” Frontend
+      - name: Build & Push — Frontend
         if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.compose == 'true'
         uses: docker/build-push-action@v5
         with:
@@ -202,12 +186,10 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-frontend:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-frontend:qa-latest
 
-
-
-      # â”€â”€ Dynamic IP Discovery â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      # ── Dynamic IP Discovery ────────────────────────────────────────────────
       # Queries AWS for all RUNNING instances in the QA ASG by Name tag.
       # Formats the private IPs as a comma-separated string for appleboy/ssh-action.
-      # No hardcoded IP secrets needed â€” works with ephemeral ASG instances.
+      # No hardcoded IP secrets needed — works with ephemeral ASG instances.
       - name: Discover QA ASG instance IPs
         id: discover-ips
         run: |
@@ -244,7 +226,7 @@ jobs:
           # Write to GITHUB_OUTPUT so subsequent steps can reference it.
           echo "app_ips=${PRIVATE_IPS}" >> "$GITHUB_OUTPUT"
 
-      # â”€â”€ Dynamic Bastion IP Discovery â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      # ── Dynamic Bastion IP Discovery ────────────────────────────────────────
       - name: Discover QA Bastion IP
         id: discover-bastion
         run: |
@@ -263,7 +245,7 @@ jobs:
           echo "Discovered QA Bastion IP: ${BASTION_IP}"
           echo "bastion_ip=${BASTION_IP}" >> "$GITHUB_OUTPUT"
 
-      # â”€â”€ SCP: copy compose file and DB scripts to ALL app instances â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      # ── SCP: copy compose file and DB scripts to ALL app instances ─────────────────────────
       # appleboy/scp-action also supports comma-separated hosts.
       - name: Copy compose file and DB scripts to QA EC2 instances
         uses: appleboy/scp-action@v0.1.7
@@ -277,9 +259,9 @@ jobs:
           source: "docker-compose.qa.yml,db-init/"
           target: /home/ec2-user/app/
 
-      # â”€â”€ SSH Deploy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      # ── SSH Deploy ──────────────────────────────────────────────────────────
       # appleboy/ssh-action runs the script on ALL hosts when given a comma-
-      # separated list â€” each instance pulls and restarts its containers.
+      # separated list — each instance pulls and restarts its containers.
       - name: Deploy to QA EC2 instances
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -301,7 +283,7 @@ jobs:
           script: |
             # Wait for EC2 user_data script to finish installing Docker + Compose plugin
             while ! command -v docker &> /dev/null || ! docker compose version &> /dev/null; do
-              echo "â³ Waiting for Docker and Compose plugin to finish installing..."
+              echo "⏳ Waiting for Docker and Compose plugin to finish installing..."
               sleep 10
             done
             
@@ -318,34 +300,34 @@ jobs:
               notification-service-qa catalog-service-qa payment-service-qa incident-service-qa frontend-qa
             docker compose -f docker-compose.qa.yml up -d
 
-            # Esperar a que los servicios estÃ©n listos (hasta 3 minutos)
-            echo "â³ Waiting for API Gateway to be ready..."
+            # Esperar a que los servicios estén listos (hasta 3 minutos)
+            echo "⏳ Waiting for API Gateway to be ready..."
             for i in $(seq 1 18); do
               if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
-                echo "âœ… API Gateway QA OK (attempt $i)"
+                echo "✅ API Gateway QA OK (attempt $i)"
                 break
               fi
               if [ "$i" -eq 18 ]; then
-                echo "âŒ API Gateway did not respond after 3 minutes"
+                echo "❌ API Gateway did not respond after 3 minutes"
                 docker compose -f docker-compose.qa.yml logs --tail=50 api-gateway-qa
                 exit 1
               fi
-              echo "   attempt $i/18 â€” retrying in 10s..."
+              echo "   attempt $i/18 — retrying in 10s..."
               sleep 10
             done
 
-            echo "â³ Waiting for Frontend to be ready..."
+            echo "⏳ Waiting for Frontend to be ready..."
             for i in $(seq 1 12); do
               if curl -sf http://localhost/health.html > /dev/null 2>&1; then
-                echo "âœ… Frontend QA OK (attempt $i)"
+                echo "✅ Frontend QA OK (attempt $i)"
                 break
               fi
               if [ "$i" -eq 12 ]; then
-                echo "âŒ Frontend did not respond after 2 minutes"
+                echo "❌ Frontend did not respond after 2 minutes"
                 docker compose -f docker-compose.qa.yml logs --tail=50 frontend-qa
                 exit 1
               fi
-              echo "   attempt $i/12 â€” retrying in 10s..."
+              echo "   attempt $i/12 — retrying in 10s..."
               sleep 10
             done
         env:
