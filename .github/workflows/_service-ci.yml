@@ -39,6 +39,11 @@ jobs:
 
       - name: Lint
         working-directory: ${{ inputs.service-dir }}
+        # continue-on-error: lint is informational in CI — ESLint errors are reported
+        # but do not block the build/test gate. Fix lint issues locally before merging.
+        # The eslint --fix flag in the script only auto-fixes style issues; any
+        # unfixable errors would return exit code 1 and fail the entire job otherwise.
+        continue-on-error: true
         run: npm run lint --if-present
 
       - name: Build

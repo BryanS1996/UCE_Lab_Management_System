@@ -54,8 +54,7 @@ jobs:
           terraform apply -auto-approve \
             -var="enable_rds=false" \
             ${{ github.ref == 'refs/heads/main' && format('-var="db_password={0}"', secrets.DB_PASSWORD) || '' }} \
-            ${{ github.ref == 'refs/heads/main' && format('-var="jwt_secret={0}"', secrets.JWT_SECRET) || '' }} \
-            -var="image_tag=${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}"
+            ${{ github.ref == 'refs/heads/main' && format('-var="jwt_secret={0}"', secrets.JWT_SECRET) || '' }}
 
       - name: Mostrar outputs
         working-directory: infra/terraform/environments/${{ github.ref == 'refs/heads/main' && 'prod' || 'qa' }}
