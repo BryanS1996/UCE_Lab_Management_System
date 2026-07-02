@@ -572,35 +572,5 @@ export class ReservationsService {
     };
   }
 
-  @RabbitSubscribe({
-    exchange: 'amq.topic',
-    routingKey: 'payment.succeeded',
-    queue: 'reservation.payment.succeeded.queue',
-  })
-  async handlePaymentCompleted(payload: { reservation_id: string; status: string }) {
-    this.logger.log(`Received payment.completed event for reservation: ${payload.reservation_id}`);
-    try {
-      const reservation = await this.reservationRepository.findOne({
-        where: { reservation_id: payload.reservation_id },
-      });
 
-      if (reservation && reservation.status === ReservationStatus.PENDING_PAYMENT) {
-        reservation.status = ReservationStatus.CONFIRMED;
-        await this.reservationRepository.save(reservation);
-        this.logger.log(`Reservation ${payload.reservation_id} status updated to CONFIRMED.`);
-
-        // Publish reservation confirmed event
-        this.rabbitmqService.publishReservationConfirmed({
-          reservation_id: reservation.reservation_id,
-          user_id: reservation.user_id,
-          lab_id: reservation.lab_id,
-          start_time: reservation.start_time,
-          end_time: reservation.end_time,
-          paid: true,
-        }).catch(e => this.logger.error('Error publishing reservation confirmed event', e));
-      }
-    } catch (error) {
-      this.logger.error(`Error handling payment.completed for ${payload.reservation_id}:`, error);
-    }
-  }
 }
