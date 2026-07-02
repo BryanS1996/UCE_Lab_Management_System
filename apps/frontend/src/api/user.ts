@@ -16,12 +16,12 @@ export const userApi = {
   },
 
   updateRole: async (userId: string, role: string) => {
-    const response = await axiosInstance.patch(\/api/users/\/role\, { role });
+    const response = await axiosInstance.patch(`/api/users/${userId}/role`, { role });
     return response.data;
   },
 
   updateStatus: async (userId: string, isActive: boolean) => {
-    const response = await axiosInstance.patch(\/api/users/\/status\, { isActive });
+    const response = await axiosInstance.patch(`/api/users/${userId}/status`, { isActive });
     return response.data;
   },
 };
