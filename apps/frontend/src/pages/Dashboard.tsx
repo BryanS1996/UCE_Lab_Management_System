@@ -116,6 +116,13 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+
+    // Polling para sincronización en "tiempo real"
+    const interval = setInterval(() => {
+      fetchData();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleOpenBooking = (lab: Laboratory) => {

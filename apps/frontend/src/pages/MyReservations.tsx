@@ -40,6 +40,13 @@ export const MyReservations: React.FC = () => {
 
   useEffect(() => {
     fetchReservations();
+
+    // Polling para sincronización en "tiempo real"
+    const interval = setInterval(() => {
+      fetchReservations();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleCancelReservation = async (id: string) => {

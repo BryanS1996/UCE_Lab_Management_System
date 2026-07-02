@@ -23,6 +23,13 @@ export const Users: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
+
+    // Polling para sincronización de usuarios en tiempo real
+    const interval = setInterval(() => {
+      fetchUsers();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleChangeRole = async (userId: string, newRole: string) => {
@@ -34,10 +41,20 @@ export const Users: React.FC = () => {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) return;
+    try {
+      await userApi.deleteUser(userId);
+      fetchUsers();
+    } catch (err) {
+      alert('Error al eliminar usuario');
+    }
+  };
+
   return (
     <div className="space-y-6 text-left">
       <div>
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Gesti�n de Usuarios</h2>
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Gestión de Usuarios</h2>
         <p className="text-slate-500 text-sm mt-1">Administra los roles y accesos de los usuarios del sistema.</p>
       </div>
 
@@ -51,6 +68,7 @@ export const Users: React.FC = () => {
                 <th className="px-6 py-4 font-bold">Rol Actual</th>
                 <th className="px-6 py-4 font-bold">Cambiar Rol</th>
                 <th className="px-6 py-4 font-bold">Estado</th>
+                <th className="px-6 py-4 font-bold">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -78,6 +96,14 @@ export const Users: React.FC = () => {
                     ) : (
                       <span className="flex items-center gap-1 text-red-600 font-bold"><XCircle className="w-4 h-4"/> Inactivo</span>
                     )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => handleDeleteUser(u.id)}
+                      className="text-red-500 hover:text-red-700 font-semibold text-xs border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      Eliminar
+                    </button>
                   </td>
                 </tr>
               ))}

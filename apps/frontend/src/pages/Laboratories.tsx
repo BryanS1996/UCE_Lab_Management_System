@@ -84,14 +84,15 @@ export const Laboratories: React.FC = () => {
 
   const handleOpenBooking = (lab: Laboratory) => {
     setSelectedLabForBooking(lab);
-    // Inicializar fecha de reserva con la de mañana por defecto usando timezone local
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const year = tomorrow.getFullYear();
-    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
-    const day = String(tomorrow.getDate()).padStart(2, '0');
-    setBookingDate(`${year}-${month}-${day}`);
+    
+    // Configurar la fecha sugerida para HOY por defecto
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    setBookingDate(`${yyyy}-${mm}-${dd}`);
     setSelectedSlotIndex(null);
+    
     setIsBookingOpen(true);
     setBookingSuccess('');
     setError('');

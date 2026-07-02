@@ -6,6 +6,7 @@ import {
   UploadedFiles,
   Get,
   Param,
+  Req,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { IncidentsService } from './incidents.service';
@@ -20,8 +21,10 @@ export class IncidentsController {
   async create(
     @Body() createIncidentDto: CreateIncidentDto,
     @UploadedFiles() files: Express.Multer.File[],
+    @Req() req: any,
   ) {
-    return this.incidentsService.create(createIncidentDto, files);
+    const authHeader = req.headers.authorization || '';
+    return this.incidentsService.create(createIncidentDto, files, authHeader);
   }
 
   @Get()
