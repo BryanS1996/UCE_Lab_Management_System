@@ -39,6 +39,7 @@ export class IncidentsService {
   async create(
     createIncidentDto: CreateIncidentDto,
     files: Express.Multer.File[],
+    authHeader: string = '',
   ): Promise<Incident> {
     const { user_id, reservation_id, lab_id } = createIncidentDto;
 
@@ -47,6 +48,7 @@ export class IncidentsService {
       const response = await firstValueFrom(
         this.httpService.get<ReservationInfo>(
           `${this.reservationServiceUrl}/api/reservations/${reservation_id}`,
+          { headers: { Authorization: authHeader } }
         ),
       );
       const reservation = response.data;

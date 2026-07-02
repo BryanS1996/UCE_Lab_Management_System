@@ -23,6 +23,13 @@ export const Users: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
+
+    // Polling para sincronización de usuarios en tiempo real
+    const interval = setInterval(() => {
+      fetchUsers();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleChangeRole = async (userId: string, newRole: string) => {
@@ -37,7 +44,7 @@ export const Users: React.FC = () => {
   return (
     <div className="space-y-6 text-left">
       <div>
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Gesti�n de Usuarios</h2>
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Gestión de Usuarios</h2>
         <p className="text-slate-500 text-sm mt-1">Administra los roles y accesos de los usuarios del sistema.</p>
       </div>
 
