@@ -2,8 +2,7 @@ import { Controller, All, Req, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { Request, Response } from 'express';
-import { firstValueFrom } from 'rxjs';
-import { AxiosError } from 'axios';
+import * as http from 'http';
 
 @Controller('api/incidents')
 export class IncidentController {
@@ -30,9 +29,6 @@ export class IncidentController {
 
   private handleProxy(req: Request, res: Response) {
     const targetUrl = new URL(`${this.incidentServiceUrl}${req.originalUrl}`);
-    
-    // Importación dinámica para usar http
-    const http = require('http');
 
     const options = {
       hostname: targetUrl.hostname,
