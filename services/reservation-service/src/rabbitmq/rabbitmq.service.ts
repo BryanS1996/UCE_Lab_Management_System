@@ -19,6 +19,7 @@ export interface ReservationConfirmedEvent {
   lab_id: number;
   start_time: Date;
   end_time: Date;
+  paid?: boolean;
   timestamp: string;
 }
 
