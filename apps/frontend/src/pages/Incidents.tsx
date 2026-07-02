@@ -33,6 +33,13 @@ export const Incidents: React.FC = () => {
 
   useEffect(() => {
     fetchIncidents();
+
+    // Polling para sincronización de incidentes en tiempo real
+    const interval = setInterval(() => {
+      fetchIncidents();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [user]);
 
   const filteredIncidents = incidents.filter(inc => 

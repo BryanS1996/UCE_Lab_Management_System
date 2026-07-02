@@ -86,12 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       icon: Bell,
       badgeKey: 'notifications',
     },
-    {
-      path: '/reportes',
-      label: 'Reportes',
-      icon: BarChart3,
-      roles: ['ADMIN'],
-    },
+
     {
       path: '/incidentes',
       label: 'Incidentes',

@@ -24,5 +24,10 @@ export const userApi = {
     const response = await axiosInstance.patch(`/api/users/${userId}/status`, { isActive });
     return response.data;
   },
+
+  deleteUser: async (userId: string) => {
+    const response = await axiosInstance.delete(`/api/users/${userId}`);
+    return response.data;
+  },
 };
 
