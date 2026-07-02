@@ -66,10 +66,10 @@ export class ReservationsService {
       throw new BadRequestException('No se pueden crear reservas en el pasado');
     }
 
-    // 1.1 Validate 24 hours of anticipation
+    // 1.1 Validate 12 hours of anticipation
     const diffHours = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-    if (diffHours < 24) {
-      throw new BadRequestException('Las reservas requieren al menos 24 horas de anticipación');
+    if (diffHours < 12) {
+      throw new BadRequestException('Las reservas requieren al menos 12 horas de anticipación');
     }
 
     // 2. Verify that the laboratory exists and is active
@@ -108,7 +108,7 @@ export class ReservationsService {
     let saved: Reservation;
 
     try {
-      const conflictCount = await queryRunner.manager
+      const conflicts = await queryRunner.manager
         .createQueryBuilder(Reservation, 'r')
         .setLock('pessimistic_write')
         .where('r.lab_id = :lab_id', { lab_id })
@@ -117,9 +117,9 @@ export class ReservationsService {
         })
         .andWhere('r.start_time < :endTime', { endTime: endDate })
         .andWhere('r.end_time > :startTime', { startTime: startDate })
-        .getCount();
+        .getMany();
 
-      if (conflictCount > 0) {
+      if (conflicts.length > 0) {
         throw new ConflictException(
           'Ya existe una reserva en ese horario para este laboratorio',
         );
