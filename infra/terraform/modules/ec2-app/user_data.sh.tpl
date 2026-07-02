@@ -85,6 +85,18 @@ services:
       timeout: 10s
       retries: 3
 
+  api-gateway:
+    image: ${ecr_registry}/uce-api-gateway:${environment}-latest
+    container_name: api-gateway-autoheal
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   frontend:
     image: ${ecr_registry}/uce-frontend:${environment}-latest
     container_name: frontend-autoheal
