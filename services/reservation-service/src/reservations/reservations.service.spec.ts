@@ -271,7 +271,7 @@ describe('ReservationsService', () => {
 
     it('debe lanzar ConflictException si hay conflicto de horario', async () => {
       mockLaboratoryRepository.findOne.mockResolvedValue(mockLaboratory);
-      mockQueryBuilder.getCount.mockResolvedValue(1); // Hay conflicto
+      mockQueryBuilder.getMany.mockResolvedValue([mockReservation]); // Hay conflicto
 
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 2);
