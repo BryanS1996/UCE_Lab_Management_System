@@ -71,8 +71,6 @@ variable "db_password" {
   default     = ""
 }
 
-variable "image_tag" {
-  type        = string
-  default     = "qa"
-  description = "Image tag para Docker Hub (prod o qa). Determina qué imágenes descargar en ECS Fargate Task Definition."
-}
+# NOTE: image_tag was removed — it was a legacy variable from an ECS Fargate architecture
+# that was replaced by EC2 + Docker Compose. The image tag is now controlled by the
+# GitHub Actions deploy workflow via the :qa-<sha> and :qa-latest ECR tags.

@@ -335,7 +335,7 @@ services:
     build:
       context: ./services/api-gateway
       dockerfile: Dockerfile
-    container_name: api-gateway-qa
+    container_name: api-gateway
     environment:
       NODE_ENV: development
       PORT: 3000

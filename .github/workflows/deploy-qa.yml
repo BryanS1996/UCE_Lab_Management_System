@@ -43,7 +43,9 @@ jobs:
     needs: detect-changes
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      # fail-fast: false — we want to see ALL service failures in one run,
+      # not cancel the matrix as soon as one service fails.
+      fail-fast: false
       matrix:
         service:
           - auth-service
@@ -54,15 +56,15 @@ jobs:
           - payment-service
           - incident-service
     steps:
+      # Always checkout — subsequent steps guard with the if condition.
       - uses: actions/checkout@v4
-        if: needs.detect-changes.outputs[matrix.service] == 'true' || needs.detect-changes.outputs.compose == 'true'
       - uses: actions/setup-node@v4
-        if: needs.detect-changes.outputs[matrix.service] == 'true' || needs.detect-changes.outputs.compose == 'true'
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: services/${{ matrix.service }}/package-lock.json
       - name: Install, Build & Test
+        # Only run if this specific service changed OR the compose file changed.
         if: needs.detect-changes.outputs[matrix.service] == 'true' || needs.detect-changes.outputs.compose == 'true'
         working-directory: services/${{ matrix.service }}
         run: |
@@ -105,6 +107,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-auth-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-auth-service:qa-latest
+          cache-from: type=gha,scope=qa-auth-service
+          cache-to: type=gha,mode=max,scope=qa-auth-service
 
       - name: Build & Push — Reservation Service
         if: needs.detect-changes.outputs.reservation-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -115,6 +119,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-reservation-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-reservation-service:qa-latest
+          cache-from: type=gha,scope=qa-reservation-service
+          cache-to: type=gha,mode=max,scope=qa-reservation-service
 
       - name: Build & Push — Laboratory Service
         if: needs.detect-changes.outputs.laboratory-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -125,6 +131,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-laboratory-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-laboratory-service:qa-latest
+          cache-from: type=gha,scope=qa-laboratory-service
+          cache-to: type=gha,mode=max,scope=qa-laboratory-service
 
       - name: Build & Push — Notification Service
         if: needs.detect-changes.outputs.notification-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -135,6 +143,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-latest
+          cache-from: type=gha,scope=qa-notification-service
+          cache-to: type=gha,mode=max,scope=qa-notification-service
 
       - name: Build & Push — Catalog Service
         if: needs.detect-changes.outputs.catalog-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -145,6 +155,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-latest
+          cache-from: type=gha,scope=qa-catalog-service
+          cache-to: type=gha,mode=max,scope=qa-catalog-service
 
       - name: Build & Push — Incident Service
         if: needs.detect-changes.outputs.incident-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -155,6 +167,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:qa-latest
+          cache-from: type=gha,scope=qa-incident-service
+          cache-to: type=gha,mode=max,scope=qa-incident-service
 
       - name: Build & Push — Payment Service
         if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -165,6 +179,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:qa-latest
+          cache-from: type=gha,scope=qa-payment-service
+          cache-to: type=gha,mode=max,scope=qa-payment-service
 
       - name: Build & Push — API Gateway
         if: needs.detect-changes.outputs.api-gateway == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -175,6 +191,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-api-gateway:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-api-gateway:qa-latest
+          cache-from: type=gha,scope=qa-api-gateway
+          cache-to: type=gha,mode=max,scope=qa-api-gateway
 
       - name: Build & Push — Frontend
         if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -185,6 +203,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-frontend:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-frontend:qa-latest
+          cache-from: type=gha,scope=qa-frontend
+          cache-to: type=gha,mode=max,scope=qa-frontend
 
       # ── Dynamic IP Discovery ────────────────────────────────────────────────
       # Queries AWS for all RUNNING instances in the QA ASG by Name tag.
@@ -288,9 +308,14 @@ jobs:
             done
             
             cd /home/ec2-user/app
-            
-            # Escribir el archivo .env desde el GitHub Secret QA_ENV_FILE
+
+            # Escribir el archivo .env desde el GitHub Secret QA_ENV_FILE.
+            # set +x evita que el contenido del secret se imprima en los logs.
+            set +x
             printf '%s\n' "$QA_ENV_FILE" > /home/ec2-user/app/.env
+            chmod 600 /home/ec2-user/app/.env
+            set -x
+            echo "✅ .env escrito correctamente"
 
             # Re-authenticate with ECR using the session credentials passed via envs.
             aws ecr get-login-password --region "$AWS_REGION" \

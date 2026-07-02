@@ -75,8 +75,6 @@ variable "jwt_secret" {
   description = "Referencia para documentacion; configurar en .env del EC2"
 }
 
-variable "image_tag" {
-  type        = string
-  default     = "prod"
-  description = "Image tag para Docker Hub (prod o qa). Determina qué imágenes descargar en ECS Fargate Task Definition."
-}
+# NOTE: image_tag was removed — it was a legacy variable from an ECS Fargate architecture
+# that was replaced by EC2 + Docker Compose. The image tag is now controlled by the
+# GitHub Actions deploy workflow via the :<sha> and :latest ECR tags.

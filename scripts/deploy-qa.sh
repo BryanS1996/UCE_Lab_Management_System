@@ -8,7 +8,7 @@
 #
 # En QA (EC2):
 #   - Descarga imágenes desde Docker Hub (tag: qa)
-#   - Inicia BD PostgreSQL, RabbitMQ, y microservicios en docker-compose
+#   - Inicia BD PostgreSQL, RabbitMQ, y microservicios en docker compose
 #
 # En LOCAL (desarrollo):
 #   - Construye imágenes locales (docker build)
@@ -77,24 +77,24 @@ fi
 log_info "Usando: $COMPOSE_FILE"
 
 # Validar configuración
-docker-compose -f "$COMPOSE_FILE" config --quiet
+docker compose -f "$COMPOSE_FILE" config --quiet
 
 # Detener servicios anteriores
 log_info "Deteniendo servicios anteriores..."
-docker-compose -f "$COMPOSE_FILE" down 2>/dev/null || log_info "No hay servicios anteriores"
+docker compose -f "$COMPOSE_FILE" down 2>/dev/null || log_info "No hay servicios anteriores"
 
 # Build o Pull según el modo
 if [ "$BUILD_MODE" = true ]; then
     log_info "Construyendo imágenes locales..."
-    docker-compose -f "$COMPOSE_FILE" build --no-cache
+    docker compose -f "$COMPOSE_FILE" build --no-cache
 else
     log_info "Descargando imágenes desde Docker Hub (tag: qa)..."
-    docker-compose -f "$COMPOSE_FILE" pull
+    docker compose -f "$COMPOSE_FILE" pull
 fi
 
 # Iniciar servicios
 log_info "Iniciando servicios..."
-docker-compose -f "$COMPOSE_FILE" up -d
+docker compose -f "$COMPOSE_FILE" up -d
 
 log_info "Esperando a que los servicios se estabilicen (15 segundos)..."
 sleep 15
@@ -138,7 +138,7 @@ log_info "============================================"
 
 log_info ""
 log_info "Próximos pasos:"
-log_info "  Ver logs:     docker-compose -f $COMPOSE_FILE logs -f"
-log_info "  Detener:      docker-compose -f $COMPOSE_FILE down"
-log_info "  Estado:       docker-compose -f $COMPOSE_FILE ps"
+log_info "  Ver logs:     docker compose -f $COMPOSE_FILE logs -f"
+log_info "  Detener:      docker compose -f $COMPOSE_FILE down"
+log_info "  Estado:       docker compose -f $COMPOSE_FILE ps"
 

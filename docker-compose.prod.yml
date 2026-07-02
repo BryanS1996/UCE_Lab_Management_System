@@ -205,8 +205,9 @@ services:
       MONGODB_URI: mongodb://${INCIDENT_DB_USER:-admin}:${INCIDENT_DB_PASS:-admin}@incident-db:27017/incident_service?authSource=admin
       RESERVATION_SERVICE_URL: http://reservation-service:3001
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
-      AWS_ACCESS_KEY_ID: 
-      AWS_SECRET_ACCESS_KEY: 
+      # AWS credentials intentionally omitted — the EC2 IAM Instance Profile
+      # (LabInstanceProfile) grants S3 access automatically via the metadata service.
+      # Explicitly setting empty keys would OVERRIDE and BREAK the instance profile.
     depends_on:
       incident-db:
         condition: service_healthy
@@ -425,11 +426,10 @@ services:
 
   # ─── Production: MQTT Broker (Eclipse Mosquitto) ──────────────────────────
   mosquitto:
-    image: eclipse-mosquitto:latest
+    image: eclipse-mosquitto:2.0
     container_name: mosquitto
-    ports:
-      - "1883:1883"
-      - "9001:9001"
+    # Mosquitto MQTT and WebSocket ports are internal-only in Production.
+    # Only internal services (catalog-service, notification-service) connect to it.
     networks:
       - uce-prod-network
     command: >
@@ -445,8 +445,7 @@ services:
   kafka-prod:
     image: confluentinc/cp-kafka:7.4.0
     container_name: kafka-prod
-    ports:
-      - "9094:9092"
+    # Kafka is internal-only in Production — no host port binding needed.
     depends_on:
       - zookeeper-prod
     environment:
