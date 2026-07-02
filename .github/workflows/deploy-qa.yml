@@ -265,6 +265,38 @@ jobs:
           echo "Discovered QA Bastion IP: ${BASTION_IP}"
           echo "bastion_ip=${BASTION_IP}" >> "$GITHUB_OUTPUT"
 
+      # ── Dynamic ALB DNS Discovery ────────────────────────────────────────────
+      # The ALB DNS name is the stable public entry point — it does NOT change
+      # when EC2 instances are replaced by the ASG or when IPs rotate.
+      # This is used as FRONTEND_URL_QA so Stripe redirects to the correct host
+      # after payment, without any hardcoded IP in code or secrets.
+      - name: Discover QA ALB DNS
+        id: discover-alb
+        run: |
+          ALB_NAME="uce-lab-alb-qa"
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names "${ALB_NAME}" \
+            --query "LoadBalancers[0].DNSName" \
+            --output text \
+            --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+
+          # Fallback: search by tag if the exact name doesn't match
+          if [ -z "$ALB_DNS" ] || [ "$ALB_DNS" == "None" ]; then
+            ALB_DNS=$(aws elbv2 describe-load-balancers \
+              --query "LoadBalancers[?contains(LoadBalancerName,'qa')].DNSName | [0]" \
+              --output text \
+              --region ${{ env.AWS_REGION }})
+          fi
+
+          if [ -z "$ALB_DNS" ] || [ "$ALB_DNS" == "None" ]; then
+            echo "::warning::Could not discover ALB DNS. FRONTEND_URL_QA will use value from QA_ENV_FILE secret."
+            ALB_DNS=""
+          else
+            echo "Discovered QA ALB DNS: ${ALB_DNS}"
+          fi
+
+          echo "alb_dns=${ALB_DNS}" >> "$GITHUB_OUTPUT"
+
       # ── SCP: copy compose file and DB scripts to ALL app instances ─────────────────────────
       # appleboy/scp-action also supports comma-separated hosts.
       - name: Copy compose file and DB scripts to QA EC2 instances
@@ -293,7 +325,7 @@ jobs:
           proxy_key: ${{ secrets.QA_EC2_SSH_PRIVATE_KEY }}
           # 'envs' securely injects variables into the remote shell.
           # They are NOT interpolated as plaintext into the script string.
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,QA_ENV_FILE
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,QA_ENV_FILE,FRONTEND_URL_QA
           # sync: true ensures the script runs sequentially on each host,
           # providing a controlled rolling-style deploy across the ASG fleet.
           sync: true
@@ -316,6 +348,18 @@ jobs:
             chmod 600 /home/ec2-user/app/.env
             set -x
             echo "✅ .env escrito correctamente"
+
+            # Inyectar FRONTEND_URL_QA dinámicamente desde el ALB DNS descubierto.
+            # Esto reemplaza cualquier valor de FRONTEND_URL_QA que venga del secret
+            # y garantiza que Stripe redirija al host correcto sin IPs hardcodeadas.
+            if [ -n "$FRONTEND_URL_QA" ]; then
+              # Elimina cualquier FRONTEND_URL_QA existente en el .env y agrega el nuevo valor
+              sed -i '/^FRONTEND_URL_QA=/d' /home/ec2-user/app/.env
+              echo "FRONTEND_URL_QA=${FRONTEND_URL_QA}" >> /home/ec2-user/app/.env
+              echo "✅ FRONTEND_URL_QA inyectado dinámicamente: ${FRONTEND_URL_QA}"
+            else
+              echo "⚠️  FRONTEND_URL_QA no disponible — usando valor del secret QA_ENV_FILE"
+            fi
 
             # Re-authenticate with ECR using the session credentials passed via envs.
             aws ecr get-login-password --region "$AWS_REGION" \
@@ -362,3 +406,6 @@ jobs:
           AWS_REGION: ${{ env.AWS_REGION }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           QA_ENV_FILE: ${{ secrets.QA_ENV_FILE }}
+          # ALB DNS inyectado dinámicamente — no hardcodeado, no depende de IPs.
+          # Si el discover-alb step no encontró el ALB, queda vacío y se usa el valor del secret.
+          FRONTEND_URL_QA: ${{ steps.discover-alb.outputs.alb_dns != '' && format('http://{0}', steps.discover-alb.outputs.alb_dns) || '' }}
