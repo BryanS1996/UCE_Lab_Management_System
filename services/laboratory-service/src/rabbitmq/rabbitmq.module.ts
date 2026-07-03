@@ -1,10 +1,15 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { RabbitmqService } from './rabbitmq.service';
+import { IncidentConsumer } from './incident.consumer';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Resource } from '../laboratories/entities/resource.entity';
 
+@Global()
 @Module({
   imports: [
+    TypeOrmModule.forFeature([Resource]),
     RabbitMQModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -24,7 +29,7 @@ import { RabbitmqService } from './rabbitmq.service';
       }),
     }),
   ],
-  providers: [RabbitmqService],
-  exports: [RabbitmqService],
+  providers: [RabbitmqService, IncidentConsumer],
+  exports: [RabbitMQModule, RabbitmqService],
 })
 export class RabbitmqModule {}

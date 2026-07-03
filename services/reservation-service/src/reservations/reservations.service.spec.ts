@@ -61,15 +61,15 @@ const mockKafkaProducerService = {
 // Mock for a regular student user
 const mockUser: CurrentUserData = {
   user_id: 'user-uuid-123',
-  email: 'student@uce.edu.ec',
-  role: 'STUDENT',
+  email: 'student@test.com',
+  roles: ['STUDENT'],
 };
 
 // Mock for an administrator user
 const mockAdminUser: CurrentUserData = {
   user_id: 'admin-uuid-456',
-  email: 'admin@uce.edu.ec',
-  role: 'ADMIN',
+  email: 'admin@test.com',
+  roles: ['ADMIN'],
 };
 
 const mockLaboratory: Laboratory = {
@@ -176,8 +176,8 @@ describe('ReservationsService', () => {
 
       const teacherUser: CurrentUserData = {
         user_id: 'teacher-uuid-123',
-        email: 'profesor@uce.edu.ec',
-        role: 'TEACHER', // Docente
+        email: 'teacher@test.com',
+        roles: ['TEACHER'], // Docente
       };
 
       // Act

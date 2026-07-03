@@ -64,4 +64,24 @@ export const laboratoryApi = {
   delete: async (labId: number): Promise<void> => {
     await axiosInstance.delete(`/api/laboratories/${labId}`);
   },
+
+  // --- RECURSOS (INVENTARIO) ---
+  getResources: async (labId: number): Promise<LaboratoryResource[]> => {
+    const response = await axiosInstance.get<LaboratoryResource[]>(`/api/laboratories/${labId}/resources`);
+    return response.data;
+  },
+
+  createResource: async (labId: number, data: Record<string, any>): Promise<LaboratoryResource> => {
+    const response = await axiosInstance.post<LaboratoryResource>(`/api/laboratories/${labId}/resources`, data);
+    return response.data;
+  },
+
+  updateResource: async (labId: number, resourceId: number, data: Record<string, any>): Promise<LaboratoryResource> => {
+    const response = await axiosInstance.patch<LaboratoryResource>(`/api/laboratories/${labId}/resources/${resourceId}`, data);
+    return response.data;
+  },
+
+  deleteResource: async (labId: number, resourceId: number): Promise<void> => {
+    await axiosInstance.delete(`/api/laboratories/${labId}/resources/${resourceId}`);
+  },
 };

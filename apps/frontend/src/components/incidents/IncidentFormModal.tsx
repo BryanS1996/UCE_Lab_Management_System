@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { endpoints } from '../../api';
+import { laboratoryApi, LaboratoryResource } from '../../api/laboratory';
 import { X, UploadCloud, AlertCircle } from 'lucide-react';
 
 interface IncidentFormModalProps {
@@ -19,6 +20,8 @@ export const IncidentFormModal: React.FC<IncidentFormModalProps> = ({
   const [description, setDescription] = useState('');
   const [reservationId, setReservationId] = useState('');
   const [labId, setLabId] = useState('');
+  const [resourceId, setResourceId] = useState('');
+  const [labResources, setLabResources] = useState<LaboratoryResource[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,18 +51,27 @@ export const IncidentFormModal: React.FC<IncidentFormModalProps> = ({
     }
   };
 
-  const handleReservationSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleReservationSelect = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const resId = e.target.value;
     setReservationId(resId);
-    const selectedRes = reservations.find(r => r.id === resId);
+    setResourceId('');
+    setLabResources([]);
+
+    const selectedRes = reservations.find(r => r.reservation_id === resId);
     if (selectedRes) {
       setLabId(selectedRes.lab_id);
+      try {
+        const resources = await laboratoryApi.getResources(selectedRes.lab_id);
+        setLabResources(resources);
+      } catch (err) {
+        console.error('Failed to load resources for lab', err);
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reservationId || !title || !description) {
+    if (!reservationId || !title || !description || !resourceId) {
       setError('Por favor completa todos los campos requeridos.');
       return;
     }
@@ -74,6 +86,7 @@ export const IncidentFormModal: React.FC<IncidentFormModalProps> = ({
       formData.append('user_id', userId);
       formData.append('lab_id', labId.toString());
       formData.append('reservation_id', reservationId);
+      formData.append('resource_id', resourceId);
       
       files.forEach((file) => {
         formData.append('files', file);
@@ -86,6 +99,8 @@ export const IncidentFormModal: React.FC<IncidentFormModalProps> = ({
       setDescription('');
       setReservationId('');
       setLabId('');
+      setResourceId('');
+      setLabResources([]);
       setFiles([]);
       onSuccess();
       onClose();
@@ -145,11 +160,34 @@ export const IncidentFormModal: React.FC<IncidentFormModalProps> = ({
             >
               <option value="">Selecciona una reserva...</option>
               {reservations.map(res => (
-                <option key={res.id} value={res.id}>
+                <option key={res.reservation_id} value={res.reservation_id}>
                   Reserva en Lab #{res.lab_id} ({new Date(res.start_time).toLocaleDateString()}) - {res.status}
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              Equipo o Recurso Dañado <span className="text-red-400">*</span>
+            </label>
+            <select 
+              value={resourceId}
+              onChange={(e) => setResourceId(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50"
+              required
+              disabled={!reservationId || labResources.length === 0}
+            >
+              <option value="">Selecciona el equipo...</option>
+              {labResources.map(res => (
+                <option key={res.resource_id} value={res.resource_id}>
+                  {res.name} ({res.type})
+                </option>
+              ))}
+            </select>
+            {reservationId && labResources.length === 0 && (
+              <p className="text-xs text-amber-400 mt-1">Este laboratorio no tiene equipos registrados.</p>
+            )}
           </div>
 
           <div>
