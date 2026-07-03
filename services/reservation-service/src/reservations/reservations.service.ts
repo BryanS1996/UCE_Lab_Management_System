@@ -66,10 +66,10 @@ export class ReservationsService {
       throw new BadRequestException('No se pueden crear reservas en el pasado');
     }
 
-    // 1.1 Validate 12 hours of anticipation
+    // 1.1 Validate 24 hours of anticipation
     const diffHours = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-    if (diffHours < 12) {
-      throw new BadRequestException('Las reservas requieren al menos 12 horas de anticipación');
+    if (diffHours < 24) {
+      throw new BadRequestException('Las reservas requieren al menos 24 horas de anticipación');
     }
 
     // 2. Verify that the laboratory exists and is active
@@ -199,7 +199,7 @@ export class ReservationsService {
     const query = this.reservationRepository.createQueryBuilder('r');
 
     // If not an admin, the user can only view their own reservations
-    if (currentUser.role !== 'ADMIN') {
+    if (!currentUser.roles?.includes('ADMIN')) {
       query.andWhere('r.user_id = :user_id', { user_id: currentUser.user_id });
     } else if (filters?.user_id) {
       query.andWhere('r.user_id = :user_id', { user_id: filters.user_id });
@@ -248,10 +248,7 @@ export class ReservationsService {
     }
 
     // Only the owner or an admin can view the reservation
-    if (
-      reservation.user_id !== currentUser.user_id &&
-      currentUser.role !== 'ADMIN'
-    ) {
+    if (reservation.user_id !== currentUser.user_id && !currentUser.roles?.includes('ADMIN')) {
       throw new ForbiddenException('No tienes permiso para ver esta reserva');
     }
 
@@ -398,7 +395,7 @@ export class ReservationsService {
   async confirm(id: string, currentUser: CurrentUserData): Promise<Reservation> {
     
     // Security check: Only administrators can confirm reservations
-    if (currentUser.role !== 'ADMIN') {
+    if (!currentUser.roles?.includes('ADMIN')) {
       throw new ForbiddenException('Solo los administradores pueden confirmar reservas');
     }
 
@@ -459,7 +456,7 @@ export class ReservationsService {
    * Only ADMIN can reject
    */
   async reject(id: string, currentUser: CurrentUserData): Promise<Reservation> {
-    if (currentUser.role !== 'ADMIN') {
+    if (!currentUser.roles?.includes('ADMIN')) {
       throw new ForbiddenException('Solo los administradores pueden rechazar reservas');
     }
 

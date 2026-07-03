@@ -14,11 +14,11 @@ import {
   RegisterView,
   ReservationsPlaceholder,
   CalendarPlaceholder,
-  NotificationsPlaceholder,
   ReportsPlaceholder,
   UsersPlaceholder,
   SettingsPlaceholder,
 } from './PlaceholderViews';
+import { NotificationsSection } from '../components/NotificationsSection';
 
 const RootRedirect = () => {
   const { user } = useAuth();
@@ -90,7 +90,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'notificaciones',
-        element: <NotificationsPlaceholder />,
+        element: <NotificationsSection />,
       },
       {
         path: 'reportes',
