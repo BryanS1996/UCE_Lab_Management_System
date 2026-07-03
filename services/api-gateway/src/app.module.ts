@@ -12,6 +12,7 @@ import { CatalogModule } from './modules/catalog/catalog.module';
 
 import { PaymentModule } from './modules/payment/payment.module';
 import { IncidentModule } from './modules/incident/incident.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { IncidentModule } from './modules/incident/incident.module';
     CatalogModule,
     PaymentModule,
     IncidentModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
