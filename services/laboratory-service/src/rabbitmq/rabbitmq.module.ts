@@ -20,6 +20,11 @@ import { Resource } from '../laboratories/entities/resource.entity';
             type: 'topic',
             options: { durable: true },
           },
+          {
+            name: 'incident.events',
+            type: 'topic',
+            options: { durable: true },
+          },
         ],
         uri: configService.get<string>(
           'RABBITMQ_URL',
