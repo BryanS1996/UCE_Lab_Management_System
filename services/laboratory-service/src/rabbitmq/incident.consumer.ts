@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Resource } from '../resources/entities/resource.entity';
+import { Resource } from '../laboratories/entities/resource.entity';
 
 @Injectable()
 export class IncidentConsumer {
