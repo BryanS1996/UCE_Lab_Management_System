@@ -47,7 +47,7 @@ export class IncidentsService {
     try {
       const response = await firstValueFrom(
         this.httpService.get<ReservationInfo>(
-          `${this.reservationServiceUrl}/api/reservations/${reservation_id}`,
+          `${this.reservationServiceUrl}/reservations/${reservation_id}`,
           { headers: { Authorization: authHeader } }
         ),
       );
