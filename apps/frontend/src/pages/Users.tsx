@@ -2,12 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { userApi, User } from '../api/user';
-import { ShieldAlert, CheckCircle2, XCircle } from 'lucide-react';
+import { ShieldAlert, CheckCircle2, XCircle, Plus } from 'lucide-react';
+import { Modal } from '../components/ui/Modal';
+import { Input } from '../components/ui/Input';
 
 export const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    role: 'student',
+  });
+  const [isCreating, setIsCreating] = useState(false);
   
   const fetchUsers = async () => {
     setLoading(true);
@@ -51,11 +62,38 @@ export const Users: React.FC = () => {
     }
   };
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreating(true);
+    try {
+      await userApi.createUser({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        roles: [formData.role],
+      });
+      setIsModalOpen(false);
+      setFormData({ firstName: '', lastName: '', email: '', password: '', role: 'student' });
+      fetchUsers();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al crear usuario');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   return (
     <div className="space-y-6 text-left">
-      <div>
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Gestión de Usuarios</h2>
-        <p className="text-slate-500 text-sm mt-1">Administra los roles y accesos de los usuarios del sistema.</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Gestión de Usuarios</h2>
+          <p className="text-slate-500 text-sm mt-1">Administra los roles y accesos de los usuarios del sistema.</p>
+        </div>
+        <Button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2">
+          <Plus className="w-5 h-5" />
+          Nuevo Usuario
+        </Button>
       </div>
 
       <Card className="p-0 overflow-hidden border-slate-200">
@@ -111,6 +149,67 @@ export const Users: React.FC = () => {
           </table>
         </div>
       </Card>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Crear Nuevo Usuario"
+      >
+        <form onSubmit={handleCreateUser} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Nombre"
+              placeholder="Juan"
+              required
+              value={formData.firstName}
+              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+            />
+            <Input
+              label="Apellido"
+              placeholder="Pérez"
+              required
+              value={formData.lastName}
+              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+            />
+          </div>
+          <Input
+            label="Correo Institucional"
+            type="email"
+            placeholder="jperez@uce.edu.ec"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          />
+          <Input
+            label="Contraseña Temporal"
+            type="password"
+            placeholder="••••••••"
+            required
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          />
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-900">Rol</label>
+            <select
+              className="bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 block w-full p-3 transition-all"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+            >
+              <option value="student">Estudiante</option>
+              <option value="professor">Docente</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+          <div className="pt-4 flex justify-end gap-3">
+            <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isCreating}>
+              {isCreating ? 'Creando...' : 'Crear Usuario'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

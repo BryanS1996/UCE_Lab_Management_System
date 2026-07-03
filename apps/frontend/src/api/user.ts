@@ -15,6 +15,11 @@ export const userApi = {
     return response.data;
   },
 
+  createUser: async (userData: any) => {
+    const response = await axiosInstance.post('/api/users', userData);
+    return response.data;
+  },
+
   updateRole: async (userId: string, role: string) => {
     const response = await axiosInstance.patch(`/api/users/${userId}/role`, { role });
     return response.data;
