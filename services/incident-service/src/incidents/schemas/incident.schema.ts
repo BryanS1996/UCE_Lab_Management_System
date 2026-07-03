@@ -26,6 +26,9 @@ export class Incident {
   @Prop({ required: true })
   reservation_id: string;
 
+  @Prop({ required: false })
+  resource_id: number;
+
   @Prop({
     type: String,
     enum: IncidentStatus,

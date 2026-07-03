@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { IncidentsModule } from './incidents/incidents.module';
 import { S3Module } from './s3/s3.module';
+import { AppRabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { S3Module } from './s3/s3.module';
     }),
     IncidentsModule,
     S3Module,
+    AppRabbitmqModule,
   ],
 })
 export class AppModule {}

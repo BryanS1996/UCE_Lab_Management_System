@@ -12,6 +12,7 @@ import { S3Service } from '../s3/s3.service';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
+import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 
 interface ReservationInfo {
   user_id: string;
@@ -28,6 +29,7 @@ export class IncidentsService {
     private readonly s3Service: S3Service,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly rabbitmqService: RabbitmqService,
   ) {
     // Apuntamos al api-gateway o directamente al reservation-service.
     // Usualmente a través de DNS interno en docker o un config.
@@ -100,7 +102,21 @@ export class IncidentsService {
       evidence_urls: evidenceUrls,
     });
 
-    return createdIncident.save();
+    const savedIncident = await createdIncident.save();
+
+    // 4. Publicar evento para inhabilitar el equipo (CP-04)
+    if (createIncidentDto.resource_id) {
+      await this.rabbitmqService.publishIncidentReported({
+        incident_id: savedIncident._id.toString(),
+        lab_id: savedIncident.lab_id,
+        resource_id: savedIncident.resource_id,
+        reservation_id: savedIncident.reservation_id,
+        title: savedIncident.title,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return savedIncident;
   }
 
   async findAll(): Promise<Incident[]> {
