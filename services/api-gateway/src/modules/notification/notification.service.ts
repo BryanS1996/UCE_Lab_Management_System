@@ -23,7 +23,7 @@ export class NotificationService {
 
   async getNotifications(authHeader: string) {
     const response = await firstValueFrom(
-      this.httpService.get(`${this.notificationServiceUrl}/notifications`, {
+      this.httpService.get(`${this.notificationServiceUrl}/notifications/my`, {
         headers: { Authorization: authHeader },
       }),
     );
@@ -33,7 +33,7 @@ export class NotificationService {
   async getUnreadCount(authHeader: string) {
     const response = await firstValueFrom(
       this.httpService.get(
-        `${this.notificationServiceUrl}/notifications/unread-count`,
+        `${this.notificationServiceUrl}/notifications/my/unread-count`,
         {
           headers: { Authorization: authHeader },
         },
