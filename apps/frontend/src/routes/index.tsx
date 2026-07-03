@@ -18,7 +18,7 @@ import {
   UsersPlaceholder,
   SettingsPlaceholder,
 } from './PlaceholderViews';
-import { NotificationsSection } from '../components/NotificationsSection';
+import NotificationsSection from '../components/NotificationsSection';
 
 const RootRedirect = () => {
   const { user } = useAuth();
@@ -90,7 +90,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'notificaciones',
-        element: <NotificationsSection />,
+        element: <NotificationsSection isAuthenticated={true} onUpdateUnreadCount={() => {}} />,
       },
       {
         path: 'reportes',
