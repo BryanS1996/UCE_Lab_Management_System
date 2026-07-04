@@ -11,7 +11,10 @@ export class LoggerService {
     queue: 'logger_service_queue',
   })
   public async handleEvent(msg: any, amqpMsg: any) {
-    const correlationId = amqpMsg?.properties?.headers?.['x-correlation-id'] || 'No correlation-id';
-    this.logger.log(`[CorrelationID: ${correlationId}] Recibido evento: ${JSON.stringify(msg)}`);
+    const correlationId =
+      amqpMsg?.properties?.headers?.['x-correlation-id'] || 'No correlation-id';
+    this.logger.log(
+      `[CorrelationID: ${correlationId}] Recibido evento: ${JSON.stringify(msg)}`,
+    );
   }
 }

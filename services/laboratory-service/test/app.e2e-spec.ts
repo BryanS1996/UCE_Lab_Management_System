@@ -27,10 +27,8 @@ describe('Laboratory & Resources (e2e)', () => {
     .overrideProvider(ResourcesService).useValue(mockResourcesService)
     .compile();
     */
-
     // Como estamos enfocados en generar los scripts para cuando estén listos
     // dejaremos este esqueleto E2E estructurado.
-    
     // app = moduleFixture.createNestApplication();
     // app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     // await app.init();
@@ -50,7 +48,7 @@ describe('Laboratory & Resources (e2e)', () => {
         max_capacity: 45,
       });
 
-      return request(app.getHttpServer() as unknown as import('http').Server)
+      return request(app.getHttpServer())
         .post('/laboratories')
         .send({
           name: 'Lab E2E',
@@ -63,7 +61,7 @@ describe('Laboratory & Resources (e2e)', () => {
     });
 
     it.skip('CP-08 (Negativo - Validación DTO): max_capacity inválido lanza 400', () => {
-      return request(app.getHttpServer() as unknown as import('http').Server)
+      return request(app.getHttpServer())
         .post('/laboratories')
         .send({
           name: 'Lab Inválido',
@@ -82,7 +80,7 @@ describe('Laboratory & Resources (e2e)', () => {
         quantity: 1,
       });
 
-      return request(app.getHttpServer() as unknown as import('http').Server)
+      return request(app.getHttpServer())
         .post('/laboratories/1/resources')
         .send({
           name: 'Proyector',

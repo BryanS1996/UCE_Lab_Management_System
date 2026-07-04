@@ -9,13 +9,13 @@ export const CORRELATION_ID_HEADER = 'x-correlation-id';
 export class CorrelationIdMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     const correlationId = req.header(CORRELATION_ID_HEADER) || randomUUID();
-    
+
     // Set the correlation id to the request object so it can be accessed by the controller/services
     req.headers[CORRELATION_ID_HEADER] = correlationId;
-    
+
     // Also attach it to the response header
     res.setHeader(CORRELATION_ID_HEADER, correlationId);
-    
+
     const store = new Map<string, string>();
     store.set(CORRELATION_ID_HEADER, correlationId);
 

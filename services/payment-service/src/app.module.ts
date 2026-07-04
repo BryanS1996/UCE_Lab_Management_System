@@ -5,10 +5,7 @@ import { PaymentService } from './payment.service';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    RabbitmqModule,
-  ],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), RabbitmqModule],
   controllers: [PaymentController],
   providers: [PaymentService],
 })

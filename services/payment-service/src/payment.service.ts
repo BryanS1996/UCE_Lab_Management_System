@@ -13,11 +13,13 @@ export class PaymentService {
     private readonly configService: ConfigService,
     private readonly rabbitmqService: RabbitmqService,
   ) {
-    const stripeKey = this.configService.get<string>('STRIPE_SECRET_KEY') || 'sk_test_dummy';
+    const stripeKey =
+      this.configService.get<string>('STRIPE_SECRET_KEY') || 'sk_test_dummy';
     this.stripe = new Stripe(stripeKey, {
       apiVersion: '2025-01-27.acacia' as any, // Using latest valid or ignoring type for now if mismatch
     });
-    this.webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || 'whsec_dummy';
+    this.webhookSecret =
+      this.configService.get<string>('STRIPE_WEBHOOK_SECRET') || 'whsec_dummy';
   }
 
   constructEventFromPayload(signature: string, payload: Buffer): Stripe.Event {
@@ -31,7 +33,7 @@ export class PaymentService {
 
   async handlePaymentSucceeded(reservationId: string) {
     this.logger.log(`Payment succeeded for reservation: ${reservationId}`);
-    
+
     // Publicar evento en RabbitMQ para que reservation-service y notification-service lo consuman
     await this.rabbitmqService.publishPaymentSucceeded({
       reservation_id: reservationId,
@@ -41,7 +43,8 @@ export class PaymentService {
 
   async createCheckoutSession(reservationId: string, labName: string) {
     // URL base del frontend para redireccionar tras el pago
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost';
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost';
 
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],

@@ -52,7 +52,7 @@ export class IncidentsService {
       const response = await firstValueFrom(
         this.httpService.get<ReservationInfo>(
           `${this.reservationServiceUrl}/reservations/${reservation_id}`,
-          { headers: { Authorization: authHeader } }
+          { headers: { Authorization: authHeader } },
         ),
       );
       const reservation = response.data;

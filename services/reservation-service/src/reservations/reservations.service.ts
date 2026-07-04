@@ -13,7 +13,6 @@ import { LaboratoryStatus } from '../database/entities/laboratory.entity';
 import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 import { Outbox } from '../outbox/outbox.entity';
-import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { KafkaProducerService } from '../kafka/kafka-producer.service';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
 

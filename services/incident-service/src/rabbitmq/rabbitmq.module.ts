@@ -16,7 +16,9 @@ import { RabbitmqService } from './rabbitmq.service';
             type: 'topic',
           },
         ],
-        uri: configService.get<string>('RABBITMQ_URL') || 'amqp://guest:guest@localhost:5672',
+        uri:
+          configService.get<string>('RABBITMQ_URL') ||
+          'amqp://guest:guest@localhost:5672',
         connectionInitOptions: { wait: false },
       }),
     }),

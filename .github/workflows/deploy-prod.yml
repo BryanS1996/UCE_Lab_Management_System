@@ -294,7 +294,7 @@ jobs:
           # 'envs' securely injects variables into the remote shell.
           # PROD_ENV_FILE contains the full .env content (single GitHub Secret).
           # They are NOT interpolated as plaintext into the script string.
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,PROD_ENV_FILE
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,PROD_ENV_FILE,IA_LAMBDA_URL
           # sync: true ensures the script runs sequentially on each host,
           # providing a controlled rolling-style deploy across the ASG fleet.
           sync: true
@@ -320,7 +320,17 @@ jobs:
             printf '%s\n' "$PROD_ENV_FILE" > /home/ec2-user/app/.env
             chmod 600 /home/ec2-user/app/.env
             set -x
-            echo "✅ .env escrito correctamente"
+            echo "✅ .env escrito correctamente desde el secret"
+            
+            if [ -n "$IA_LAMBDA_URL" ]; then
+              sed -i '/^IA_LAMBDA_URL=/d' /home/ec2-user/app/.env
+              echo "IA_LAMBDA_URL=${IA_LAMBDA_URL}" >> /home/ec2-user/app/.env
+              echo "✅ IA_LAMBDA_URL inyectado dinámicamente: ${IA_LAMBDA_URL}"
+            fi
+
+            # In production, images are pulled with latest tag. We force pull to ensure\
+              api-gateway auth-service reservation-service laboratory-service \
+              notification-service catalog-service payment-service incident-service frontend
 
             docker compose -f docker-compose.prod.yml pull \
               api-gateway auth-service reservation-service laboratory-service \
@@ -365,6 +375,7 @@ jobs:
           AWS_REGION: ${{ env.AWS_REGION }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+          IA_LAMBDA_URL: ${{ secrets.PROD_IA_LAMBDA_URL }}
 
       # ── GitHub Release con historial automático ─────────────────────────────
       # Se ejecuta SOLO si el deploy SSH fue exitoso (paso anterior no falló).
