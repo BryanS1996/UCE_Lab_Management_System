@@ -285,6 +285,7 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+      IA_LAMBDA_URL: ${IA_LAMBDA_URL}
     depends_on:
       incident-db-qa:
         condition: service_healthy
@@ -417,6 +418,28 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     networks:
       - uce-qa-network
+
+  # ─── QA: Logger Service ────────────────────────────────
+  logger-service-qa:
+    build:
+      context: ./services/logger-service
+      dockerfile: Dockerfile
+    container_name: logger-service-qa
+    environment:
+      NODE_ENV: qa
+      PORT: 3014
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
+    depends_on:
+      rabbitmq-qa:
+        condition: service_healthy
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3014/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   auth-db-qa-data:

@@ -23,6 +23,7 @@ interface ReservationInfo {
 export class IncidentsService {
   private readonly logger = new Logger(IncidentsService.name);
   private readonly reservationServiceUrl: string;
+  private readonly iaLambdaUrl: string;
 
   constructor(
     @InjectModel(Incident.name) private incidentModel: Model<IncidentDocument>,
@@ -36,6 +37,7 @@ export class IncidentsService {
     this.reservationServiceUrl =
       this.configService.get<string>('RESERVATION_SERVICE_URL') ||
       'http://localhost:3003';
+    this.iaLambdaUrl = this.configService.get<string>('IA_LAMBDA_URL') || '';
   }
 
   async create(
@@ -96,10 +98,32 @@ export class IncidentsService {
       }
     }
 
-    // 3. Crear el incidente
+    // 3. IA Analysis
+    let severity = 'BAJA';
+    let category = 'OTRO';
+
+    if (this.iaLambdaUrl) {
+      try {
+        const iaResponse = await firstValueFrom(
+          this.httpService.post(this.iaLambdaUrl, {
+            description: createIncidentDto.description,
+          }),
+        );
+        if (iaResponse.data) {
+          severity = iaResponse.data.severity || severity;
+          category = iaResponse.data.category || category;
+        }
+      } catch (error) {
+        this.logger.error('Error llamando a la Lambda de IA', error);
+      }
+    }
+
+    // 4. Crear el incidente
     const createdIncident = new this.incidentModel({
       ...createIncidentDto,
       evidence_urls: evidenceUrls,
+      severity,
+      category,
     });
 
     const savedIncident = await createdIncident.save();

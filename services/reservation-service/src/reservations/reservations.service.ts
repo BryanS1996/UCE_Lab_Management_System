@@ -12,6 +12,7 @@ import { Reservation, ReservationStatus, Laboratory } from '../database/entities
 import { LaboratoryStatus } from '../database/entities/laboratory.entity';
 import { CreateReservationDto, UpdateReservationDto } from './dto';
 import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
+import { Outbox } from '../outbox/outbox.entity';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { KafkaProducerService } from '../kafka/kafka-producer.service';
 import { CurrentUserData } from '../common/decorators/current-user.decorator';
@@ -139,6 +140,22 @@ export class ReservationsService {
       });
 
       saved = await queryRunner.manager.save(reservation);
+
+      // --- OUTBOX PATTERN ---
+      const outbox = new Outbox();
+      outbox.aggregateType = 'Reservation';
+      outbox.aggregateId = saved.reservation_id;
+      outbox.eventType = 'ReservationCreated';
+      outbox.payload = {
+        reservation_id: saved.reservation_id,
+        user_id: saved.user_id,
+        lab_id: saved.lab_id,
+        start_time: saved.start_time,
+        end_time: saved.end_time,
+        purpose: saved.purpose,
+      };
+      await queryRunner.manager.save(outbox);
+
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -147,21 +164,9 @@ export class ReservationsService {
       await queryRunner.release();
     }
 
-    // 5. Publish ReservationCreated event (fire-and-forget, without affecting DB transaction)
-    try {
-      await this.rabbitmqService.publishReservationCreated({
-        reservation_id: saved.reservation_id,
-        user_id: saved.user_id,
-        lab_id: saved.lab_id,
-        start_time: saved.start_time,
-        end_time: saved.end_time,
-        purpose: saved.purpose,
-      });
-    } catch (err) {
-      this.logger.error('Error publicando ReservationCreated. El broker podría estar caído.', err);
-    }
+      // 5. The ReservationCreated event will be published by the Outbox Polling Publisher
 
-    // 6. Publish Kafka event for email confirmation (fire-and-forget)
+      // 6. Publish Kafka event for email confirmation (fire-and-forget)
     this.kafkaProducer
       .sendEmailNotification({
         email: currentUser.email,
