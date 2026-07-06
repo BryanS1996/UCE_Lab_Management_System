@@ -9,8 +9,7 @@ services:
       POSTGRES_USER: authuser
       POSTGRES_PASSWORD: authpassword
       POSTGRES_DB: auth_service_qa
-    ports:
-      - "5434:5432"
+    # No ports exposed — QA DBs are internal-only, accessible via Bastion SSH if needed
     volumes:
       - auth-db-qa-data:/var/lib/postgresql/data
     networks:
@@ -51,8 +50,7 @@ services:
       POSTGRES_USER: reservationuser
       POSTGRES_PASSWORD: reservationpassword
       POSTGRES_DB: reservation_service_qa
-    ports:
-      - "5435:5432"
+    # No ports exposed — QA DBs are internal-only, accessible via Bastion SSH if needed
     volumes:
       - reservation-db-qa-data:/var/lib/postgresql/data
     networks:
@@ -70,9 +68,8 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
-    ports:
-      - "5673:5672"
-      - "15673:15672"
+    # RabbitMQ management UI and AMQP port are internal-only in QA.
+    # Access via SSH tunnel through the Bastion if needed.
     volumes:
       - rabbitmq-qa-data:/var/lib/rabbitmq
     networks:
@@ -119,8 +116,7 @@ services:
       POSTGRES_USER: labuser
       POSTGRES_PASSWORD: labpassword
       POSTGRES_DB: laboratory_service_qa
-    ports:
-      - "5436:5432"
+    # No ports exposed — QA DBs are internal-only, accessible via Bastion SSH if needed
     volumes:
       - laboratory-db-qa-data:/var/lib/postgresql/data
       - ./db-init/init-laboratories.sql:/docker-entrypoint-initdb.d/init-laboratories.sql
@@ -166,8 +162,7 @@ services:
       POSTGRES_USER: notifuser
       POSTGRES_PASSWORD: notifpassword
       POSTGRES_DB: notification_service_qa
-    ports:
-      - "5437:5432"
+    # No ports exposed — QA DBs are internal-only, accessible via Bastion SSH if needed
     volumes:
       - notification-db-qa-data:/var/lib/postgresql/data
     networks:
@@ -219,8 +214,7 @@ services:
       POSTGRES_USER: cataloguser
       POSTGRES_PASSWORD: catalogpassword
       POSTGRES_DB: catalog_service_qa
-    ports:
-      - "5438:5432"
+    # No ports exposed — QA DBs are internal-only, accessible via Bastion SSH if needed
     volumes:
       - catalog-db-qa-data:/var/lib/postgresql/data
     networks:
@@ -290,6 +284,7 @@ services:
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
     depends_on:
       incident-db-qa:
         condition: service_healthy
@@ -392,11 +387,10 @@ services:
 
   # ─── QA: MQTT Broker (Eclipse Mosquitto) ─────────────
   mosquitto-qa:
-    image: eclipse-mosquitto:latest
+    image: eclipse-mosquitto:2.0
     container_name: mosquitto-qa
-    ports:
-      - "1883:1883"
-      - "9001:9001"
+    # Mosquitto MQTT and WebSocket ports are internal-only in QA.
+    # Only internal services (catalog-service-qa, notification-service-qa) connect to it.
     networks:
       - uce-qa-network
     command: >
@@ -411,8 +405,7 @@ services:
   kafka-qa:
     image: confluentinc/cp-kafka:7.4.0
     container_name: kafka-qa
-    ports:
-      - "9093:9092"
+    # Kafka is internal-only in QA — no host port binding needed.
     depends_on:
       - zookeeper-qa
     environment:

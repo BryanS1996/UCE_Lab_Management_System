@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Headers, Patch, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Get, Headers, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 @Controller('api/auth')
@@ -26,7 +26,10 @@ export class AuthController {
   }
 
   @Patch('change-password')
-  changePassword(@Headers('authorization') authHeader: string, @Body() changePasswordDto: any) {
+  changePassword(
+    @Headers('authorization') authHeader: string,
+    @Body() changePasswordDto: any,
+  ) {
     return this.authService.changePassword(authHeader, changePasswordDto);
   }
 }

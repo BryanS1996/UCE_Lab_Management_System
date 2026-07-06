@@ -51,7 +51,8 @@ export const IncidentFormModal: React.FC<IncidentFormModalProps> = ({
   const handleReservationSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const resId = e.target.value;
     setReservationId(resId);
-    const selectedRes = reservations.find(r => r.id === resId);
+
+    const selectedRes = reservations.find(r => r.reservation_id === resId);
     if (selectedRes) {
       setLabId(selectedRes.lab_id);
     }
@@ -145,12 +146,14 @@ export const IncidentFormModal: React.FC<IncidentFormModalProps> = ({
             >
               <option value="">Selecciona una reserva...</option>
               {reservations.map(res => (
-                <option key={res.id} value={res.id}>
+                <option key={res.reservation_id} value={res.reservation_id}>
                   Reserva en Lab #{res.lab_id} ({new Date(res.start_time).toLocaleDateString()}) - {res.status}
                 </option>
               ))}
             </select>
           </div>
+
+
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">

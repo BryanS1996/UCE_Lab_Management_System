@@ -11,9 +11,13 @@ export class CatalogService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.catalogServiceUrl = this.configService.get<string>('CATALOG_SERVICE_URL');
+    this.catalogServiceUrl = this.configService.get<string>(
+      'CATALOG_SERVICE_URL',
+    );
     if (!this.catalogServiceUrl) {
-      throw new Error('CATALOG_SERVICE_URL is not defined in environment variables');
+      throw new Error(
+        'CATALOG_SERVICE_URL is not defined in environment variables',
+      );
     }
   }
 
@@ -42,9 +46,13 @@ export class CatalogService {
 
   async updateCatalogItem(authHeader: string, id: string, updateDto: any) {
     const response = await firstValueFrom(
-      this.httpService.patch(`${this.catalogServiceUrl}/catalog/${id}`, updateDto, {
-        headers: { Authorization: authHeader },
-      }),
+      this.httpService.patch(
+        `${this.catalogServiceUrl}/catalog/${id}`,
+        updateDto,
+        {
+          headers: { Authorization: authHeader },
+        },
+      ),
     );
     return response.data;
   }

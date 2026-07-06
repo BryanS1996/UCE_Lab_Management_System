@@ -43,7 +43,9 @@ jobs:
     needs: detect-changes
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      # fail-fast: false — we want to see ALL service failures in one run,
+      # not cancel the matrix as soon as one service fails.
+      fail-fast: false
       matrix:
         service:
           - auth-service
@@ -54,15 +56,15 @@ jobs:
           - payment-service
           - incident-service
     steps:
+      # Always checkout — subsequent steps guard with the if condition.
       - uses: actions/checkout@v4
-        if: needs.detect-changes.outputs[matrix.service] == 'true' || needs.detect-changes.outputs.compose == 'true'
       - uses: actions/setup-node@v4
-        if: needs.detect-changes.outputs[matrix.service] == 'true' || needs.detect-changes.outputs.compose == 'true'
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: services/${{ matrix.service }}/package-lock.json
       - name: Install, Build & Test
+        # Only run if this specific service changed OR the compose file changed.
         if: needs.detect-changes.outputs[matrix.service] == 'true' || needs.detect-changes.outputs.compose == 'true'
         working-directory: services/${{ matrix.service }}
         run: |
@@ -105,8 +107,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-auth-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-auth-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=qa-auth-service
+          cache-to: type=gha,mode=max,scope=qa-auth-service
 
       - name: Build & Push — Reservation Service
         if: needs.detect-changes.outputs.reservation-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -117,8 +119,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-reservation-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-reservation-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=qa-reservation-service
+          cache-to: type=gha,mode=max,scope=qa-reservation-service
 
       - name: Build & Push — Laboratory Service
         if: needs.detect-changes.outputs.laboratory-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -129,8 +131,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-laboratory-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-laboratory-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=qa-laboratory-service
+          cache-to: type=gha,mode=max,scope=qa-laboratory-service
 
       - name: Build & Push — Notification Service
         if: needs.detect-changes.outputs.notification-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -141,8 +143,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-notification-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=qa-notification-service
+          cache-to: type=gha,mode=max,scope=qa-notification-service
 
       - name: Build & Push — Catalog Service
         if: needs.detect-changes.outputs.catalog-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -153,8 +155,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-catalog-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=qa-catalog-service
+          cache-to: type=gha,mode=max,scope=qa-catalog-service
 
       - name: Build & Push — Incident Service
         if: needs.detect-changes.outputs.incident-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -165,8 +167,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=qa-incident-service
+          cache-to: type=gha,mode=max,scope=qa-incident-service
 
       - name: Build & Push — Payment Service
         if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -177,8 +179,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-payment-service:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=qa-payment-service
+          cache-to: type=gha,mode=max,scope=qa-payment-service
 
       - name: Build & Push — API Gateway
         if: needs.detect-changes.outputs.api-gateway == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -189,8 +191,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-api-gateway:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-api-gateway:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=qa-api-gateway
+          cache-to: type=gha,mode=max,scope=qa-api-gateway
 
       - name: Build & Push — Frontend
         if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -201,8 +203,8 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-frontend:qa-${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/uce-frontend:qa-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=qa-frontend
+          cache-to: type=gha,mode=max,scope=qa-frontend
 
       # ── Dynamic IP Discovery ────────────────────────────────────────────────
       # Queries AWS for all RUNNING instances in the QA ASG by Name tag.
@@ -263,6 +265,38 @@ jobs:
           echo "Discovered QA Bastion IP: ${BASTION_IP}"
           echo "bastion_ip=${BASTION_IP}" >> "$GITHUB_OUTPUT"
 
+      # ── Dynamic ALB DNS Discovery ────────────────────────────────────────────
+      # The ALB DNS name is the stable public entry point — it does NOT change
+      # when EC2 instances are replaced by the ASG or when IPs rotate.
+      # This is used as FRONTEND_URL_QA so Stripe redirects to the correct host
+      # after payment, without any hardcoded IP in code or secrets.
+      - name: Discover QA ALB DNS
+        id: discover-alb
+        run: |
+          ALB_NAME="uce-lab-alb-qa"
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names "${ALB_NAME}" \
+            --query "LoadBalancers[0].DNSName" \
+            --output text \
+            --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+
+          # Fallback: search by tag if the exact name doesn't match
+          if [ -z "$ALB_DNS" ] || [ "$ALB_DNS" == "None" ]; then
+            ALB_DNS=$(aws elbv2 describe-load-balancers \
+              --query "LoadBalancers[?contains(LoadBalancerName,'qa')].DNSName | [0]" \
+              --output text \
+              --region ${{ env.AWS_REGION }})
+          fi
+
+          if [ -z "$ALB_DNS" ] || [ "$ALB_DNS" == "None" ]; then
+            echo "::warning::Could not discover ALB DNS. FRONTEND_URL_QA will use value from QA_ENV_FILE secret."
+            ALB_DNS=""
+          else
+            echo "Discovered QA ALB DNS: ${ALB_DNS}"
+          fi
+
+          echo "alb_dns=${ALB_DNS}" >> "$GITHUB_OUTPUT"
+
       # ── SCP: copy compose file and DB scripts to ALL app instances ─────────────────────────
       # appleboy/scp-action also supports comma-separated hosts.
       - name: Copy compose file and DB scripts to QA EC2 instances
@@ -291,7 +325,7 @@ jobs:
           proxy_key: ${{ secrets.QA_EC2_SSH_PRIVATE_KEY }}
           # 'envs' securely injects variables into the remote shell.
           # They are NOT interpolated as plaintext into the script string.
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,QA_ENV_FILE
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,QA_ENV_FILE,FRONTEND_URL_QA
           # sync: true ensures the script runs sequentially on each host,
           # providing a controlled rolling-style deploy across the ASG fleet.
           sync: true
@@ -306,9 +340,26 @@ jobs:
             done
             
             cd /home/ec2-user/app
-            
-            # Escribir el archivo .env desde el GitHub Secret QA_ENV_FILE
+
+            # Escribir el archivo .env desde el GitHub Secret QA_ENV_FILE.
+            # set +x evita que el contenido del secret se imprima en los logs.
+            set +x
             printf '%s\n' "$QA_ENV_FILE" > /home/ec2-user/app/.env
+            chmod 600 /home/ec2-user/app/.env
+            set -x
+            echo "✅ .env escrito correctamente"
+
+            # Inyectar FRONTEND_URL_QA dinámicamente desde el ALB DNS descubierto.
+            # Esto reemplaza cualquier valor de FRONTEND_URL_QA que venga del secret
+            # y garantiza que Stripe redirija al host correcto sin IPs hardcodeadas.
+            if [ -n "$FRONTEND_URL_QA" ]; then
+              # Elimina cualquier FRONTEND_URL_QA existente en el .env y agrega el nuevo valor
+              sed -i '/^FRONTEND_URL_QA=/d' /home/ec2-user/app/.env
+              echo "FRONTEND_URL_QA=${FRONTEND_URL_QA}" >> /home/ec2-user/app/.env
+              echo "✅ FRONTEND_URL_QA inyectado dinámicamente: ${FRONTEND_URL_QA}"
+            else
+              echo "⚠️  FRONTEND_URL_QA no disponible — usando valor del secret QA_ENV_FILE"
+            fi
 
             # Re-authenticate with ECR using the session credentials passed via envs.
             aws ecr get-login-password --region "$AWS_REGION" \
@@ -355,3 +406,6 @@ jobs:
           AWS_REGION: ${{ env.AWS_REGION }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           QA_ENV_FILE: ${{ secrets.QA_ENV_FILE }}
+          # ALB DNS inyectado dinámicamente — no hardcodeado, no depende de IPs.
+          # Si el discover-alb step no encontró el ALB, queda vacío y se usa el valor del secret.
+          FRONTEND_URL_QA: ${{ steps.discover-alb.outputs.alb_dns != '' && format('http://{0}', steps.discover-alb.outputs.alb_dns) || '' }}

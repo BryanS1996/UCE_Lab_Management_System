@@ -3,6 +3,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
+import { ManageResourcesModal } from '../components/laboratories/ManageResourcesModal';
 import { laboratoryApi, Laboratory } from '../api/laboratory';
 import { reservationApi } from '../api/reservation';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +22,7 @@ import {
   Plus,
   Edit,
   Trash2,
+  Package,
 } from 'lucide-react';
 import { endpoints } from '../api';
 
@@ -64,6 +66,10 @@ export const Laboratories: React.FC = () => {
     tier: 'BASIC',
   });
 
+  // Inventory Modal State
+  const [isResourcesModalOpen, setIsResourcesModalOpen] = useState(false);
+  const [selectedLabForResources, setSelectedLabForResources] = useState<Laboratory | null>(null);
+
   const fetchLaboratories = async () => {
     setLoading(true);
     setError('');
@@ -84,11 +90,15 @@ export const Laboratories: React.FC = () => {
 
   const handleOpenBooking = (lab: Laboratory) => {
     setSelectedLabForBooking(lab);
-    // Inicializar fecha de reserva con la de mañana por defecto
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    setBookingDate(tomorrow.toISOString().split('T')[0]);
+    
+    // Configurar la fecha sugerida para HOY por defecto
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    setBookingDate(`${yyyy}-${mm}-${dd}`);
     setSelectedSlotIndex(null);
+    
     setIsBookingOpen(true);
     setBookingSuccess('');
     setError('');
@@ -115,6 +125,11 @@ export const Laboratories: React.FC = () => {
       });
     }
     setIsAdminModalOpen(true);
+  };
+
+  const handleOpenResourcesModal = (lab: Laboratory) => {
+    setSelectedLabForResources(lab);
+    setIsResourcesModalOpen(true);
   };
 
   const handleAdminSubmit = async (e: React.FormEvent) => {
@@ -295,8 +310,9 @@ export const Laboratories: React.FC = () => {
                       </h3>
                       {isAdmin && (
                         <div className="flex gap-1 ml-auto shrink-0 bg-slate-50 p-1 rounded-lg border border-slate-100">
-                          <button onClick={(e) => { e.stopPropagation(); handleOpenAdminModal(lab); }} className="p-1.5 hover:bg-white rounded-md shadow-sm text-slate-500 hover:text-blue-600 transition-all"><Edit className="w-3.5 h-3.5" /></button>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteLab(lab.lab_id); }} className="p-1.5 hover:bg-white rounded-md shadow-sm text-slate-500 hover:text-red-600 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); handleOpenResourcesModal(lab); }} className="p-1.5 hover:bg-white rounded-md shadow-sm text-slate-500 hover:text-emerald-600 transition-all" title="Inventario"><Package className="w-3.5 h-3.5" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); handleOpenAdminModal(lab); }} className="p-1.5 hover:bg-white rounded-md shadow-sm text-slate-500 hover:text-blue-600 transition-all" title="Editar"><Edit className="w-3.5 h-3.5" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteLab(lab.lab_id); }} className="p-1.5 hover:bg-white rounded-md shadow-sm text-slate-500 hover:text-red-600 transition-all" title="Eliminar"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       )}
                     </div>
@@ -343,25 +359,27 @@ export const Laboratories: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-slate-50 flex">
-                {lab.status === 'ACTIVE' ? (
-                  <Button
-                    variant="primary"
-                    onClick={() => handleOpenBooking(lab)}
-                    className="w-full py-2.5"
-                  >
-                    Reservar Laboratorio
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    disabled
-                    className="w-full py-2.5"
-                  >
-                    No Disponible
-                  </Button>
-                )}
-              </div>
+              {!isAdmin && (
+                <div className="mt-6 pt-4 border-t border-slate-50 flex">
+                  {lab.status === 'ACTIVE' ? (
+                    <Button
+                      variant="primary"
+                      onClick={() => handleOpenBooking(lab)}
+                      className="w-full py-2.5"
+                    >
+                      Reservar Laboratorio
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      disabled
+                      className="w-full py-2.5"
+                    >
+                      No Disponible
+                    </Button>
+                  )}
+                </div>
+              )}
             </Card>
           ))}
         </div>
@@ -548,6 +566,13 @@ export const Laboratories: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Resources Management Modal */}
+      <ManageResourcesModal 
+        isOpen={isResourcesModalOpen}
+        onClose={() => setIsResourcesModalOpen(false)}
+        laboratory={selectedLabForResources}
+      />
     </div>
   );
 };

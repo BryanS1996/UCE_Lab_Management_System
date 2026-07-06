@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'DOCENTE' | 'ESTUDIANTE' | 'LAB_MANAGER';
+export type UserRole = 'ADMIN' | 'DOCENTE' | 'ESTUDIANTE';
 
 export interface User {
   id: string;
@@ -12,7 +12,8 @@ export interface User {
 export interface DecodedToken {
   sub: string;
   email: string;
-  role: string; // Puede venir del JWT como 'admin', 'professor', 'student' o 'lab_manager'
+  role?: string;
+  roles?: string[];
   exp: number;
   iat: number;
 }

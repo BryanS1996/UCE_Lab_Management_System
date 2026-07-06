@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { endpoints } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { IncidentFormModal } from '../components/incidents/IncidentFormModal';
-import { AlertTriangle, Plus, Search, Filter, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { AlertTriangle, Plus, Search, Filter, AlertCircle, CheckCircle2, Clock, DownloadCloud } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { startOfWeek, startOfMonth, parseISO } from 'date-fns';
 
 export const Incidents: React.FC = () => {
   const { user } = useAuth();
@@ -10,8 +13,9 @@ export const Incidents: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [timeFilter, setTimeFilter] = useState<'ALL' | 'WEEK' | 'MONTH'>('ALL');
 
-  const isAdminOrManager = user?.role === 'ADMIN' || user?.role === 'LAB_MANAGER';
+  const isAdminOrManager = user?.role === 'ADMIN';
 
   const fetchIncidents = async () => {
     try {
@@ -33,12 +37,73 @@ export const Incidents: React.FC = () => {
 
   useEffect(() => {
     fetchIncidents();
+
+    // Polling para sincronización de incidentes en tiempo real
+    const interval = setInterval(() => {
+      fetchIncidents();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [user]);
 
-  const filteredIncidents = incidents.filter(inc => 
-    inc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inc.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredIncidents = incidents.filter(inc => {
+    const matchesSearch = inc.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          inc.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+
+    if (timeFilter === 'ALL') return true;
+    
+    const incidentDate = new Date(inc.created_at);
+    if (timeFilter === 'WEEK') {
+      return incidentDate >= startOfWeek(new Date());
+    }
+    if (timeFilter === 'MONTH') {
+      return incidentDate >= startOfMonth(new Date());
+    }
+    
+    return true;
+  });
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(18);
+    doc.setTextColor(30, 58, 138); // slate-900 or blue-900
+    doc.text('Reporte de Incidencias en Equipos', 14, 22);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.text(`Generado el: ${new Date().toLocaleString()}`, 14, 30);
+    doc.text(`Filtro aplicado: ${timeFilter === 'WEEK' ? 'Esta Semana' : timeFilter === 'MONTH' ? 'Este Mes' : 'Histórico Completo'}`, 14, 36);
+
+    const tableColumn = ["Fecha", "Laboratorio", "Estado", "Título", "Descripción"];
+    const tableRows: any[] = [];
+
+    filteredIncidents.forEach(inc => {
+      const rowData = [
+        new Date(inc.created_at).toLocaleDateString(),
+        `Lab #${inc.lab_id}`,
+        inc.status || 'OPEN',
+        inc.title,
+        inc.description.length > 50 ? inc.description.substring(0, 50) + '...' : inc.description
+      ];
+      tableRows.push(rowData);
+    });
+
+    (doc as any).autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 45,
+      theme: 'grid',
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [59, 130, 246] }, // blue-500
+      alternateRowStyles: { fillColor: [248, 250, 252] }, // slate-50
+    });
+
+    doc.save(`Reporte_Incidencias_${timeFilter}_${new Date().getTime()}.pdf`);
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -77,13 +142,21 @@ export const Incidents: React.FC = () => {
           </p>
         </div>
         
-        {!isAdminOrManager && (
+        {!isAdminOrManager ? (
           <button
             onClick={() => setIsModalOpen(true)}
             className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/20 transition-all shrink-0"
           >
             <Plus className="w-4 h-4" />
             Reportar Incidente
+          </button>
+        ) : (
+          <button
+            onClick={exportToPDF}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-500/20 transition-all shrink-0"
+          >
+            <DownloadCloud className="w-4 h-4" />
+            Exportar PDF
           </button>
         )}
       </div>
@@ -100,10 +173,15 @@ export const Incidents: React.FC = () => {
             className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
           />
         </div>
-        <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-100 transition-colors text-sm font-medium">
-          <Filter className="w-4 h-4" />
-          Filtrar
-        </button>
+        <select
+          value={timeFilter}
+          onChange={(e) => setTimeFilter(e.target.value as any)}
+          className="flex-shrink-0 bg-slate-50 border border-slate-200 text-slate-600 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium"
+        >
+          <option value="ALL">Todo el Historial</option>
+          <option value="MONTH">Este Mes</option>
+          <option value="WEEK">Esta Semana</option>
+        </select>
       </div>
 
       {/* Grid de Incidentes */}

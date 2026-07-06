@@ -2,9 +2,7 @@ import { Controller, All, Req, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { Request, Response } from 'express';
-import { firstValueFrom } from 'rxjs';
-import { AxiosError } from 'axios';
-import * as FormData from 'form-data';
+import * as http from 'http';
 
 @Controller('api/incidents')
 export class IncidentController {
@@ -14,43 +12,45 @@ export class IncidentController {
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
   ) {
-    this.incidentServiceUrl = this.configService.get<string>('INCIDENT_SERVICE_URL') || 'http://localhost:3007';
+    this.incidentServiceUrl =
+      this.configService.get<string>('INCIDENT_SERVICE_URL') ||
+      'http://localhost:3007';
+  }
+
+  @All()
+  async proxyRoot(@Req() req: Request, @Res() res: Response) {
+    return this.handleProxy(req, res);
   }
 
   @All('*')
   async proxy(@Req() req: Request, @Res() res: Response) {
-    const targetUrl = `${this.incidentServiceUrl}${req.originalUrl}`;
-    
-    try {
-      let data = req.body;
-      const headers = { ...req.headers, host: undefined };
+    return this.handleProxy(req, res);
+  }
 
-      // Handle multipart/form-data for file uploads if needed
-      // However, usually we can just pipe the request or pass the body directly 
-      // if using raw body or letting express handle it. For simplicity in a proxy,
-      // it might be easier to use a proper proxy middleware like http-proxy-middleware 
-      // but we will use the existing axios approach. We may need to pass the req buffer directly.
-      // NestJS axios might struggle with multipart/form-data out of the box for proxying,
-      // so we use the basic axios request.
-      
-      const response = await firstValueFrom(
-        this.httpService.request({
-          method: req.method,
-          url: targetUrl,
-          data: req.method === 'GET' ? undefined : data,
-          headers,
-          // Si hay problemas con form-data, aquí se necesitaría lógica adicional
-        })
-      );
-      
-      res.status(response.status).json(response.data);
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response) {
-        res.status(axiosError.response.status).json(axiosError.response.data);
-      } else {
-        res.status(500).json({ message: 'Internal Server Error', error: (error as Error).message });
-      }
-    }
+  private handleProxy(req: Request, res: Response) {
+    const targetUrl = new URL(`${this.incidentServiceUrl}${req.originalUrl}`);
+
+    const options = {
+      hostname: targetUrl.hostname,
+      port: targetUrl.port,
+      path: targetUrl.pathname + targetUrl.search,
+      method: req.method,
+      headers: { ...req.headers, host: targetUrl.host },
+    };
+
+    const clientReq = http.request(options, (clientRes: any) => {
+      res.writeHead(clientRes.statusCode || 500, clientRes.headers);
+      clientRes.pipe(res);
+    });
+
+    clientReq.on('error', (e: Error) => {
+      res.status(500).json({
+        message: 'Internal Server Error (Gateway Proxy)',
+        error: e.message,
+      });
+    });
+
+    // Pipe the raw request stream to the target to preserve multipart/form-data
+    req.pipe(clientReq);
   }
 }

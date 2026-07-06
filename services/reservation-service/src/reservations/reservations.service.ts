@@ -108,7 +108,7 @@ export class ReservationsService {
     let saved: Reservation;
 
     try {
-      const conflictCount = await queryRunner.manager
+      const conflicts = await queryRunner.manager
         .createQueryBuilder(Reservation, 'r')
         .setLock('pessimistic_write')
         .where('r.lab_id = :lab_id', { lab_id })
@@ -117,9 +117,9 @@ export class ReservationsService {
         })
         .andWhere('r.start_time < :endTime', { endTime: endDate })
         .andWhere('r.end_time > :startTime', { startTime: startDate })
-        .getCount();
+        .getMany();
 
-      if (conflictCount > 0) {
+      if (conflicts.length > 0) {
         throw new ConflictException(
           'Ya existe una reserva en ese horario para este laboratorio',
         );
@@ -199,7 +199,7 @@ export class ReservationsService {
     const query = this.reservationRepository.createQueryBuilder('r');
 
     // If not an admin, the user can only view their own reservations
-    if (currentUser.role !== 'ADMIN') {
+    if (!currentUser.roles?.includes('ADMIN')) {
       query.andWhere('r.user_id = :user_id', { user_id: currentUser.user_id });
     } else if (filters?.user_id) {
       query.andWhere('r.user_id = :user_id', { user_id: filters.user_id });
@@ -248,10 +248,7 @@ export class ReservationsService {
     }
 
     // Only the owner or an admin can view the reservation
-    if (
-      reservation.user_id !== currentUser.user_id &&
-      currentUser.role !== 'ADMIN'
-    ) {
+    if (reservation.user_id !== currentUser.user_id && !currentUser.roles?.includes('ADMIN')) {
       throw new ForbiddenException('No tienes permiso para ver esta reserva');
     }
 
@@ -398,7 +395,7 @@ export class ReservationsService {
   async confirm(id: string, currentUser: CurrentUserData): Promise<Reservation> {
     
     // Security check: Only administrators can confirm reservations
-    if (currentUser.role !== 'ADMIN') {
+    if (!currentUser.roles?.includes('ADMIN')) {
       throw new ForbiddenException('Solo los administradores pueden confirmar reservas');
     }
 
@@ -459,7 +456,7 @@ export class ReservationsService {
    * Only ADMIN can reject
    */
   async reject(id: string, currentUser: CurrentUserData): Promise<Reservation> {
-    if (currentUser.role !== 'ADMIN') {
+    if (!currentUser.roles?.includes('ADMIN')) {
       throw new ForbiddenException('Solo los administradores pueden rechazar reservas');
     }
 
@@ -572,34 +569,5 @@ export class ReservationsService {
     };
   }
 
-  @RabbitSubscribe({
-    exchange: 'reservation.events',
-    routingKey: 'payment.completed',
-    queue: 'reservation.payment.completed.queue',
-  })
-  async handlePaymentCompleted(payload: { reservation_id: string; status: string }) {
-    this.logger.log(`Received payment.completed event for reservation: ${payload.reservation_id}`);
-    try {
-      const reservation = await this.reservationRepository.findOne({
-        where: { reservation_id: payload.reservation_id },
-      });
 
-      if (reservation && reservation.status === ReservationStatus.PENDING_PAYMENT) {
-        reservation.status = ReservationStatus.CONFIRMED;
-        await this.reservationRepository.save(reservation);
-        this.logger.log(`Reservation ${payload.reservation_id} status updated to CONFIRMED.`);
-
-        // Publish reservation confirmed event
-        this.rabbitmqService.publishReservationConfirmed({
-          reservation_id: reservation.reservation_id,
-          user_id: reservation.user_id,
-          lab_id: reservation.lab_id,
-          start_time: reservation.start_time,
-          end_time: reservation.end_time,
-        }).catch(e => this.logger.error('Error publishing reservation confirmed event', e));
-      }
-    } catch (error) {
-      this.logger.error(`Error handling payment.completed for ${payload.reservation_id}:`, error);
-    }
-  }
 }

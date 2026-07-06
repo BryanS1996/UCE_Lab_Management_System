@@ -12,11 +12,14 @@ import { CatalogModule } from './modules/catalog/catalog.module';
 
 import { PaymentModule } from './modules/payment/payment.module';
 import { IncidentModule } from './modules/incident/incident.module';
+import { UsersModule } from './modules/users/users.module';
+import { DocsController } from './docs.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
     HttpModule,
     AuthModule,
@@ -26,8 +29,9 @@ import { IncidentModule } from './modules/incident/incident.module';
     CatalogModule,
     PaymentModule,
     IncidentModule,
+    UsersModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, DocsController],
   providers: [AppService],
 })
 export class AppModule implements NestModule {

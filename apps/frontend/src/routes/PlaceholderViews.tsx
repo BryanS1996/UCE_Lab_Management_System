@@ -40,7 +40,7 @@ export const LoginView: React.FC = () => {
       // Guardar tokens y cargar sesión
       login(data.accessToken, data.refreshToken, data.user);
       
-      navigate('/dashboard');
+      navigate('/');
     } catch (err: any) {
       console.error('Error al iniciar sesión:', err);
       // Extraer el mensaje real devuelto por el backend
@@ -214,7 +214,7 @@ export const RegisterView: React.FC = () => {
 
       // El registro real en el backend retorna tokens directo
       login(data.accessToken, data.refreshToken, data.user);
-      navigate('/dashboard');
+      navigate('/');
     } catch (err: any) {
       console.error('Error al registrarse:', err);
       const message = err.response?.data?.message || err.data?.message || 'Error de conexión con el servidor.';

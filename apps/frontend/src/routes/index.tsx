@@ -8,16 +8,17 @@ import { Laboratories } from '../pages/Laboratories';
 import { MyReservations } from '../pages/MyReservations';
 import { GlobalReservations } from '../pages/GlobalReservations';
 import { Incidents } from '../pages/Incidents';
+import { Users } from '../pages/Users';
 import {
   LoginView,
   RegisterView,
   ReservationsPlaceholder,
   CalendarPlaceholder,
-  NotificationsPlaceholder,
   ReportsPlaceholder,
   UsersPlaceholder,
   SettingsPlaceholder,
 } from './PlaceholderViews';
+import NotificationsSection from '../components/NotificationsSection';
 
 const RootRedirect = () => {
   const { user } = useAuth();
@@ -70,7 +71,7 @@ export const router = createBrowserRouter([
       {
         path: 'reservas',
         element: (
-          <ProtectedRoute allowedRoles={['ADMIN', 'DOCENTE', 'LAB_MANAGER']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'DOCENTE']}>
             <GlobalReservations />
           </ProtectedRoute>
         ),
@@ -81,16 +82,20 @@ export const router = createBrowserRouter([
       },
       {
         path: 'mis-reservas',
-        element: <MyReservations />,
+        element: (
+          <ProtectedRoute allowedRoles={['ESTUDIANTE', 'DOCENTE']}>
+            <MyReservations />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'notificaciones',
-        element: <NotificationsPlaceholder />,
+        element: <NotificationsSection isAuthenticated={true} onUpdateUnreadCount={() => {}} />,
       },
       {
         path: 'reportes',
         element: (
-          <ProtectedRoute allowedRoles={['ADMIN', 'LAB_MANAGER']}>
+          <ProtectedRoute allowedRoles={['ADMIN']}>
             <ReportsPlaceholder />
           </ProtectedRoute>
         ),
@@ -98,7 +103,7 @@ export const router = createBrowserRouter([
       {
         path: 'incidentes',
         element: (
-          <ProtectedRoute allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE', 'LAB_MANAGER']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'DOCENTE', 'ESTUDIANTE']}>
             <Incidents />
           </ProtectedRoute>
         ),
@@ -107,13 +112,17 @@ export const router = createBrowserRouter([
         path: 'usuarios',
         element: (
           <ProtectedRoute allowedRoles={['ADMIN']}>
-            <UsersPlaceholder />
+            <Users />
           </ProtectedRoute>
         ),
       },
       {
         path: 'configuracion',
-        element: <SettingsPlaceholder />,
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <SettingsPlaceholder />
+          </ProtectedRoute>
+        ),
       },
     ],
   },

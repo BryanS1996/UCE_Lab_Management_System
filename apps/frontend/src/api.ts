@@ -160,9 +160,9 @@ export const endpoints = {
   laboratoryHealth: () => apiFetch(apiUrls.laboratory, '/health'),
   laboratoryList: () => apiFetch(apiUrls.laboratory, '/laboratories'),
   notificationHealth: () => apiFetch(apiUrls.notification, '/health'),
-  notificationMy: () => apiFetch(apiUrls.notification, '/my'),
+  notificationMy: () => apiFetch(apiUrls.notification, ''),
   notificationUnread: () =>
-    apiFetch(apiUrls.notification, '/my/unread-count'),
+    apiFetch(apiUrls.notification, '/unread-count'),
   incidentList: () => apiFetch(apiUrls.incident, ''),
   incidentGet: (id: string) => apiFetch(apiUrls.incident, `/${id}`),
   incidentCreate: (formData: FormData) =>

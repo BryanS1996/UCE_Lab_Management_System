@@ -46,8 +46,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
         return 'Docente';
       case 'ESTUDIANTE':
         return 'Estudiante';
-      case 'LAB_MANAGER':
-        return 'Gestor de Lab';
       default:
         return 'Usuario';
     }
@@ -69,7 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       path: '/reservas',
       label: 'Reservas',
       icon: CalendarDays,
-      roles: ['ADMIN', 'DOCENTE', 'LAB_MANAGER'], // Estudiante hace reservas a través de labs/calendario
+      roles: ['ADMIN', 'DOCENTE'], // Estudiante hace reservas a través de labs/calendario
     },
     {
       path: '/calendario',
@@ -80,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       path: '/mis-reservas',
       label: 'Mis Reservas',
       icon: UserCheck,
+      roles: ['ESTUDIANTE', 'DOCENTE'],
     },
     {
       path: '/notificaciones',
@@ -87,12 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       icon: Bell,
       badgeKey: 'notifications',
     },
-    {
-      path: '/reportes',
-      label: 'Reportes',
-      icon: BarChart3,
-      roles: ['ADMIN', 'LAB_MANAGER'],
-    },
+
     {
       path: '/incidentes',
       label: 'Incidentes',
@@ -108,6 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       path: '/configuracion',
       label: 'Configuración',
       icon: Settings,
+      roles: ['ADMIN'],
     },
   ];
 
