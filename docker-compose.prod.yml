@@ -201,7 +201,7 @@ services:
     pull_policy: always
     environment:
       NODE_ENV: production
-      PORT: 3006
+      PORT: 3007
       MONGODB_URI: mongodb://${INCIDENT_DB_USER:-admin}:${INCIDENT_DB_PASS:-admin}@incident-db:27017/incident_service?authSource=admin
       RESERVATION_SERVICE_URL: http://reservation-service:3001
       RABBITMQ_URL: ${RABBITMQ_URL}
@@ -218,7 +218,7 @@ services:
       - uce-prod-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3006/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3007/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -238,7 +238,7 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification-service:3003
       CATALOG_SERVICE_URL: http://catalog-service:3004
       PAYMENT_SERVICE_URL: http://payment-service:3005
-      INCIDENT_SERVICE_URL: http://incident-service:3006
+      INCIDENT_SERVICE_URL: http://incident-service:3007
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:
