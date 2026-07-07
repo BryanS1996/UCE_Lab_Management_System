@@ -9,6 +9,7 @@ import { MyReservations } from '../pages/MyReservations';
 import { GlobalReservations } from '../pages/GlobalReservations';
 import { Incidents } from '../pages/Incidents';
 import { Users } from '../pages/Users';
+import { Logs } from '../pages/Logs';
 import {
   LoginView,
   RegisterView,
@@ -113,6 +114,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={['ADMIN']}>
             <Users />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'logs',
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <Logs />
           </ProtectedRoute>
         ),
       },

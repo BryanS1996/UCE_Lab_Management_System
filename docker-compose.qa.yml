@@ -337,6 +337,7 @@ services:
       CATALOG_SERVICE_URL: http://catalog-service-qa:3014
       PAYMENT_SERVICE_URL: http://payment-service-qa:3016
       INCIDENT_SERVICE_URL: http://incident-service-qa:3017
+      LOGGER_SERVICE_URL: http://logger-service-qa:3018
       JWT_SECRET: qa-secret-key-change-in-production
       CORS_ORIGIN: "*"
     ports:
@@ -351,6 +352,7 @@ services:
       - catalog-service-qa
       - payment-service-qa
       - incident-service-qa
+      - logger-service-qa
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -419,7 +421,48 @@ services:
     networks:
       - uce-qa-network
 
+  # ─── QA: Logger Database (MongoDB) ───────────────────
+  logger-db-qa:
+    image: mongo:6
+    container_name: logger-db-qa
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${LOGGER_DB_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${LOGGER_DB_PASS:-admin}
+    volumes:
+      - logger-db-qa-data:/data/db
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ─── QA: Logger Service (puerto 3018) ────────────────
+  logger-service-qa:
+    image: ${ECR_REGISTRY:-localhost}/uce-logger-service:${IMAGE_TAG:-qa-latest}
+    container_name: logger-service-qa
+    pull_policy: always
+    environment:
+      NODE_ENV: qa
+      PORT: 3018
+      MONGODB_URI: mongodb://${LOGGER_DB_USER:-admin}:${LOGGER_DB_PASS:-admin}@logger-db-qa:27017/logger_service_qa?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
+    depends_on:
+      logger-db-qa:
+        condition: service_healthy
+      rabbitmq-qa:
+        condition: service_healthy
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3018/logs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
   auth-db-qa-data:
@@ -428,6 +471,7 @@ volumes:
   notification-db-qa-data:
   catalog-db-qa-data:
   incident-db-qa-data:
+  logger-db-qa-data:
   rabbitmq-qa-data:
 
 networks:

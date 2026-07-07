@@ -240,6 +240,7 @@ services:
       CATALOG_SERVICE_URL: http://catalog-service:3004
       PAYMENT_SERVICE_URL: http://payment-service:3005
       INCIDENT_SERVICE_URL: http://incident-service:3007
+      LOGGER_SERVICE_URL: http://logger-service:3018
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:
@@ -463,6 +464,49 @@ services:
       - uce-prod-network
     restart: unless-stopped
 
+  # ─── Production: Logger Database (MongoDB) ───────────────────
+  logger-db:
+    image: mongo:6
+    container_name: logger-db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${LOGGER_DB_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${LOGGER_DB_PASS:-admin}
+    volumes:
+      - logger-db-data:/data/db
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Production: Logger Service (puerto 3018) ────────────────
+  logger-service:
+    image: ${ECR_REGISTRY:-localhost}/uce-logger-service:${IMAGE_TAG:-prod-latest}
+    container_name: logger-service
+    pull_policy: always
+    environment:
+      NODE_ENV: production
+      PORT: 3018
+      MONGODB_URI: mongodb://${LOGGER_DB_USER:-admin}:${LOGGER_DB_PASS:-admin}@logger-db:27017/logger_service?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      logger-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3018/logs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
 volumes:
   auth-db-data:
   reservation-db-data:
@@ -470,6 +514,7 @@ volumes:
   notification-db-data:
   catalog-db-data:
   incident-db-data:
+  logger-db-data:
   rabbitmq-data:
 
 networks:
