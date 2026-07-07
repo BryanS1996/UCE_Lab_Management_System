@@ -1,0 +1,45 @@
+name: SonarQube Monorepo Scan
+
+on:
+  pull_request:
+    branches: [ "qa" ]
+
+jobs:
+  sonarqube:
+    name: SonarQube Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Important for SonarQube to get Git blame info
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install and Test all services
+        run: |
+          for dir in services/*/; do
+            if [ -f "$dir/package.json" ]; then
+              echo "----------------------------------------"
+              echo "Testing $dir"
+              echo "----------------------------------------"
+              cd "$dir"
+              npm ci --legacy-peer-deps
+              npm run test:cov --if-present -- --passWithNoTests
+              cd ../../
+            fi
+          done
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.projectKey=UCE_Lab_Management_System
+            -Dsonar.projectName="UCE Lab Management System"
+            -Dsonar.javascript.lcov.reportPaths=services/*/coverage/lcov.info
