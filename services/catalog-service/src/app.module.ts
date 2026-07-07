@@ -5,6 +5,7 @@ import { CatalogModule } from './catalog/catalog.module';
 import { CommonModule } from './common/common.module';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 import { ConsumersModule } from './consumers/consumers.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ConsumersModule } from './consumers/consumers.module';
     CatalogModule,
     RabbitmqModule,
     ConsumersModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [],
