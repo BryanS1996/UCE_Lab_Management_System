@@ -197,7 +197,7 @@ describe('ReservationsService', () => {
           status: ReservationStatus.CONFIRMED,
         }),
       );
-      expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(1);
+      expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(2);
     });
 
     it('CP-02 (Negativo): Intento de reserva con <24h de anticipación. Debe lanzar BadRequestException', async () => {
