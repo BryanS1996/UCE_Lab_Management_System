@@ -386,6 +386,15 @@ jobs:
             # Re-authenticate with ECR using the session credentials passed via envs.
             aws ecr get-login-password --region "$AWS_REGION" \
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+              
+            # Limpiar puerto 3000 en caso de que un contenedor de desarrollo (docker-compose.yml) 
+            # o un proceso zombie haya quedado encendido ocupando el puerto.
+            docker compose -f docker-compose.yml down 2>/dev/null || true
+            CONFLICT_ID=$(docker ps -q --filter "publish=3000")
+            if [ -n "$CONFLICT_ID" ]; then
+              docker rm -f $CONFLICT_ID
+            fi
+            
             docker compose -f docker-compose.qa.yml pull -q \
               api-gateway-qa auth-service-qa reservation-service-qa laboratory-service-qa \
               notification-service-qa catalog-service-qa payment-service-qa incident-service-qa frontend-qa
