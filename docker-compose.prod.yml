@@ -168,8 +168,8 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 90s
 
   payment-service:
     image: ${ECR_REGISTRY:-localhost}/uce-payment-service:${IMAGE_TAG:-latest}
@@ -192,8 +192,8 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost:3005/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 90s
 
   incident-service:
     image: ${ECR_REGISTRY:-localhost}/uce-incident-service:${IMAGE_TAG:-latest}
@@ -204,12 +204,15 @@ services:
       PORT: 3006
       MONGODB_URI: mongodb://${INCIDENT_DB_USER:-admin}:${INCIDENT_DB_PASS:-admin}@incident-db:27017/incident_service?authSource=admin
       RESERVATION_SERVICE_URL: http://reservation-service:3001
+      RABBITMQ_URL: ${RABBITMQ_URL}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
       # AWS credentials intentionally omitted — the EC2 IAM Instance Profile
       # (LabInstanceProfile) grants S3 access automatically via the metadata service.
       # Explicitly setting empty keys would OVERRIDE and BREAK the instance profile.
     depends_on:
       incident-db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - uce-prod-network
@@ -219,7 +222,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 60s
 
   # ─── Production: API Gateway ──────────────────────────────────────────────
   api-gateway:
