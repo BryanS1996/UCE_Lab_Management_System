@@ -44,7 +44,7 @@ export class PaymentService {
   async createCheckoutSession(reservationId: string, labName: string) {
     // URL base del frontend para redireccionar tras el pago
     const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost';
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
 
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],

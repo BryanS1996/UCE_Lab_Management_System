@@ -13,9 +13,31 @@ export class LoggerService {
   @RabbitSubscribe({
     exchange: 'reservation.events',
     routingKey: '#',
-    queue: 'logger_service_queue',
+    queue: 'logger_service_reservation_queue',
   })
-  public async handleEvent(msg: any, amqpMsg: any) {
+  public async handleReservationEvent(msg: any, amqpMsg: any) {
+    await this.processEvent(msg, amqpMsg);
+  }
+
+  @RabbitSubscribe({
+    exchange: 'laboratory.events',
+    routingKey: '#',
+    queue: 'logger_service_laboratory_queue',
+  })
+  public async handleLaboratoryEvent(msg: any, amqpMsg: any) {
+    await this.processEvent(msg, amqpMsg);
+  }
+
+  @RabbitSubscribe({
+    exchange: 'incident.events',
+    routingKey: '#',
+    queue: 'logger_service_incident_queue',
+  })
+  public async handleIncidentEvent(msg: any, amqpMsg: any) {
+    await this.processEvent(msg, amqpMsg);
+  }
+
+  private async processEvent(msg: any, amqpMsg: any) {
     const correlationId =
       amqpMsg?.properties?.headers?.['x-correlation-id'] || 'No correlation-id';
     this.logger.log(
@@ -25,7 +47,7 @@ export class LoggerService {
     try {
       const logEntry = new this.logModel({
         correlationId,
-        eventType: msg?.type || amqpMsg?.fields?.routingKey || 'UNKNOWN_EVENT',
+        eventType: msg?.type || msg?.event || amqpMsg?.fields?.routingKey || 'UNKNOWN_EVENT',
         payload: msg,
         source: amqpMsg?.properties?.appId || 'UNKNOWN_SOURCE',
       });

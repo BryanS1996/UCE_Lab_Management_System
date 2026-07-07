@@ -181,7 +181,7 @@ services:
       RABBITMQ_URL: ${RABBITMQ_URL}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      FRONTEND_URL: ${FRONTEND_URL_PROD:-http://localhost}
+      FRONTEND_URL: ${FRONTEND_URL_PROD:-http://localhost:5173}
     depends_on:
       rabbitmq:
         condition: service_healthy
