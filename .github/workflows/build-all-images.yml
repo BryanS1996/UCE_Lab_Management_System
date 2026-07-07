@@ -118,6 +118,8 @@ jobs:
         with:
           context: apps/frontend
           push: true
+          build-args: |
+            ENV=prod
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-frontend:latest
           cache-from: type=gha
