@@ -15,6 +15,7 @@ on:
 jobs:
   lint-and-test:
     uses: ./.github/workflows/_service-ci.yml
+    secrets: inherit
     with:
       service-name: payment
       service-dir: services/payment-service
