@@ -19,8 +19,10 @@ jobs:
       catalog-service: ${{ steps.filter.outputs.catalog-service }}
       payment-service: ${{ steps.filter.outputs.payment-service }}
       incident-service: ${{ steps.filter.outputs.incident-service }}
+      logger-service: ${{ steps.filter.outputs.logger-service }}
       api-gateway: ${{ steps.filter.outputs.api-gateway }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      compose: ${{ steps.filter.outputs.compose }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -34,6 +36,7 @@ jobs:
             catalog-service: 'services/catalog-service/**'
             payment-service: 'services/payment-service/**'
             incident-service: 'services/incident-service/**'
+            logger-service: 'services/logger-service/**'
             api-gateway: 'services/api-gateway/**'
             frontend: 'apps/frontend/**'
             compose: 'docker-compose.qa.yml'
@@ -55,6 +58,7 @@ jobs:
           - catalog-service
           - payment-service
           - incident-service
+          - logger-service
     steps:
       # Always checkout — subsequent steps guard with the if condition.
       - uses: actions/checkout@v4
@@ -169,6 +173,18 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:qa-latest
           cache-from: type=gha,scope=qa-incident-service
           cache-to: type=gha,mode=max,scope=qa-incident-service
+
+      - name: Build & Push — Logger Service
+        if: needs.detect-changes.outputs.logger-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: services/logger-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-logger-service:qa-${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/uce-logger-service:qa-latest
+          cache-from: type=gha,scope=qa-logger-service
+          cache-to: type=gha,mode=max,scope=qa-logger-service
 
       - name: Build & Push — Payment Service
         if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -325,7 +341,7 @@ jobs:
           proxy_key: ${{ secrets.QA_EC2_SSH_PRIVATE_KEY }}
           # 'envs' securely injects variables into the remote shell.
           # They are NOT interpolated as plaintext into the script string.
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,QA_ENV_FILE,FRONTEND_URL_QA
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,QA_ENV_FILE,FRONTEND_URL_QA,IA_LAMBDA_URL
           # sync: true ensures the script runs sequentially on each host,
           # providing a controlled rolling-style deploy across the ASG fleet.
           sync: true
@@ -360,11 +376,26 @@ jobs:
             else
               echo "⚠️  FRONTEND_URL_QA no disponible — usando valor del secret QA_ENV_FILE"
             fi
+            
+            if [ -n "$IA_LAMBDA_URL" ]; then
+              sed -i '/^IA_LAMBDA_URL=/d' /home/ec2-user/app/.env
+              echo "IA_LAMBDA_URL=${IA_LAMBDA_URL}" >> /home/ec2-user/app/.env
+              echo "✅ IA_LAMBDA_URL inyectado dinámicamente: ${IA_LAMBDA_URL}"
+            fi
 
             # Re-authenticate with ECR using the session credentials passed via envs.
             aws ecr get-login-password --region "$AWS_REGION" \
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
-            docker compose -f docker-compose.qa.yml pull \
+              
+            # Limpiar puerto 3000 en caso de que un contenedor de desarrollo (docker-compose.yml) 
+            # o un proceso zombie haya quedado encendido ocupando el puerto.
+            docker compose -f docker-compose.yml down 2>/dev/null || true
+            CONFLICT_ID=$(docker ps -q --filter "publish=3000")
+            if [ -n "$CONFLICT_ID" ]; then
+              docker rm -f $CONFLICT_ID
+            fi
+            
+            docker compose -f docker-compose.qa.yml pull -q \
               api-gateway-qa auth-service-qa reservation-service-qa laboratory-service-qa \
               notification-service-qa catalog-service-qa payment-service-qa incident-service-qa frontend-qa
             docker compose -f docker-compose.qa.yml up -d
@@ -378,7 +409,9 @@ jobs:
               fi
               if [ "$i" -eq 18 ]; then
                 echo "❌ API Gateway did not respond after 3 minutes"
-                docker compose -f docker-compose.qa.yml logs --tail=50 api-gateway-qa
+                echo "================= CRITICAL ERROR LOG =================="
+                docker compose -f docker-compose.qa.yml logs --tail=100 api-gateway-qa
+                echo "======================================================="
                 exit 1
               fi
               echo "   attempt $i/18 — retrying in 10s..."
@@ -409,3 +442,4 @@ jobs:
           # ALB DNS inyectado dinámicamente — no hardcodeado, no depende de IPs.
           # Si el discover-alb step no encontró el ALB, queda vacío y se usa el valor del secret.
           FRONTEND_URL_QA: ${{ steps.discover-alb.outputs.alb_dns != '' && format('http://{0}', steps.discover-alb.outputs.alb_dns) || '' }}
+          IA_LAMBDA_URL: ${{ secrets.QA_IA_LAMBDA_URL }}

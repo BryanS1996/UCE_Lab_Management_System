@@ -1,0 +1,22 @@
+name: Logger Service — CI
+
+on:
+  push:
+    paths:
+      - 'services/logger-service/**'
+      - '.github/workflows/_service-ci.yml'
+  pull_request:
+    branches: [ "qa" ]
+    paths:
+      - 'services/logger-service/**'
+      - '.github/workflows/_service-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  lint-and-test:
+    uses: ./.github/workflows/_service-ci.yml
+    secrets: inherit
+    with:
+      service-name: logger
+      service-dir: services/logger-service
+      coverage-artifact-name: logger-coverage

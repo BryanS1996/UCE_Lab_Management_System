@@ -168,8 +168,8 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 90s
 
   payment-service:
     image: ${ECR_REGISTRY:-localhost}/uce-payment-service:${IMAGE_TAG:-latest}
@@ -181,7 +181,7 @@ services:
       RABBITMQ_URL: ${RABBITMQ_URL}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      FRONTEND_URL: ${FRONTEND_URL_PROD:-http://localhost}
+      FRONTEND_URL: ${FRONTEND_URL_PROD:-http://localhost:5173}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -192,8 +192,8 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost:3005/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 90s
 
   incident-service:
     image: ${ECR_REGISTRY:-localhost}/uce-incident-service:${IMAGE_TAG:-latest}
@@ -201,25 +201,29 @@ services:
     pull_policy: always
     environment:
       NODE_ENV: production
-      PORT: 3006
+      PORT: 3007
       MONGODB_URI: mongodb://${INCIDENT_DB_USER:-admin}:${INCIDENT_DB_PASS:-admin}@incident-db:27017/incident_service?authSource=admin
       RESERVATION_SERVICE_URL: http://reservation-service:3001
+      RABBITMQ_URL: ${RABBITMQ_URL}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
       # AWS credentials intentionally omitted — the EC2 IAM Instance Profile
       # (LabInstanceProfile) grants S3 access automatically via the metadata service.
       # Explicitly setting empty keys would OVERRIDE and BREAK the instance profile.
+      IA_LAMBDA_URL: ${IA_LAMBDA_URL}
     depends_on:
       incident-db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - uce-prod-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3006/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3007/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 60s
 
   # ─── Production: API Gateway ──────────────────────────────────────────────
   api-gateway:
@@ -235,7 +239,8 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification-service:3003
       CATALOG_SERVICE_URL: http://catalog-service:3004
       PAYMENT_SERVICE_URL: http://payment-service:3005
-      INCIDENT_SERVICE_URL: http://incident-service:3006
+      INCIDENT_SERVICE_URL: http://incident-service:3007
+      LOGGER_SERVICE_URL: http://logger-service:3018
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:
@@ -459,6 +464,49 @@ services:
       - uce-prod-network
     restart: unless-stopped
 
+  # ─── Production: Logger Database (MongoDB) ───────────────────
+  logger-db:
+    image: mongo:6
+    container_name: logger-db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${LOGGER_DB_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${LOGGER_DB_PASS:-admin}
+    volumes:
+      - logger-db-data:/data/db
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Production: Logger Service (puerto 3018) ────────────────
+  logger-service:
+    image: ${ECR_REGISTRY:-localhost}/uce-logger-service:${IMAGE_TAG:-prod-latest}
+    container_name: logger-service
+    pull_policy: always
+    environment:
+      NODE_ENV: production
+      PORT: 3018
+      MONGODB_URI: mongodb://${LOGGER_DB_USER:-admin}:${LOGGER_DB_PASS:-admin}@logger-db:27017/logger_service?authSource=admin
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      logger-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - uce-prod-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3018/logs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
 volumes:
   auth-db-data:
   reservation-db-data:
@@ -466,6 +514,7 @@ volumes:
   notification-db-data:
   catalog-db-data:
   incident-db-data:
+  logger-db-data:
   rabbitmq-data:
 
 networks:

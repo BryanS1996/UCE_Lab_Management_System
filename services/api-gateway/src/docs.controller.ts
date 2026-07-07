@@ -41,7 +41,9 @@ export class DocsController {
       );
       return res.json(response.data);
     } catch (error) {
-      return res.status(500).json({ message: 'Failed to fetch swagger JSON from microservice' });
+      return res
+        .status(500)
+        .json({ message: 'Failed to fetch swagger JSON from microservice' });
     }
   }
 }

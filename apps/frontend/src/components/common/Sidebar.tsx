@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Menu,
   AlertTriangle,
+  Terminal,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -96,6 +97,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       path: '/usuarios',
       label: 'Usuarios',
       icon: Users,
+      roles: ['ADMIN'],
+    },
+    {
+      path: '/logs',
+      label: 'Auditoría',
+      icon: Terminal,
       roles: ['ADMIN'],
     },
     {

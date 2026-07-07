@@ -8,11 +8,14 @@ import { LaboratoryModule } from './modules/laboratory/laboratory.module';
 import { ReservationModule } from './modules/reservation/reservation.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
+import { CorrelationIdMiddleware } from './middlewares/correlation-id.middleware';
+import { HttpInterceptorService } from './middlewares/http-interceptor.service';
 import { CatalogModule } from './modules/catalog/catalog.module';
 
 import { PaymentModule } from './modules/payment/payment.module';
 import { IncidentModule } from './modules/incident/incident.module';
 import { UsersModule } from './modules/users/users.module';
+import { LoggerModule } from './modules/logger/logger.module';
 import { DocsController } from './docs.controller';
 
 @Module({
@@ -30,12 +33,13 @@ import { DocsController } from './docs.controller';
     PaymentModule,
     IncidentModule,
     UsersModule,
+    LoggerModule,
   ],
   controllers: [AppController, DocsController],
-  providers: [AppService],
+  providers: [AppService, HttpInterceptorService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggerMiddleware).forRoutes('*');
+    consumer.apply(CorrelationIdMiddleware, LoggerMiddleware).forRoutes('*');
   }
 }

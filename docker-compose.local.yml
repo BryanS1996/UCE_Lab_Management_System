@@ -369,6 +369,7 @@ services:
       AWS_SECRET_ACCESS_KEY: test
       AWS_S3_BUCKET: incidents-bucket
       RESERVATION_SERVICE_URL: http://reservation-service:3011
+      IA_LAMBDA_URL: ${IA_LAMBDA_URL:-}
     depends_on:
       mongo:
         condition: service_healthy

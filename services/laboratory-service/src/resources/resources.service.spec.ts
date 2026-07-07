@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ResourcesService } from './resources.service';
-import { Resource, ResourceType } from '../laboratories/entities/resource.entity';
+import {
+  Resource,
+  ResourceType,
+} from '../laboratories/entities/resource.entity';
 import { Laboratory } from '../laboratories/entities/laboratory.entity';
-
 
 describe('ResourcesService', () => {
   let service: ResourcesService;
@@ -39,7 +41,7 @@ describe('ResourcesService', () => {
   describe('create()', () => {
     it('CP-09 (Happy Path - Inventario): Debe agregar un recurso y vincularlo al laboratorio', async () => {
       mockLabRepository.findOne.mockResolvedValue({ lab_id: 1 });
-      
+
       const dto = {
         name: 'Proyector Epson',
         type: ResourceType.PROJECTOR,
@@ -58,7 +60,9 @@ describe('ResourcesService', () => {
 
       const result = await service.create(1, dto);
 
-      expect(mockLabRepository.findOne).toHaveBeenCalledWith({ where: { lab_id: 1 } });
+      expect(mockLabRepository.findOne).toHaveBeenCalledWith({
+        where: { lab_id: 1 },
+      });
       expect(result.lab_id).toBe(1);
       expect(result.name).toBe('Proyector Epson');
     });
