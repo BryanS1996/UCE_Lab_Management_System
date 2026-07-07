@@ -386,7 +386,7 @@ jobs:
             # Re-authenticate with ECR using the session credentials passed via envs.
             aws ecr get-login-password --region "$AWS_REGION" \
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
-            docker compose -f docker-compose.qa.yml pull \
+            docker compose -f docker-compose.qa.yml pull -q \
               api-gateway-qa auth-service-qa reservation-service-qa laboratory-service-qa \
               notification-service-qa catalog-service-qa payment-service-qa incident-service-qa frontend-qa
             docker compose -f docker-compose.qa.yml up -d
@@ -400,7 +400,9 @@ jobs:
               fi
               if [ "$i" -eq 18 ]; then
                 echo "❌ API Gateway did not respond after 3 minutes"
-                docker compose -f docker-compose.qa.yml logs --tail=50 api-gateway-qa
+                echo "================= CRITICAL ERROR LOG =================="
+                docker compose -f docker-compose.qa.yml logs --tail=100 api-gateway-qa
+                echo "======================================================="
                 exit 1
               fi
               echo "   attempt $i/18 — retrying in 10s..."
