@@ -308,7 +308,7 @@ services:
       RABBITMQ_URL: amqp://guest:guest@rabbitmq-qa:5672
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_dummy}
-      FRONTEND_URL: ${FRONTEND_URL_QA:-http://localhost}
+      FRONTEND_URL: ${FRONTEND_URL_QA:-http://localhost:5173}
     depends_on:
       rabbitmq-qa:
         condition: service_healthy
