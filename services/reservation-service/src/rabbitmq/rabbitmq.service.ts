@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import * as crypto from 'crypto';
 
 export interface ReservationCreatedEvent {
   event: 'ReservationCreated';
@@ -91,9 +92,15 @@ export class RabbitmqService {
    */
   private async publish(routingKey: string, payload: ReservationEvent): Promise<void> {
     try {
-      await this.amqpConnection.publish(this.EXCHANGE, routingKey, payload);
+      const correlationId = crypto.randomUUID();
+      await this.amqpConnection.publish(this.EXCHANGE, routingKey, payload, {
+        appId: 'reservation-service',
+        headers: {
+          'x-correlation-id': correlationId,
+        },
+      });
       this.logger.log(
-        `✉️  Evento publicado [${routingKey}]: ${JSON.stringify(payload)}`,
+        `✉️  Evento publicado [${routingKey}] (CorrID: ${correlationId}): ${JSON.stringify(payload)}`,
       );
     } catch (error) {
       this.logger.error(
