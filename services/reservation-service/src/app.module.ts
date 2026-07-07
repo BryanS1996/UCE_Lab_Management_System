@@ -30,7 +30,7 @@ import { Reservation, Laboratory } from './database/entities';
         password: configService.get<string>('DB_PASSWORD', 'postgres'),
         database: configService.get<string>('DB_NAME', 'reservation_service'),
         entities: [Reservation, Laboratory],
-        synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        synchronize: true, // No hay migraciones definidas; auto-crear tablas en todos los ambientes
         logging: configService.get<string>('NODE_ENV') === 'development',
         ssl:
           configService.get<string>('DB_SSL') === 'true'

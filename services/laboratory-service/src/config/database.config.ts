@@ -17,6 +17,6 @@ export const getDatabaseConfig = (
       ? { rejectUnauthorized: false }
       : false,
   entities: [Laboratory, Resource],
-  synchronize: configService.get<string>('NODE_ENV') !== 'production',
+  synchronize: true, // No hay migraciones definidas; auto-crear tablas en todos los ambientes
   logging: configService.get<string>('NODE_ENV') === 'development',
 });

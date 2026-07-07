@@ -168,8 +168,8 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 90s
 
   payment-service:
     image: ${ECR_REGISTRY:-localhost}/uce-payment-service:${IMAGE_TAG:-latest}
@@ -192,8 +192,8 @@ services:
       test: ["CMD", "wget", "-qO-", "http://localhost:3005/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 30s
+      retries: 5
+      start_period: 90s
 
   incident-service:
     image: ${ECR_REGISTRY:-localhost}/uce-incident-service:${IMAGE_TAG:-latest}
@@ -201,9 +201,10 @@ services:
     pull_policy: always
     environment:
       NODE_ENV: production
-      PORT: 3006
+      PORT: 3007
       MONGODB_URI: mongodb://${INCIDENT_DB_USER:-admin}:${INCIDENT_DB_PASS:-admin}@incident-db:27017/incident_service?authSource=admin
       RESERVATION_SERVICE_URL: http://reservation-service:3001
+      RABBITMQ_URL: ${RABBITMQ_URL}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
       # AWS credentials intentionally omitted — the EC2 IAM Instance Profile
       # (LabInstanceProfile) grants S3 access automatically via the metadata service.
@@ -211,15 +212,17 @@ services:
     depends_on:
       incident-db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - uce-prod-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3006/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3007/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 60s
 
   # ─── Production: API Gateway ──────────────────────────────────────────────
   api-gateway:
@@ -235,7 +238,7 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification-service:3003
       CATALOG_SERVICE_URL: http://catalog-service:3004
       PAYMENT_SERVICE_URL: http://payment-service:3005
-      INCIDENT_SERVICE_URL: http://incident-service:3006
+      INCIDENT_SERVICE_URL: http://incident-service:3007
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:

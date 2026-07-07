@@ -3,9 +3,22 @@ name: Deploy — Production
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_full_build:
+        description: '🔨 Forzar build de TODOS los servicios (ignorar detección de cambios)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 env:
   AWS_REGION: us-east-1
+
+permissions:
+  contents: write
 
 jobs:
   detect-changes:
@@ -100,7 +113,7 @@ jobs:
 
       # ── Build & Push ────────────────────────────────────────────────────────
       - name: Build & Push — Auth Service
-        if: needs.detect-changes.outputs.auth-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.auth-service == 'true' || needs.detect-changes.outputs.compose == 'true' || inputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/auth-service
@@ -112,7 +125,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & Push — Reservation Service
-        if: needs.detect-changes.outputs.reservation-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.reservation-service == 'true' || needs.detect-changes.outputs.compose == 'true' || inputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/reservation-service
@@ -124,7 +137,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & Push — Laboratory Service
-        if: needs.detect-changes.outputs.laboratory-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.laboratory-service == 'true' || needs.detect-changes.outputs.compose == 'true' || inputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/laboratory-service
@@ -136,7 +149,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & Push — Notification Service
-        if: needs.detect-changes.outputs.notification-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.notification-service == 'true' || needs.detect-changes.outputs.compose == 'true' || inputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/notification-service
@@ -148,7 +161,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & Push — Catalog Service
-        if: needs.detect-changes.outputs.catalog-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.catalog-service == 'true' || needs.detect-changes.outputs.compose == 'true' || inputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/catalog-service
@@ -160,7 +173,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & Push — Incident Service
-        if: needs.detect-changes.outputs.incident-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.incident-service == 'true' || needs.detect-changes.outputs.compose == 'true' || inputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/incident-service
@@ -172,7 +185,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & Push — Payment Service
-        if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.compose == 'true' || inputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/payment-service
@@ -185,7 +198,7 @@ jobs:
 
 
       - name: Build & Push — API Gateway
-        if: needs.detect-changes.outputs.api-gateway == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.api-gateway == 'true' || needs.detect-changes.outputs.compose == 'true' || inputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/api-gateway
@@ -197,11 +210,13 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & Push — Frontend
-        if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.compose == 'true' || inputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: apps/frontend
           push: true
+          build-args: |
+            ENV=prod
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/uce-frontend:latest
             ${{ steps.login-ecr.outputs.registry }}/uce-frontend:${{ github.sha }}
@@ -265,6 +280,38 @@ jobs:
           echo "Discovered Production Bastion IP: ${BASTION_IP}"
           echo "bastion_ip=${BASTION_IP}" >> "$GITHUB_OUTPUT"
 
+      # ── Dynamic ALB DNS Discovery ────────────────────────────────────────────
+      # The ALB DNS name is the stable public entry point — it does NOT change
+      # when EC2 instances are replaced by the ASG or when IPs rotate.
+      # This is used as FRONTEND_URL_PROD so Stripe redirects to the correct host
+      # after payment, without any hardcoded IP in code or secrets.
+      - name: Discover Production ALB DNS
+        id: discover-alb
+        run: |
+          ALB_NAME="uce-lab-alb-prod"
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names "${ALB_NAME}" \
+            --query "LoadBalancers[0].DNSName" \
+            --output text \
+            --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+
+          # Fallback: search by tag if the exact name doesn't match
+          if [ -z "$ALB_DNS" ] || [ "$ALB_DNS" == "None" ]; then
+            ALB_DNS=$(aws elbv2 describe-load-balancers \
+              --query "LoadBalancers[?contains(LoadBalancerName,'prod')].DNSName | [0]" \
+              --output text \
+              --region ${{ env.AWS_REGION }})
+          fi
+
+          if [ -z "$ALB_DNS" ] || [ "$ALB_DNS" == "None" ]; then
+            echo "::warning::Could not discover ALB DNS. FRONTEND_URL_PROD will use value from PROD_ENV_FILE secret."
+            ALB_DNS=""
+          else
+            echo "Discovered Production ALB DNS: ${ALB_DNS}"
+          fi
+
+          echo "alb_dns=${ALB_DNS}" >> "$GITHUB_OUTPUT"
+
       # ── SCP: copy compose file and DB scripts to ALL app instances ──────────
       # appleboy/scp-action also supports comma-separated hosts.
       - name: Copy compose file and DB scripts to Production EC2 instances
@@ -294,7 +341,7 @@ jobs:
           # 'envs' securely injects variables into the remote shell.
           # PROD_ENV_FILE contains the full .env content (single GitHub Secret).
           # They are NOT interpolated as plaintext into the script string.
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,PROD_ENV_FILE
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,PROD_ENV_FILE,FRONTEND_URL_PROD
           # sync: true ensures the script runs sequentially on each host,
           # providing a controlled rolling-style deploy across the ASG fleet.
           sync: true
@@ -322,11 +369,38 @@ jobs:
             set -x
             echo "✅ .env escrito correctamente"
 
+            # Inyectar FRONTEND_URL_PROD dinámicamente desde el ALB DNS descubierto.
+            # Esto reemplaza cualquier valor de FRONTEND_URL_PROD que venga del secret
+            # y garantiza que Stripe redirija al host correcto sin IPs hardcodeadas.
+            if [ -n "$FRONTEND_URL_PROD" ]; then
+              # Elimina cualquier FRONTEND_URL_PROD existente en el .env y agrega el nuevo valor
+              sed -i '/^FRONTEND_URL_PROD=/d' /home/ec2-user/app/.env
+              echo "FRONTEND_URL_PROD=${FRONTEND_URL_PROD}" >> /home/ec2-user/app/.env
+              echo "✅ FRONTEND_URL_PROD inyectado dinámicamente: ${FRONTEND_URL_PROD}"
+            else
+              echo "⚠️  FRONTEND_URL_PROD no disponible — usando valor del secret PROD_ENV_FILE"
+            fi
+
             docker compose -f docker-compose.prod.yml pull \
               api-gateway auth-service reservation-service laboratory-service \
               notification-service catalog-service payment-service incident-service frontend
 
             docker compose -f docker-compose.prod.yml up -d
+
+            # ── Diagnóstico temprano: detectar servicios caídos antes del healthcheck ──
+            echo "⏳ Esperando 40s para que los contenedores intenten arrancar..."
+            sleep 40
+            echo "--- ESTADO DE LOS CONTENEDORES ---"
+            docker compose -f docker-compose.prod.yml ps -a
+            echo "--- LOGS DE SERVICIOS NO SALUDABLES ---"
+            for svc in auth-service reservation-service laboratory-service notification-service catalog-service payment-service incident-service api-gateway; do
+              status=$(docker inspect --format='{{.State.Health.Status}}' $svc 2>/dev/null || echo "not_found")
+              if [ "$status" = "unhealthy" ] || [ "$status" = "not_found" ]; then
+                echo ""
+                echo "======== LOGS DE $svc (status: $status) ========"
+                docker logs --tail=80 $svc 2>&1 || true
+              fi
+            done
 
             # Esperar a que los servicios estén listos (hasta 3 minutos)
             echo "⏳ Waiting for API Gateway to be ready..."
@@ -365,6 +439,9 @@ jobs:
           AWS_REGION: ${{ env.AWS_REGION }}
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+          # ALB DNS inyectado dinámicamente — no hardcodeado, no depende de IPs.
+          # Si el discover-alb step no encontró el ALB, queda vacío y se usa el valor del secret.
+          FRONTEND_URL_PROD: ${{ steps.discover-alb.outputs.alb_dns != '' && format('http://{0}', steps.discover-alb.outputs.alb_dns) || '' }}
 
       # ── GitHub Release con historial automático ─────────────────────────────
       # Se ejecuta SOLO si el deploy SSH fue exitoso (paso anterior no falló).
