@@ -40,6 +40,7 @@ jobs:
         with:
           projectBaseDir: .
           args: >
-            -Dsonar.projectKey=UCE_Lab_Management_System
-            -Dsonar.projectName="UCE Lab Management System"
+            -Dsonar.projectKey=g5-laboratory-management-and-control-system
+            -Dsonar.projectName="g5-laboratory-management-and-control-system"
             -Dsonar.javascript.lcov.reportPaths=services/*/coverage/lcov.info
+            -Dsonar.exclusions=**/coverage/**,**/*.html
