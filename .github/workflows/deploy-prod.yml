@@ -34,6 +34,7 @@ jobs:
       incident-service: ${{ steps.filter.outputs.incident-service }}
       api-gateway: ${{ steps.filter.outputs.api-gateway }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      compose: ${{ steps.filter.outputs.compose }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
