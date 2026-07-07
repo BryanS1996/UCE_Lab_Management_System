@@ -209,6 +209,7 @@ services:
       # AWS credentials intentionally omitted — the EC2 IAM Instance Profile
       # (LabInstanceProfile) grants S3 access automatically via the metadata service.
       # Explicitly setting empty keys would OVERRIDE and BREAK the instance profile.
+      IA_LAMBDA_URL: ${IA_LAMBDA_URL}
     depends_on:
       incident-db:
         condition: service_healthy

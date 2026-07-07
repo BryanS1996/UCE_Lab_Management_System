@@ -38,6 +38,12 @@ export class Incident {
 
   @Prop({ type: [String], default: [] })
   evidence_urls: string[];
+
+  @Prop({ type: String, required: false })
+  severity?: string;
+
+  @Prop({ type: String, required: false })
+  category?: string;
 }
 
 export const IncidentSchema = SchemaFactory.createForClass(Incident);
