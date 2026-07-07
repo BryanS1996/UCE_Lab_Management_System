@@ -6,6 +6,7 @@ on:
       - 'services/laboratory-service/**'
       - '.github/workflows/_service-ci.yml'
   pull_request:
+    branches: [ "qa" ]
     paths:
       - 'services/laboratory-service/**'
       - '.github/workflows/_service-ci.yml'

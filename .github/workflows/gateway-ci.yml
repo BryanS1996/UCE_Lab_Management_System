@@ -6,6 +6,7 @@ on:
       - 'services/api-gateway/**'
       - '.github/workflows/_service-ci.yml'
   pull_request:
+    branches: [ "qa" ]
     paths:
       - 'services/api-gateway/**'
       - '.github/workflows/_service-ci.yml'
