@@ -99,6 +99,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
       roles: ['ADMIN'],
     },
     {
+      path: '/logs',
+      label: 'Auditoría',
+      icon: Terminal,
+      roles: ['ADMIN'],
+    },
+    {
       path: '/configuracion',
       label: 'Configuración',
       icon: Settings,

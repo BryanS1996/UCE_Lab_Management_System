@@ -19,6 +19,7 @@ jobs:
       catalog-service: ${{ steps.filter.outputs.catalog-service }}
       payment-service: ${{ steps.filter.outputs.payment-service }}
       incident-service: ${{ steps.filter.outputs.incident-service }}
+      logger-service: ${{ steps.filter.outputs.logger-service }}
       api-gateway: ${{ steps.filter.outputs.api-gateway }}
       frontend: ${{ steps.filter.outputs.frontend }}
       compose: ${{ steps.filter.outputs.compose }}
@@ -35,6 +36,7 @@ jobs:
             catalog-service: 'services/catalog-service/**'
             payment-service: 'services/payment-service/**'
             incident-service: 'services/incident-service/**'
+            logger-service: 'services/logger-service/**'
             api-gateway: 'services/api-gateway/**'
             frontend: 'apps/frontend/**'
             compose: 'docker-compose.qa.yml'
@@ -56,6 +58,7 @@ jobs:
           - catalog-service
           - payment-service
           - incident-service
+          - logger-service
     steps:
       # Always checkout — subsequent steps guard with the if condition.
       - uses: actions/checkout@v4
@@ -170,6 +173,18 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:qa-latest
           cache-from: type=gha,scope=qa-incident-service
           cache-to: type=gha,mode=max,scope=qa-incident-service
+
+      - name: Build & Push — Logger Service
+        if: needs.detect-changes.outputs.logger-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: services/logger-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-logger-service:qa-${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/uce-logger-service:qa-latest
+          cache-from: type=gha,scope=qa-logger-service
+          cache-to: type=gha,mode=max,scope=qa-logger-service
 
       - name: Build & Push — Payment Service
         if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.compose == 'true'

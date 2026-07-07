@@ -32,6 +32,7 @@ jobs:
       catalog-service: ${{ steps.filter.outputs.catalog-service }}
       payment-service: ${{ steps.filter.outputs.payment-service }}
       incident-service: ${{ steps.filter.outputs.incident-service }}
+      logger-service: ${{ steps.filter.outputs.logger-service }}
       api-gateway: ${{ steps.filter.outputs.api-gateway }}
       frontend: ${{ steps.filter.outputs.frontend }}
       compose: ${{ steps.filter.outputs.compose }}
@@ -48,6 +49,7 @@ jobs:
             catalog-service: 'services/catalog-service/**'
             payment-service: 'services/payment-service/**'
             incident-service: 'services/incident-service/**'
+            logger-service: 'services/logger-service/**'
             api-gateway: 'services/api-gateway/**'
             frontend: 'apps/frontend/**'
             compose: 'docker-compose.prod.yml'
@@ -67,6 +69,7 @@ jobs:
           - catalog-service
           - payment-service
           - incident-service
+          - logger-service
     steps:
       - uses: actions/checkout@v4
         if: needs.detect-changes.outputs[matrix.service] == 'true' || needs.detect-changes.outputs.compose == 'true'
@@ -174,16 +177,28 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build & Push — Incident Service
-        if: needs.detect-changes.outputs.incident-service == 'true' || needs.detect-changes.outputs.compose == 'true' || inputs.force_full_build == 'true'
+        if: needs.detect-changes.outputs.incident-service == 'true' || needs.detect-changes.outputs.compose == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/incident-service
           push: true
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:latest
-            ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:prod-${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/uce-incident-service:prod-latest
+          cache-from: type=gha,scope=prod-incident-service
+          cache-to: type=gha,mode=max,scope=prod-incident-service
+
+      - name: Build & Push — Logger Service
+        if: needs.detect-changes.outputs.logger-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: services/logger-service
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/uce-logger-service:prod-${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/uce-logger-service:prod-latest
+          cache-from: type=gha,scope=prod-logger-service
+          cache-to: type=gha,mode=max,scope=prod-logger-service
 
       - name: Build & Push — Payment Service
         if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.compose == 'true' || inputs.force_full_build == 'true'

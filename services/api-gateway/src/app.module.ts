@@ -15,6 +15,7 @@ import { CatalogModule } from './modules/catalog/catalog.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { IncidentModule } from './modules/incident/incident.module';
 import { UsersModule } from './modules/users/users.module';
+import { LoggerModule } from './modules/logger/logger.module';
 import { DocsController } from './docs.controller';
 
 @Module({
@@ -32,6 +33,7 @@ import { DocsController } from './docs.controller';
     PaymentModule,
     IncidentModule,
     UsersModule,
+    LoggerModule,
   ],
   controllers: [AppController, DocsController],
   providers: [AppService, HttpInterceptorService],

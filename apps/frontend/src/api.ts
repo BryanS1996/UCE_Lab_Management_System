@@ -14,6 +14,7 @@ const apiUrls = {
   notification: '/api/notifications',
   incident: '/api/incidents',
   payment: '/api/payments',
+  logs: '/api/logs',
 };
 
 export function getToken(): string | null {
@@ -175,4 +176,5 @@ export const endpoints = {
       method: 'POST',
       body: JSON.stringify({ reservation_id, lab_name }),
     }),
+  logsList: () => apiFetch(apiUrls.logs, ''),
 };
