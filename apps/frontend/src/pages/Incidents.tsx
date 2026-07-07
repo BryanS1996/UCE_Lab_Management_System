@@ -54,7 +54,7 @@ export const Incidents: React.FC = () => {
 
     if (timeFilter === 'ALL') return true;
     
-    const incidentDate = new Date(inc.created_at);
+    const incidentDate = new Date(inc.createdAt || inc.created_at || new Date());
     if (timeFilter === 'WEEK') {
       return incidentDate >= startOfWeek(new Date());
     }
@@ -83,7 +83,7 @@ export const Incidents: React.FC = () => {
 
     filteredIncidents.forEach(inc => {
       const rowData = [
-        new Date(inc.created_at).toLocaleDateString(),
+        new Date(inc.createdAt || inc.created_at || new Date()).toLocaleDateString(),
         `Lab #${inc.lab_id}`,
         inc.status || 'OPEN',
         inc.title,
@@ -121,6 +121,18 @@ export const Incidents: React.FC = () => {
       case 'RESOLVED': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
     }
+  };
+
+  const getSeverityBadge = (severity?: string) => {
+    if (!severity) return null;
+    const sev = severity.toUpperCase();
+    if (sev.includes('CRIT') || sev.includes('CRÍT') || sev.includes('HIGH') || sev.includes('ALTA')) {
+      return <span className="text-xs font-bold px-2 py-1 rounded-md bg-rose-100 text-rose-700 border border-rose-200">Alta</span>;
+    }
+    if (sev.includes('MED')) {
+      return <span className="text-xs font-bold px-2 py-1 rounded-md bg-amber-100 text-amber-700 border border-amber-200">Media</span>;
+    }
+    return <span className="text-xs font-bold px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 border border-emerald-200">Baja</span>;
   };
 
   return (
@@ -212,12 +224,15 @@ export const Incidents: React.FC = () => {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-500/5 to-transparent rounded-bl-full -z-0 pointer-events-none" />
 
                 <div className="flex justify-between items-start mb-4 relative z-10">
-                  <div className={`px-2.5 py-1 rounded-lg border text-xs font-bold flex items-center gap-1.5 ${getStatusColor(inc.status || 'OPEN')}`}>
-                    {getStatusIcon(inc.status || 'OPEN')}
-                    {inc.status || 'OPEN'}
+                  <div className="flex flex-wrap gap-2">
+                    <div className={`px-2.5 py-1 rounded-lg border text-xs font-bold flex items-center gap-1.5 ${getStatusColor(inc.status || 'OPEN')}`}>
+                      {getStatusIcon(inc.status || 'OPEN')}
+                      {inc.status || 'OPEN'}
+                    </div>
+                    {getSeverityBadge(inc.severity)}
                   </div>
-                  <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-md">
-                    {new Date(inc.created_at).toLocaleDateString()}
+                  <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-md whitespace-nowrap ml-2">
+                    {new Date(inc.createdAt || inc.created_at || new Date()).toLocaleDateString()}
                   </span>
                 </div>
                 
