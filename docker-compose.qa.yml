@@ -454,4 +454,4 @@ networks:
   uce-qa-network:
     driver: bridge
 
-# Force full build for new account
+# Force full build for new account# Force rebuild for new AWS account
