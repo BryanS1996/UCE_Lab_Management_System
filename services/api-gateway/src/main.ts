@@ -23,7 +23,7 @@ async function bootstrap() {
   // http://auth-service-qa:3010/api/docs-json, it will fail because it's not exposed!
   // Therefore, Swagger UI must fetch through the API gateway.
   // Since we don't have proxy routes for the swagger JSONs, we can just use the proxy!
-  
+
   const options = new DocumentBuilder()
     .setTitle('UCE Lab Management System - API Gateway')
     .setDescription('Centralized API Documentation')
@@ -32,7 +32,7 @@ async function bootstrap() {
 
   // Create empty document just to host the UI
   const document = SwaggerModule.createDocument(app, options);
-  
+
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
       urls: [
@@ -42,7 +42,7 @@ async function bootstrap() {
         { name: 'Reservation Service', url: '/api/reservations/docs-json' },
         { name: 'Laboratory Service', url: '/api/laboratories/docs-json' },
         { name: 'Notification Service', url: '/api/notifications/docs-json' },
-      ]
+      ],
     },
     explorer: true,
   });

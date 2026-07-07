@@ -13,7 +13,13 @@ export class RabbitmqService {
   constructor(private readonly amqpConnection: AmqpConnection) {}
 
   async publishPaymentSucceeded(payload: PaymentSucceededEvent) {
-    this.logger.log(`Publishing payment.succeeded event for reservation ${payload.reservation_id}`);
-    await this.amqpConnection.publish('amq.topic', 'payment.succeeded', payload);
+    this.logger.log(
+      `Publishing payment.succeeded event for reservation ${payload.reservation_id}`,
+    );
+    await this.amqpConnection.publish(
+      'amq.topic',
+      'payment.succeeded',
+      payload,
+    );
   }
 }

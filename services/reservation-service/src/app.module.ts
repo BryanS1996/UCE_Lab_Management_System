@@ -10,6 +10,9 @@ import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 import { KafkaModule } from './kafka/kafka.module';
 import { HealthModule } from './health/health.module';
 import { Reservation, Laboratory } from './database/entities';
+import { Outbox } from './outbox/outbox.entity';
+import { OutboxModule } from './outbox/outbox.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -31,6 +34,8 @@ import { Reservation, Laboratory } from './database/entities';
         database: configService.get<string>('DB_NAME', 'reservation_service'),
         entities: [Reservation, Laboratory],
         synchronize: true, // No hay migraciones definidas; auto-crear tablas en todos los ambientes
+        entities: [Reservation, Laboratory, Outbox],
+        synchronize: configService.get<string>('NODE_ENV') !== 'production',
         logging: configService.get<string>('NODE_ENV') === 'development',
         ssl:
           configService.get<string>('DB_SSL') === 'true'
@@ -46,6 +51,8 @@ import { Reservation, Laboratory } from './database/entities';
     ReservationsModule,
     LaboratoriesModule,
     HealthModule,
+    OutboxModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],

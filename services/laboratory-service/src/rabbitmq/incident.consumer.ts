@@ -19,8 +19,10 @@ export class IncidentConsumer {
     queue: 'laboratory_service_incident_queue',
   })
   public async handleIncidentReported(payload: any) {
-    this.logger.log(`Received incident.reported for resource: ${payload.resource_id}`);
-    
+    this.logger.log(
+      `Received incident.reported for resource: ${payload.resource_id}`,
+    );
+
     if (!payload.resource_id) {
       return;
     }
@@ -33,7 +35,9 @@ export class IncidentConsumer {
       if (resource && resource.is_available) {
         resource.is_available = false; // "En Mantenimiento"
         await this.resourceRepository.save(resource);
-        this.logger.log(`Resource ${resource.resource_id} marked as unavailable due to incident ${payload.incident_id}`);
+        this.logger.log(
+          `Resource ${resource.resource_id} marked as unavailable due to incident ${payload.incident_id}`,
+        );
       }
     } catch (error) {
       this.logger.error('Error handling incident.reported event', error);

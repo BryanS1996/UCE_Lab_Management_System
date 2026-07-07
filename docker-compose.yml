@@ -314,6 +314,7 @@ services:
       AWS_SECRET_ACCESS_KEY: test
       AWS_S3_BUCKET: incidents-bucket
       RESERVATION_SERVICE_URL: http://reservation-service:3011
+      IA_LAMBDA_URL: ${IA_LAMBDA_URL:-}
     depends_on:
       mongo:
         condition: service_healthy
@@ -414,6 +415,28 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     networks:
       - uce-local-network
+
+  # ─── LOCAL: Logger Service (puerto 3014) ─────────────────
+  logger-service:
+    build:
+      context: ./services/logger-service
+      dockerfile: Dockerfile
+    container_name: logger-service
+    environment:
+      NODE_ENV: development
+      PORT: 3014
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - uce-local-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3014/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   auth-db-data:

@@ -341,7 +341,7 @@ jobs:
           # 'envs' securely injects variables into the remote shell.
           # PROD_ENV_FILE contains the full .env content (single GitHub Secret).
           # They are NOT interpolated as plaintext into the script string.
-          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,PROD_ENV_FILE,FRONTEND_URL_PROD
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN,AWS_REGION,ECR_REGISTRY,PROD_ENV_FILE,FRONTEND_URL_PROD,IA_LAMBDA_URL
           # sync: true ensures the script runs sequentially on each host,
           # providing a controlled rolling-style deploy across the ASG fleet.
           sync: true
@@ -367,7 +367,13 @@ jobs:
             printf '%s\n' "$PROD_ENV_FILE" > /home/ec2-user/app/.env
             chmod 600 /home/ec2-user/app/.env
             set -x
-            echo "✅ .env escrito correctamente"
+            echo "✅ .env escrito correctamente desde el secret"
+            
+            if [ -n "$IA_LAMBDA_URL" ]; then
+              sed -i '/^IA_LAMBDA_URL=/d' /home/ec2-user/app/.env
+              echo "IA_LAMBDA_URL=${IA_LAMBDA_URL}" >> /home/ec2-user/app/.env
+              echo "✅ IA_LAMBDA_URL inyectado dinámicamente: ${IA_LAMBDA_URL}"
+            fi
 
             # Inyectar FRONTEND_URL_PROD dinámicamente desde el ALB DNS descubierto.
             # Esto reemplaza cualquier valor de FRONTEND_URL_PROD que venga del secret
@@ -442,6 +448,7 @@ jobs:
           # ALB DNS inyectado dinámicamente — no hardcodeado, no depende de IPs.
           # Si el discover-alb step no encontró el ALB, queda vacío y se usa el valor del secret.
           FRONTEND_URL_PROD: ${{ steps.discover-alb.outputs.alb_dns != '' && format('http://{0}', steps.discover-alb.outputs.alb_dns) || '' }}
+          IA_LAMBDA_URL: ${{ secrets.PROD_IA_LAMBDA_URL }}
 
       # ── GitHub Release con historial automático ─────────────────────────────
       # Se ejecuta SOLO si el deploy SSH fue exitoso (paso anterior no falló).
