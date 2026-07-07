@@ -17,6 +17,9 @@ on:
 env:
   AWS_REGION: us-east-1
 
+permissions:
+  contents: write
+
 jobs:
   detect-changes:
     name: Detect Changed Services
