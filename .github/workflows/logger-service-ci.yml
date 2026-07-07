@@ -6,6 +6,7 @@ on:
       - 'services/logger-service/**'
       - '.github/workflows/_service-ci.yml'
   pull_request:
+    branches: [ "qa" ]
     paths:
       - 'services/logger-service/**'
       - '.github/workflows/_service-ci.yml'
@@ -14,6 +15,7 @@ on:
 jobs:
   lint-and-test:
     uses: ./.github/workflows/_service-ci.yml
+    secrets: inherit
     with:
       service-name: logger
       service-dir: services/logger-service
