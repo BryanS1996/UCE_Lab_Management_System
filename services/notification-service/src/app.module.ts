@@ -30,7 +30,7 @@ import { MailModule } from './mail/mail.module';
         password: configService.get<string>('DB_PASSWORD', 'notifpassword'),
         database: configService.get<string>('DB_NAME', 'notification_service'),
         entities: [Notification],
-        synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        synchronize: true, // No hay migraciones definidas; auto-crear tablas en todos los ambientes
         logging: configService.get<string>('NODE_ENV') === 'development',
         ssl:
           configService.get<string>('DB_SSL') === 'true'

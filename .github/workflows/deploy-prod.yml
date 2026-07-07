@@ -338,6 +338,21 @@ jobs:
 
             docker compose -f docker-compose.prod.yml up -d
 
+            # ── Diagnóstico temprano: detectar servicios caídos antes del healthcheck ──
+            echo "⏳ Esperando 40s para que los contenedores intenten arrancar..."
+            sleep 40
+            echo "--- ESTADO DE LOS CONTENEDORES ---"
+            docker compose -f docker-compose.prod.yml ps -a
+            echo "--- LOGS DE SERVICIOS NO SALUDABLES ---"
+            for svc in auth-service reservation-service laboratory-service notification-service catalog-service payment-service incident-service api-gateway; do
+              status=$(docker inspect --format='{{.State.Health.Status}}' $svc 2>/dev/null || echo "not_found")
+              if [ "$status" = "unhealthy" ] || [ "$status" = "not_found" ]; then
+                echo ""
+                echo "======== LOGS DE $svc (status: $status) ========"
+                docker logs --tail=80 $svc 2>&1 || true
+              fi
+            done
+
             # Esperar a que los servicios estén listos (hasta 3 minutos)
             echo "⏳ Waiting for API Gateway to be ready..."
             for i in $(seq 1 18); do
