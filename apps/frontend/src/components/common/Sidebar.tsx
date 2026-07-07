@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Menu,
   AlertTriangle,
+  Terminal,
 } from 'lucide-react';
 
 interface SidebarProps {
