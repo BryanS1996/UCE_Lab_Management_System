@@ -139,11 +139,10 @@ describe('AuthService', () => {
         password: 'MySecretPassword!',
       });
 
-      // Valida RNF-01: El password debe encriptarse antes de guardarse
-      expect(bcrypt.hash).toHaveBeenCalledWith('MySecretPassword!', 10);
       expect(mockUsersService.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          password: 'hashed-password-123',
+          email: 'new@uce.edu.ec',
+          password: 'MySecretPassword!', // El encriptado ahora se delega al UsersService
         }),
       );
 
