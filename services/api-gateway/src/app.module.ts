@@ -17,6 +17,7 @@ import { IncidentModule } from './modules/incident/incident.module';
 import { UsersModule } from './modules/users/users.module';
 import { LoggerModule } from './modules/logger/logger.module';
 import { DocsController } from './docs.controller';
+import { CircuitBreakerModule } from './common/circuit-breaker/circuit-breaker.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { DocsController } from './docs.controller';
     IncidentModule,
     UsersModule,
     LoggerModule,
+    CircuitBreakerModule,
   ],
   controllers: [AppController, DocsController],
   providers: [AppService, HttpInterceptorService],
