@@ -484,7 +484,7 @@ services:
 
   # ─── Production: Logger Service (puerto 3018) ────────────────
   logger-service:
-    image: ${ECR_REGISTRY:-localhost}/uce-logger-service:${IMAGE_TAG:-prod-latest}
+    image: ${ECR_REGISTRY:-localhost}/uce-logger-service:${IMAGE_TAG:-latest}
     container_name: logger-service
     pull_policy: always
     environment:
