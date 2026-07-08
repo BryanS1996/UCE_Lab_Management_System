@@ -71,7 +71,7 @@ export const Users: React.FC = () => {
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
-        roles: [formData.role],
+        role: formData.role,
       });
       setIsModalOpen(false);
       setFormData({ firstName: '', lastName: '', email: '', password: '', role: 'student' });
