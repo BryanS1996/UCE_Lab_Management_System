@@ -464,6 +464,27 @@ services:
       retries: 3
       start_period: 30s
 
+  # ─── QA: n8n Workflow Automation (puerto 5678) ────────
+  n8n-qa:
+    image: n8nio/n8n:latest
+    container_name: n8n-qa
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_ON_PROGRESS=true
+    volumes:
+      - n8n-qa-data:/home/node/.n8n
+    networks:
+      - uce-qa-network
+    restart: unless-stopped
+
 volumes:
   auth-db-qa-data:
   reservation-db-qa-data:
@@ -473,6 +494,7 @@ volumes:
   incident-db-qa-data:
   logger-db-qa-data:
   rabbitmq-qa-data:
+  n8n-qa-data:
 
 networks:
   uce-qa-network:
