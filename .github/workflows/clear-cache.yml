@@ -1,0 +1,16 @@
+name: Limpiar Caché de Actions
+on:
+  workflow_dispatch: # Permite ejecutar el script manualmente
+
+permissions:
+  actions: write # Permiso estricto necesario para borrar la caché
+
+jobs:
+  clear-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Eliminar toda la caché
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh cache delete --all
