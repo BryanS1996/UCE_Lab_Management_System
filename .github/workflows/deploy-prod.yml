@@ -462,8 +462,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
           # ALB DNS inyectado dinámicamente — no hardcodeado, no depende de IPs.
-          # Si el discover-alb step no encontró el ALB, queda vacío y se usa el valor del secret.
-          FRONTEND_URL_PROD: ${{ steps.discover-alb.outputs.alb_dns != '' && format('http://{0}', steps.discover-alb.outputs.alb_dns) || '' }}
+          FRONTEND_URL_PROD: ${{ secrets.PROD_FRONTEND_URL || 'https://bryanchilenoprod1.distribuidauce.org' }}
           IA_LAMBDA_URL: ${{ secrets.PROD_IA_LAMBDA_URL }}
 
       # ── GitHub Release con historial automático ─────────────────────────────
