@@ -1,0 +1,77 @@
+name: SCA Analysis (OWASP Dependency-Check + npm audit)
+
+on:
+  push:
+    branches:
+      - feature/sca-analysis
+  pull_request:
+    branches:
+      - qa
+
+jobs:
+  sca-scan:
+    name: Software Composition Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies and generate npm audit reports
+        run: |
+          mkdir -p reports
+          echo '{"services": []}' > reports/npm-audit-summary.json
+          
+          # Scan services
+          for dir in services/*/; do
+            if [ -f "$dir/package.json" ]; then
+              service_name=$(basename $dir)
+              echo "Scanning $service_name..."
+              cd "$dir"
+              npm ci --legacy-peer-deps || true
+              npm audit --json > ../../reports/npm-audit-${service_name}.json || true
+              cd ../../
+            fi
+          done
+
+          # Scan frontend
+          if [ -f "apps/frontend/package.json" ]; then
+            echo "Scanning frontend..."
+            cd apps/frontend
+            npm ci --legacy-peer-deps || true
+            npm audit --json > ../../reports/npm-audit-frontend.json || true
+            cd ../../
+          fi
+
+      - name: OWASP Dependency-Check Scan
+        uses: dependency-check/Dependency-Check_Action@main
+        # env:
+          # NVD_API_KEY: ${{ secrets.NVD_API_KEY }} # Optional but recommended to avoid rate limits
+        with:
+          project: 'UCE_Lab_Management_System'
+          path: '.'
+          format: 'ALL'
+          out: 'reports'
+          args: >
+            --disableAssembly
+            --exclude "**/node_modules/**"
+            --exclude "**/dist/**"
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          
+      - name: Upload SCA Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sca-reports
+          path: reports/
+          retention-days: 14

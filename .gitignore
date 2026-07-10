@@ -28,3 +28,8 @@ backend.hcl
 *.tfstate
 *.tfstate.backup
 .terraform/
+
+# SCA Reports (generados dinámicamente)
+reports/*.json
+reports/*.html
+!reports/.gitkeep
