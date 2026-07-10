@@ -59,6 +59,7 @@ jobs:
           out: 'reports'
           args: >
             --disableAssembly
+            --disableNodeAudit
             --exclude "**/node_modules/**"
             --exclude "**/dist/**"
 

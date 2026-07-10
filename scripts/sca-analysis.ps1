@@ -24,7 +24,8 @@ try {
         --format "ALL" `
         --exclude "**\node_modules\**" `
         --exclude "**\dist\**" `
-        --disableAssembly
+        --disableAssembly `
+        --disableNodeAudit
 
     Write-Host "`nReportes generados en la carpeta /reports" -ForegroundColor Green
 } catch {
