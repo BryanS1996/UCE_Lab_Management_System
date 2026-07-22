@@ -3,6 +3,16 @@ name: Deploy — QA
 on:
   push:
     branches: [qa]
+  workflow_dispatch:
+    inputs:
+      force_full_build:
+        description: '🔨 Forzar build de TODOS los servicios (ignorar detección de cambios)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 env:
   AWS_REGION: us-east-1
