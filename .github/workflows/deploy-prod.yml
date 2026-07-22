@@ -371,6 +371,9 @@ jobs:
               sleep 10
             done
 
+            # Fix permission denied on docker.sock for the current SSH session
+            sudo chmod 666 /var/run/docker.sock
+
             cd /home/ec2-user/app
 
             # Re-authenticate with ECR using the session credentials passed via envs.
