@@ -484,14 +484,14 @@ services:
 
   # ─── Production: Logger Service (puerto 3018) ────────────────
   logger-service:
-    image: ${ECR_REGISTRY:-localhost}/uce-logger-service:${IMAGE_TAG:-prod-latest}
+    image: ${ECR_REGISTRY:-localhost}/uce-logger-service:${IMAGE_TAG:-latest}
     container_name: logger-service
     pull_policy: always
     environment:
       NODE_ENV: production
       PORT: 3018
       MONGODB_URI: mongodb://${LOGGER_DB_USER:-admin}:${LOGGER_DB_PASS:-admin}@logger-db:27017/logger_service?authSource=admin
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_URL: ${RABBITMQ_URL}
     depends_on:
       logger-db:
         condition: service_healthy

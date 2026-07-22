@@ -1,0 +1,102 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# 🌐 Pruebas Funcionales E2E — Selenium
+# Ejecuta 5 flujos E2E con navegador headless contra el frontend en QA.
+# Se dispara manualmente o es invocado por qa-quality-gate.yml.
+# ──────────────────────────────────────────────────────────────────────────────
+name: "UI Tests — Selenium E2E"
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  selenium-e2e:
+    name: 🌐 Ejecutar Pruebas E2E (Selenium)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Google Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Verificar instalación de Chrome
+        run: |
+          google-chrome --version
+          which google-chrome
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: apps/frontend/tests/e2e/requirements.txt
+
+      - name: Instalar dependencias de Python
+        run: |
+          pip install --upgrade pip
+          pip install -r apps/frontend/tests/e2e/requirements.txt
+
+      - name: 🧪 Ejecutar pruebas E2E contra QA
+        run: |
+          echo "🌐 Iniciando pruebas E2E contra el frontend QA..."
+          echo "   Frontend URL: ${{ secrets.QA_FRONTEND_URL }}"
+          echo "   API Gateway:  ${{ secrets.QA_API_GATEWAY_URL }}"
+          echo ""
+
+          mkdir -p selenium-reports/screenshots
+
+          pytest apps/frontend/tests/e2e/ \
+            -v \
+            --tb=short \
+            --html=selenium-reports/report.html \
+            --self-contained-html \
+            --junitxml=selenium-reports/junit-results.xml \
+            2>&1 | tee selenium-reports/pytest-output.txt
+
+          echo "✅ Pruebas E2E finalizadas."
+        env:
+          QA_FRONTEND_URL: ${{ secrets.QA_FRONTEND_URL }}
+          QA_API_GATEWAY_URL: ${{ secrets.QA_API_GATEWAY_URL }}
+          QA_TEST_USER_EMAIL: ${{ secrets.QA_TEST_USER_EMAIL }}
+          QA_TEST_USER_PASSWORD: ${{ secrets.QA_TEST_USER_PASSWORD }}
+
+      - name: 📊 Publicar resumen de resultados
+        if: always()
+        run: |
+          echo "## 🌐 Resultados de Pruebas E2E — Selenium" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Métrica | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Frontend URL** | \`${{ secrets.QA_FRONTEND_URL }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Fecha** | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f selenium-reports/junit-results.xml ]; then
+            echo "### 📋 Resultados JUnit" >> $GITHUB_STEP_SUMMARY
+            # Extraer línea de resumen del XML
+            TESTS=$(grep -oP 'tests="\K[^"]+' selenium-reports/junit-results.xml | head -1 || echo "N/A")
+            FAILURES=$(grep -oP 'failures="\K[^"]+' selenium-reports/junit-results.xml | head -1 || echo "N/A")
+            ERRORS=$(grep -oP 'errors="\K[^"]+' selenium-reports/junit-results.xml | head -1 || echo "N/A")
+            echo "| Tests | Failures | Errors |" >> $GITHUB_STEP_SUMMARY
+            echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
+            echo "| $TESTS | $FAILURES | $ERRORS |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Salida de pytest" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -30 selenium-reports/pytest-output.txt >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "No output available"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: 📦 Subir reportes como artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selenium-e2e-results-${{ github.run_number }}
+          path: |
+            selenium-reports/
+          retention-days: 14

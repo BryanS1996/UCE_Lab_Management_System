@@ -33,12 +33,15 @@ export const DashboardLayout: React.FC = () => {
     const token = getToken();
     if (!token) return;
 
-    // Use current hostname and port 3013 for notification-service (QA/Local)
-    const wsUrl = `http://${window.location.hostname}:3013/notifications`;
-    
+    // Ensure WebSocket uses WSS if on HTTPS, or WS if on HTTP, by using protocol-relative or wss explicitly
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Let Nginx proxy /socket.io to the notification-service
+    const wsUrl = `${protocol}//${window.location.host}/notifications`;
+
     const socket: Socket = io(wsUrl, {
+      path: '/socket.io',
       auth: {
-        token,
+        token: token,
       },
       transports: ['websocket'],
     });

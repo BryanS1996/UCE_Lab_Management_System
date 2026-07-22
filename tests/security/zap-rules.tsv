@@ -1,0 +1,24 @@
+10038	IGNORE	Content Security Policy (CSP) Header Not Set
+10021	IGNORE	X-Content-Type-Options Header Missing
+10036	IGNORE	Server Leaks Version Information
+10055	IGNORE	CSP: Wildcard Directive
+10098	IGNORE	Cross-Domain Misconfiguration
+10096	IGNORE	Timestamp Disclosure
+10027	IGNORE	Information Disclosure - Suspicious Comments
+10109	IGNORE	Modern Web Application
+10035	WARN	Strict-Transport-Security Header Not Set
+10037	WARN	Server Leaks Information via X-Powered-By
+90033	WARN	Loosely Scoped Cookie
+40012	FAIL	Cross Site Scripting (Reflected)
+40014	FAIL	Cross Site Scripting (Persistent)
+40018	FAIL	SQL Injection
+40019	FAIL	SQL Injection (MySQL)
+40020	FAIL	SQL Injection (HypersonicSQL)
+40021	FAIL	SQL Injection (Oracle)
+40022	FAIL	SQL Injection (PostgreSQL)
+90019	FAIL	Server Side Code Injection
+90020	FAIL	Remote OS Command Injection
+40003	FAIL	CRLF Injection
+40008	FAIL	Parameter Tampering
+40009	FAIL	Server Side Request Forgery
+10202	FAIL	Absence of Anti-CSRF Tokens
