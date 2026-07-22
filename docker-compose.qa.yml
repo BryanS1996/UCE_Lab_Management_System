@@ -16,9 +16,9 @@ services:
       - uce-qa-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U authuser"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 15s
+      retries: 10
 
   # ─── QA: Auth Service (puerto 3010) ──────────────────
   auth-service-qa:
@@ -57,9 +57,9 @@ services:
       - uce-qa-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U reservationuser"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 15s
+      retries: 10
 
   # ─── QA: RabbitMQ (puerto 5673 / 15673) ──────────────
   rabbitmq-qa:
@@ -78,7 +78,7 @@ services:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 15s
       timeout: 10s
-      retries: 5
+      retries: 10
 
   # ─── QA: Reservation Service (puerto 3011) ───────────
   reservation-service-qa:
@@ -124,9 +124,9 @@ services:
       - uce-qa-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U labuser"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 15s
+      retries: 10
 
   # ─── QA: Laboratory Service (puerto 3012) ────────────
   laboratory-service-qa:
@@ -169,9 +169,9 @@ services:
       - uce-qa-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U notifuser"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 15s
+      retries: 10
 
   # ─── QA: Notification Service (puerto 3013) ──────────
   notification-service-qa:
@@ -221,9 +221,9 @@ services:
       - uce-qa-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U cataloguser"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 15s
+      retries: 10
 
   # ─── QA: Catalog Service (puerto 3014) ───────────────
   catalog-service-qa:
@@ -267,9 +267,9 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 15s
+      retries: 10
 
   # ─── QA: Incident Service (puerto 3017) ──────────────
   incident-service-qa:
@@ -357,7 +357,7 @@ services:
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
       interval: 15s
-      timeout: 5s
+      timeout: 15s
       retries: 3
 
   # ─── QA: Frontend (puerto 80) ────────────────────────
@@ -435,9 +435,9 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 15s
+      retries: 10
 
   # ─── QA: Logger Service (puerto 3018) ────────────────
   logger-service-qa:

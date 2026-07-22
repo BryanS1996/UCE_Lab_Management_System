@@ -420,6 +420,8 @@ jobs:
               if [ "$i" -eq 18 ]; then
                 echo "❌ API Gateway did not respond after 3 minutes"
                 echo "================= CRITICAL ERROR LOG =================="
+                docker compose -f docker-compose.qa.yml ps
+                echo "-------------------------------------------------------"
                 docker compose -f docker-compose.qa.yml logs --tail=100 api-gateway-qa
                 echo "======================================================="
                 exit 1
@@ -436,7 +438,11 @@ jobs:
               fi
               if [ "$i" -eq 12 ]; then
                 echo "❌ Frontend did not respond after 2 minutes"
+                echo "================= CRITICAL ERROR LOG =================="
+                docker compose -f docker-compose.qa.yml ps
+                echo "-------------------------------------------------------"
                 docker compose -f docker-compose.qa.yml logs --tail=50 frontend-qa
+                echo "======================================================="
                 exit 1
               fi
               echo "   attempt $i/12 — retrying in 10s..."
