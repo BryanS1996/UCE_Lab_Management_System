@@ -3,6 +3,16 @@ name: Deploy — QA
 on:
   push:
     branches: [qa]
+  workflow_dispatch:
+    inputs:
+      force_full_build:
+        description: '🔨 Forzar build de TODOS los servicios (ignorar detección de cambios)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 env:
   AWS_REGION: us-east-1
@@ -23,6 +33,7 @@ jobs:
       api-gateway: ${{ steps.filter.outputs.api-gateway }}
       frontend: ${{ steps.filter.outputs.frontend }}
       compose: ${{ steps.filter.outputs.compose }}
+      force_full_build: ${{ github.event.inputs.force_full_build }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -68,8 +79,8 @@ jobs:
           cache: 'npm'
           cache-dependency-path: services/${{ matrix.service }}/package-lock.json
       - name: Install, Build & Test
-        # Only run if this specific service changed OR the compose file changed.
-        if: needs.detect-changes.outputs[matrix.service] == 'true' || needs.detect-changes.outputs.compose == 'true'
+        # Only run if this specific service changed OR the compose file changed OR force_full_build is true
+        if: needs.detect-changes.outputs[matrix.service] == 'true' || needs.detect-changes.outputs.compose == 'true' || needs.detect-changes.outputs.force_full_build == 'true'
         working-directory: services/${{ matrix.service }}
         run: |
           npm ci --legacy-peer-deps
@@ -103,7 +114,7 @@ jobs:
 
       # ── Build & Push ────────────────────────────────────────────────────────
       - name: Build & Push — Auth Service
-        if: needs.detect-changes.outputs.auth-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.auth-service == 'true' || needs.detect-changes.outputs.compose == 'true' || needs.detect-changes.outputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/auth-service
@@ -115,7 +126,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=qa-auth-service
 
       - name: Build & Push — Reservation Service
-        if: needs.detect-changes.outputs.reservation-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.reservation-service == 'true' || needs.detect-changes.outputs.compose == 'true' || needs.detect-changes.outputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/reservation-service
@@ -127,7 +138,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=qa-reservation-service
 
       - name: Build & Push — Laboratory Service
-        if: needs.detect-changes.outputs.laboratory-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.laboratory-service == 'true' || needs.detect-changes.outputs.compose == 'true' || needs.detect-changes.outputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/laboratory-service
@@ -139,7 +150,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=qa-laboratory-service
 
       - name: Build & Push — Notification Service
-        if: needs.detect-changes.outputs.notification-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.notification-service == 'true' || needs.detect-changes.outputs.compose == 'true' || needs.detect-changes.outputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/notification-service
@@ -151,7 +162,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=qa-notification-service
 
       - name: Build & Push — Catalog Service
-        if: needs.detect-changes.outputs.catalog-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.catalog-service == 'true' || needs.detect-changes.outputs.compose == 'true' || needs.detect-changes.outputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/catalog-service
@@ -163,7 +174,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=qa-catalog-service
 
       - name: Build & Push — Incident Service
-        if: needs.detect-changes.outputs.incident-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.incident-service == 'true' || needs.detect-changes.outputs.compose == 'true' || needs.detect-changes.outputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/incident-service
@@ -175,7 +186,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=qa-incident-service
 
       - name: Build & Push — Logger Service
-        if: needs.detect-changes.outputs.logger-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.logger-service == 'true' || needs.detect-changes.outputs.compose == 'true' || needs.detect-changes.outputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/logger-service
@@ -187,7 +198,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=qa-logger-service
 
       - name: Build & Push — Payment Service
-        if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.compose == 'true' || needs.detect-changes.outputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/payment-service
@@ -199,7 +210,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=qa-payment-service
 
       - name: Build & Push — API Gateway
-        if: needs.detect-changes.outputs.api-gateway == 'true' || needs.detect-changes.outputs.compose == 'true'
+        if: needs.detect-changes.outputs.api-gateway == 'true' || needs.detect-changes.outputs.compose == 'true' || needs.detect-changes.outputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: services/api-gateway
@@ -210,8 +221,8 @@ jobs:
           cache-from: type=gha,scope=qa-api-gateway
           cache-to: type=gha,mode=max,scope=qa-api-gateway
 
-      - name: Build & Push — Frontend
-        if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.compose == 'true'
+      - name: Build & Push — Frontend (Vite)
+        if: needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.compose == 'true' || needs.detect-changes.outputs.force_full_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: apps/frontend
