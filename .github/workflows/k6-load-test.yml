@@ -1,0 +1,74 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# 🏋️ Pruebas de Carga — k6
+# Ejecuta 5 escenarios de rendimiento contra el API Gateway en el entorno QA.
+# Se dispara manualmente o es invocado por qa-quality-gate.yml.
+# ──────────────────────────────────────────────────────────────────────────────
+name: "Load Tests — k6"
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  k6-load-test:
+    name: 🏋️ Ejecutar Pruebas de Carga (k6)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Ejecutar pruebas de carga contra QA
+        run: |
+          echo "🏋️ Iniciando pruebas de carga contra el API Gateway QA..."
+          echo "   Target: ${{ secrets.QA_API_GATEWAY_URL }}"
+          echo ""
+
+          k6 run tests/performance/load-test-api-gateway.js \
+            --out json=k6-results.json \
+            --summary-export=k6-summary.json \
+            2>&1 | tee k6-output.txt
+
+          echo "✅ Pruebas de carga finalizadas."
+        env:
+          API_GATEWAY_URL: ${{ secrets.QA_API_GATEWAY_URL }}
+          TEST_USER_EMAIL: ${{ secrets.QA_TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.QA_TEST_USER_PASSWORD }}
+
+      - name: 📊 Publicar resumen de resultados
+        if: always()
+        run: |
+          echo "## 🏋️ Resultados de Pruebas de Carga — k6" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Métrica | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Target** | \`${{ secrets.QA_API_GATEWAY_URL }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Fecha** | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f k6-summary.json ]; then
+            echo "### 📈 Resumen de Métricas" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat k6-summary.json | head -100 >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Últimas 50 líneas de salida" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          tail -50 k6-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: 📦 Subir reportes como artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-load-test-results-${{ github.run_number }}
+          path: |
+            k6-results.json
+            k6-summary.json
+            k6-output.txt
+          retention-days: 14
