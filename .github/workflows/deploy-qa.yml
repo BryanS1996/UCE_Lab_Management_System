@@ -397,13 +397,18 @@ jobs:
             aws ecr get-login-password --region "$AWS_REGION" \
               | docker login --username AWS --password-stdin "$ECR_REGISTRY"
               
-            # Limpiar puerto 3000 en caso de que un contenedor de desarrollo (docker-compose.yml) 
-            # o un proceso zombie haya quedado encendido ocupando el puerto.
+            # Limpiar contenedores de autoheal que ocupan puertos
+            docker compose -f docker-compose.autoheal.yml down 2>/dev/null || true
+            
+            # Limpiar puerto 3000 en caso de procesos zombies
             docker compose -f docker-compose.yml down 2>/dev/null || true
             CONFLICT_ID=$(docker ps -q --filter "publish=3000")
             if [ -n "$CONFLICT_ID" ]; then
               docker rm -f $CONFLICT_ID
             fi
+            
+            # Limpiar cualquier contenedor atascado reiniciándose
+            docker container prune -f
             
             docker compose -f docker-compose.qa.yml pull -q \
               api-gateway-qa auth-service-qa reservation-service-qa laboratory-service-qa \
