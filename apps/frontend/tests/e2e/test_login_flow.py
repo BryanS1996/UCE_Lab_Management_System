@@ -257,7 +257,7 @@ def test_sel_e2e_05_flujo_registro(driver, base_url):
 
     # Esperar a que aparezcan los campos de texto del registro (nombre/apellido)
     text_inputs = wait.until(
-        lambda d: d.find_elements(By.CSS_SELECTOR, 'input[type="text"]')
+        EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'input[type="text"]'))
     )
     assert len(text_inputs) >= 2, (
         f"Se esperaban al menos 2 campos de texto (nombre, apellido), "
