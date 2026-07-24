@@ -28,7 +28,7 @@ jobs:
         with:
           target: ${{ secrets.QA_FRONTEND_URL }}
           rules_file_name: "tests/security/zap-rules.tsv"
-          fail_action: warn
+          fail_action: false
           allow_issue_writing: false
           cmd_options: "-j"
           artifact_name: "zap-dast-01-frontend-baseline"
@@ -57,7 +57,7 @@ jobs:
         with:
           target: ${{ secrets.QA_API_GATEWAY_URL }}
           rules_file_name: "tests/security/zap-rules.tsv"
-          fail_action: warn
+          fail_action: false
           allow_issue_writing: false
           cmd_options: "-j"
           artifact_name: "zap-dast-02-api-baseline"
@@ -118,7 +118,7 @@ jobs:
         with:
           target: ${{ secrets.QA_FRONTEND_URL }}
           # No usar zap-rules.tsv aquí — queremos ver TODOS los headers faltantes
-          fail_action: warn
+          fail_action: false
           allow_issue_writing: false
           cmd_options: >-
             -j
