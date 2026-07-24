@@ -7,6 +7,7 @@ locals {
     "uce-catalog-service",
     "uce-payment-service",
     "uce-incident-service",
+    "uce-logger-service",
     "uce-api-gateway",
     "uce-frontend",
   ]

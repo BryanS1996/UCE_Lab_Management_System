@@ -1,0 +1,143 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# 🚦 Quality Gate — Orquestador de Pruebas QA
+#
+# Ejecuta las 15 pruebas automatizadas en orden SECUENCIAL estricto:
+#   1. 🌐 Selenium (5 pruebas E2E)     → Valida funcionalidad sobre sistema estable
+#   2. 🔒 OWASP ZAP (5 escaneos DAST)  → Escanea seguridad sin interferencia de carga
+#   3. 🏋️ k6 (5 pruebas de carga)      → Estresa el sistema al final
+#
+# Si CUALQUIERA de los 3 conjuntos falla, el Quality Gate se marca como FAILED
+# y el deploy a Producción queda bloqueado.
+#
+# ⚠️  IMPORTANTE: El orden secuencial evita falsos positivos por interferencia.
+#     Ejemplo: k6 en paralelo con Selenium haría fallar los tiempos de carga UI.
+# ──────────────────────────────────────────────────────────────────────────────
+name: "🚦 QA Quality Gate"
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_dast:
+        description: "⏭️ Saltar pruebas DAST (útil para debugging rápido)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  # ── PASO 1: Pruebas Funcionales E2E (Selenium) ────────────────────────────
+  # Se ejecutan PRIMERO porque necesitan un backend estable sin carga.
+  selenium-e2e:
+    name: "1️⃣ Pruebas Funcionales E2E (Selenium)"
+    uses: ./.github/workflows/selenium-ui-test.yml
+    secrets: inherit
+
+  # ── PASO 2: Pruebas de Seguridad DAST (OWASP ZAP) ─────────────────────────
+  # Se ejecutan DESPUÉS de Selenium para escanear sobre un sistema funcional.
+  # ZAP puede inyectar payloads — mejor hacerlo antes de las pruebas de carga.
+  dast-security:
+    name: "2️⃣ Pruebas de Seguridad DAST (OWASP ZAP)"
+    needs: selenium-e2e
+    if: ${{ inputs.skip_dast != 'true' }}
+    uses: ./.github/workflows/dast-security-test.yml
+    secrets: inherit
+
+  # ── PASO 3: Pruebas de Carga (k6) ─────────────────────────────────────────
+  # Se ejecutan AL FINAL porque estresan el sistema y podrían afectar
+  # a las otras pruebas si se ejecutaran en paralelo.
+  k6-load-test:
+    name: "3️⃣ Pruebas de Carga (k6)"
+    needs: [selenium-e2e, dast-security]
+    # Si DAST se saltó, k6 solo depende de Selenium
+    if: |
+      always() &&
+      needs.selenium-e2e.result == 'success' &&
+      (needs.dast-security.result == 'success' || needs.dast-security.result == 'skipped')
+    uses: ./.github/workflows/k6-load-test.yml
+    secrets: inherit
+
+  # ── QUALITY GATE: Decisión final ───────────────────────────────────────────
+  quality-gate:
+    name: "🚦 Quality Gate — Decisión Final"
+    runs-on: ubuntu-latest
+    needs: [selenium-e2e, dast-security, k6-load-test]
+    if: always()
+    steps:
+      - name: 🚦 Evaluar resultados del Quality Gate
+        run: |
+          echo "## 🚦 Quality Gate — Resultados Finales" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| # | Prueba | Resultado | Estado |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|---|---|" >> $GITHUB_STEP_SUMMARY
+
+          SELENIUM="${{ needs.selenium-e2e.result }}"
+          DAST="${{ needs.dast-security.result }}"
+          K6="${{ needs.k6-load-test.result }}"
+
+          # Selenium
+          if [ "$SELENIUM" = "success" ]; then
+            echo "| 1 | 🌐 Selenium E2E (5 pruebas) | \`$SELENIUM\` | ✅ |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 1 | 🌐 Selenium E2E (5 pruebas) | \`$SELENIUM\` | ❌ |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # DAST
+          if [ "$DAST" = "success" ] || [ "$DAST" = "skipped" ]; then
+            echo "| 2 | 🔒 OWASP ZAP DAST (5 escaneos) | \`$DAST\` | ✅ |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 2 | 🔒 OWASP ZAP DAST (5 escaneos) | \`$DAST\` | ❌ |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # k6
+          if [ "$K6" = "success" ]; then
+            echo "| 3 | 🏋️ k6 Carga (5 escenarios) | \`$K6\` | ✅ |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| 3 | 🏋️ k6 Carga (5 escenarios) | \`$K6\` | ❌ |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Decisión final
+          GATE_PASSED=true
+
+          if [ "$SELENIUM" != "success" ]; then
+            echo "::error::❌ Las pruebas funcionales E2E (Selenium) fallaron. Quality Gate BLOQUEADO."
+            GATE_PASSED=false
+          fi
+
+          if [ "$DAST" != "success" ] && [ "$DAST" != "skipped" ]; then
+            echo "::error::❌ Las pruebas de seguridad DAST (ZAP) fallaron. Quality Gate BLOQUEADO."
+            GATE_PASSED=false
+          fi
+
+          if [ "$K6" != "success" ]; then
+            echo "::error::❌ Las pruebas de carga (k6) fallaron. Quality Gate BLOQUEADO."
+            GATE_PASSED=false
+          fi
+
+          if [ "$GATE_PASSED" = "true" ]; then
+            echo "### ✅ QUALITY GATE APROBADO" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Las 15 pruebas automatizadas pasaron exitosamente." >> $GITHUB_STEP_SUMMARY
+            echo "El deploy a **Producción** está habilitado." >> $GITHUB_STEP_SUMMARY
+            echo ""
+            echo "✅ ¡QUALITY GATE APROBADO! Todas las pruebas pasaron."
+            echo "   El pipeline de Producción puede proceder."
+          else
+            echo "### ❌ QUALITY GATE RECHAZADO" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Una o más suites de pruebas fallaron." >> $GITHUB_STEP_SUMMARY
+            echo "El deploy a **Producción** está **BLOQUEADO**." >> $GITHUB_STEP_SUMMARY
+            echo "Revisa los reportes en la sección **Artifacts** de cada job." >> $GITHUB_STEP_SUMMARY
+            echo ""
+            echo "❌ QUALITY GATE RECHAZADO. Revisa los reportes de pruebas."
+            exit 1
+          fi
